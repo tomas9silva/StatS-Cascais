@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-PT">
 <head>
@@ -1404,6 +1405,179 @@ body.club-custom-logo .statsLogoBox>img{display:none!important}
     position:relative!important;
     z-index:1!important;
   }
+}
+</style>
+
+
+<style id="stats-mac-scoreboard-final-override">
+/* Marcador específico para Mac/desktop — colocado no fim para vencer regras de iPad/telemóvel */
+@media screen and (min-width:1100px) and (min-height:620px){
+  #main > .matchBoard.statsFixedScoreboard,
+  #main .matchBoard.statsFixedScoreboard{
+    position:relative!important;
+    inset:auto!important;
+    transform:none!important;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 150px!important;
+    grid-template-rows:1fr!important;
+    align-items:stretch!important;
+    gap:16px!important;
+    box-sizing:border-box!important;
+    width:calc(100% - 24px)!important;
+    max-width:none!important;
+    height:148px!important;
+    min-height:148px!important;
+    max-height:148px!important;
+    margin:12px!important;
+    padding:14px 16px!important;
+    overflow:hidden!important;
+    z-index:30!important;
+  }
+  #main > .matchBoard > .matchScore.statsFixedScore,
+  #main .matchBoard > .matchScore.statsFixedScore{
+    position:static!important;
+    inset:auto!important;
+    transform:none!important;
+    display:grid!important;
+    grid-template-columns:minmax(220px,1fr) 150px minmax(220px,1fr)!important;
+    grid-template-rows:1fr!important;
+    align-items:center!important;
+    gap:18px!important;
+    width:100%!important;
+    height:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+  }
+  #main .matchBoard .matchTeam.statsTeam{
+    position:static!important;
+    inset:auto!important;
+    transform:none!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:12px!important;
+    width:auto!important;
+    min-width:0!important;
+    height:100%!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+  }
+  #main .matchBoard .statsHomeTeam{grid-column:1!important;grid-row:1!important;flex-direction:row!important}
+  #main .matchBoard .statsScoreCenter{grid-column:2!important;grid-row:1!important}
+  #main .matchBoard .statsAwayTeam{grid-column:3!important;grid-row:1!important;flex-direction:row-reverse!important}
+  #main .matchBoard .statsTeamNameWrap{
+    position:static!important;
+    flex:1 1 auto!important;
+    width:auto!important;
+    min-width:0!important;
+    overflow:hidden!important;
+  }
+  #main .matchBoard .statsTeamNameWrap input{
+    position:static!important;
+    display:block!important;
+    box-sizing:border-box!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    height:48px!important;
+    margin:0!important;
+    padding:0 14px!important;
+    font-size:18px!important;
+    line-height:48px!important;
+    text-align:center!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  #main .matchBoard .teamGoalBtns,
+  #main .matchBoard .statsHomeGoalBtns,
+  #main .matchBoard .statsAwayGoalBtns{
+    position:static!important;
+    inset:auto!important;
+    transform:none!important;
+    display:flex!important;
+    flex:0 0 42px!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:8px!important;
+    width:42px!important;
+    min-width:42px!important;
+    height:auto!important;
+    margin:0!important;
+    padding:0!important;
+  }
+  #main .matchBoard .teamGoalBtns button,
+  #main .matchBoard .statsHomeGoalBtns button,
+  #main .matchBoard .statsAwayGoalBtns button{
+    width:42px!important;
+    min-width:42px!important;
+    height:36px!important;
+    min-height:36px!important;
+    margin:0!important;
+    padding:0!important;
+    font-size:23px!important;
+    line-height:1!important;
+    border-radius:9px!important;
+  }
+  #main .matchBoard .matchCenter.statsScoreCenter{
+    position:static!important;
+    inset:auto!important;
+    transform:none!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:5px!important;
+    box-sizing:border-box!important;
+    width:150px!important;
+    min-width:150px!important;
+    height:100%!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+  }
+  #main .matchBoard .matchScoreline{font-size:46px!important;line-height:.9!important;margin:0!important;white-space:nowrap!important}
+  #main .matchBoard #tempo{font-size:17px!important;line-height:1!important;margin:0!important}
+  #main .matchBoard .matchPeriodRow{width:100%!important;margin:0!important;display:flex!important;justify-content:center!important}
+  #main .matchBoard #periodo{box-sizing:border-box!important;width:126px!important;min-width:126px!important;max-width:126px!important;height:27px!important;min-height:27px!important;font-size:11px!important;padding:0 4px!important}
+  #main > .matchBoard > .matchControls.statsFixedControls,
+  #main .matchBoard > .matchControls.statsFixedControls{
+    position:static!important;
+    inset:auto!important;
+    transform:none!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    grid-template-rows:repeat(5,minmax(0,1fr))!important;
+    gap:6px!important;
+    box-sizing:border-box!important;
+    width:150px!important;
+    min-width:150px!important;
+    max-width:150px!important;
+    height:100%!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+  }
+  #main .matchBoard > .matchControls button{
+    box-sizing:border-box!important;
+    width:100%!important;
+    height:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0 7px!important;
+    font-size:10px!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    border-radius:8px!important;
+  }
+  #main .matchBoard > .matchControls .iconBtn{font-size:17px!important}
 }
 </style>
 
