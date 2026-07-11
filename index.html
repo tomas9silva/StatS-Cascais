@@ -1212,6 +1212,11 @@ body.club-custom-logo .statsLogoBox>img{display:none!important}
 #landingPage.landingPage,#menuPage.landingPage{background:var(--club-background)!important;background-image:none!important}
 #landingPage .landingContent,#menuPage .landingContent{background:var(--club-secondary)!important;border-color:color-mix(in srgb,var(--club-primary) 18%,transparent)!important}
 #landingPage h1,#menuPage h1,.settingsTitle,.card h2,.card h3{color:var(--club-primary)!important}
+#settingsPage,#settingsPage .card,#settingsPage label,#settingsPage .small,#settingsPage p,#settingsPage span,#settingsPage div:not(.settingsHeader):not(.clubColorInput){color:var(--club-text)!important}
+#settingsPage input:not([type="color"]),#settingsPage textarea,#settingsPage select{color:var(--club-text)!important;background:var(--club-secondary)!important}
+#settingsPage .settingsTitle,#settingsPage .card h2,#settingsPage .card h3{color:var(--club-text)!important}
+#settingsPage button{color:inherit}
+#settingsPage button.green,#settingsPage button.dark,#settingsPage button.danger,#settingsPage button.yellow,#settingsPage button.blue{color:var(--club-secondary)!important}
 .enterBtn,button.green,.green,.trainingStartBtn{background:var(--club-primary)!important;border-color:var(--club-primary)!important;color:var(--club-secondary)!important}
 .enterBtn:hover,button.green:hover,.trainingStartBtn:hover{background:var(--club-primary-dark)!important}
 .statsSidebar,.proSidebar,.trainingHeader,.settingsHeader{background:var(--club-primary)!important}
@@ -1633,6 +1638,7 @@ DEFINIÇÕES / ESTATÍSTICAS / HISTÓRICO
     <label>Cor principal<input id="clubPrimaryInput" class="clubColorInput" type="color" value="#08783f"></label>
     <label>Cor secundária<input id="clubSecondaryInput" class="clubColorInput" type="color" value="#ffffff"></label>
     <label>Cor de fundo<input id="clubBackgroundInput" class="clubColorInput" type="color" value="#f4f7f5"></label>
+    <label>Cor das letras<input id="clubTextInput" class="clubColorInput" type="color" value="#173c2b"></label>
    </div>
    <div class="clubLogoTools">
     <img id="clubLogoPreview" class="clubLogoPreview" alt="Pré-visualização do símbolo">
@@ -1767,7 +1773,7 @@ MODAIS
 <script id="stats-club-personalisation-js">
 (function(){
  const KEY='stats_club_personalisation_v1';
- const defaults={name:'StatS',shortName:'StatS',primary:'#08783f',secondary:'#ffffff',background:'#f4f7f5',logo:''};
+ const defaults={name:'StatS',shortName:'StatS',primary:'#08783f',secondary:'#ffffff',background:'#f4f7f5',text:'#173c2b',logo:''};
  let pendingLogo='';
  function safeParse(v){try{return JSON.parse(v)||{}}catch(e){return {}}}
  function config(){return Object.assign({},defaults,safeParse(localStorage.getItem(KEY)))}
@@ -1787,7 +1793,7 @@ MODAIS
  }
  function apply(c){
   const root=document.documentElement.style;
-  root.setProperty('--club-primary',c.primary);root.setProperty('--club-secondary',c.secondary);root.setProperty('--club-background',c.background);root.setProperty('--club-primary-dark',darken(c.primary));
+  root.setProperty('--club-primary',c.primary);root.setProperty('--club-secondary',c.secondary);root.setProperty('--club-background',c.background);root.setProperty('--club-text',c.text||defaults.text);root.setProperty('--club-primary-dark',darken(c.primary));
   setText(c);
   const targets=[];
   document.querySelectorAll('#landingPage .landingContent,#menuPage .landingContent').forEach(p=>targets.push(ensureLogo(p,'first')));
@@ -1796,7 +1802,7 @@ MODAIS
   targets.filter(Boolean).forEach(img=>{img.src=c.logo||'';img.classList.toggle('has-logo',!!c.logo)});
   document.body.classList.toggle('club-custom-logo',!!c.logo);
   const preview=document.getElementById('clubLogoPreview');if(preview){preview.src=c.logo||'';preview.style.visibility=c.logo?'visible':'hidden'}
-  ['clubNameInput','clubShortNameInput','clubPrimaryInput','clubSecondaryInput','clubBackgroundInput'].forEach(id=>{const el=document.getElementById(id);if(!el)return;const map={clubNameInput:'name',clubShortNameInput:'shortName',clubPrimaryInput:'primary',clubSecondaryInput:'secondary',clubBackgroundInput:'background'};el.value=c[map[id]]||defaults[map[id]]});
+  ['clubNameInput','clubShortNameInput','clubPrimaryInput','clubSecondaryInput','clubBackgroundInput','clubTextInput'].forEach(id=>{const el=document.getElementById(id);if(!el)return;const map={clubNameInput:'name',clubShortNameInput:'shortName',clubPrimaryInput:'primary',clubSecondaryInput:'secondary',clubBackgroundInput:'background',clubTextInput:'text'};el.value=c[map[id]]||defaults[map[id]]});
  }
  window.previewClubLogo=function(ev){
   const file=ev.target.files&&ev.target.files[0];if(!file)return;
@@ -1810,12 +1816,13 @@ MODAIS
    primary:document.getElementById('clubPrimaryInput')?.value||defaults.primary,
    secondary:document.getElementById('clubSecondaryInput')?.value||defaults.secondary,
    background:document.getElementById('clubBackgroundInput')?.value||defaults.background,
+   text:document.getElementById('clubTextInput')?.value||defaults.text,
    logo:pendingLogo||old.logo||''
   };
   try{localStorage.setItem(KEY,JSON.stringify(c));pendingLogo='';apply(c);alert('Personalização guardada.')}catch(e){alert('Não foi possível guardar. O símbolo poderá ser demasiado grande.')}
  };
  window.resetClubPersonalisation=function(){
-  if(!confirm('Restaurar o nome, as cores e remover o símbolo personalizado?'))return;
+  if(!confirm('Restaurar o nome, todas as cores e remover o símbolo personalizado?'))return;
   localStorage.removeItem(KEY);pendingLogo='';const f=document.getElementById('clubLogoInput');if(f)f.value='';apply(defaults);
  };
  function init(){apply(config())}
