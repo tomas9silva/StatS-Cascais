@@ -831,6 +831,63 @@ body.club-custom-logo .statsLogoBox>img{display:none!important}
 }
 </style>
 
+
+<style id="stats-dark-professional-v6">
+:root{
+ --stats-bg:#020b14;--stats-bg-2:#061421;--stats-surface:#091a29;--stats-surface-2:#0d2233;
+ --stats-border:rgba(148,180,205,.18);--stats-muted:#91a4b7;--stats-white:#f7fbff;
+ --stats-accent:var(--club-primary,#58cf23);--stats-accent-2:var(--club-primary-dark,#2e9d19);
+}
+html,body{background:var(--stats-bg)!important;color:var(--stats-white)!important}
+@media screen and (orientation:landscape){
+ #main.statsShell{background:radial-gradient(circle at 55% -10%,color-mix(in srgb,var(--club-primary) 12%,transparent),transparent 35%),linear-gradient(145deg,#020812,#061522 58%,#020a12)!important}
+ #main>.statsSidebar{background:linear-gradient(180deg,#061421 0%,#071827 100%)!important;border-right:1px solid var(--stats-border)!important;box-shadow:8px 0 30px rgba(0,0,0,.22)!important}
+ #main>.statsMain{grid-template-rows:38px 86px minmax(0,1fr)!important;grid-template-columns:minmax(168px,.66fr) minmax(430px,1.9fr) minmax(190px,.74fr)!important;gap:8px!important;padding:8px 10px 10px!important}
+ .statsMain>.proTopTools{background:transparent!important;border:0!important;color:var(--stats-white)!important}
+ #statsScoreboardV4{height:86px!important;min-height:86px!important;background:linear-gradient(180deg,rgba(12,29,44,.98),rgba(6,20,32,.98))!important;color:var(--stats-white)!important;border:1px solid color-mix(in srgb,var(--club-primary) 45%,var(--stats-border))!important;box-shadow:0 12px 34px rgba(0,0,0,.28)!important;border-radius:12px!important;padding:6px 10px!important;gap:4px!important}
+ #statsScoreboardV4 .sbv4-main{grid-template-columns:minmax(0,1fr) 132px minmax(0,1fr)!important;gap:10px!important}
+ #statsScoreboardV4 .sbv4-team input{height:29px!important;line-height:29px!important;background:#0b1d2d!important;color:#fff!important;border-color:var(--stats-border)!important;font-size:12px!important}
+ #statsScoreboardV4 .sbv4-center{width:132px!important;min-width:132px!important}
+ #statsScoreboardV4 .sbv4-score{font-size:30px!important;color:#fff!important}
+ #statsScoreboardV4 .sbv4-timer{font-size:11px!important;color:var(--club-primary)!important}
+ #statsScoreboardV4 #periodo{height:20px!important;min-height:20px!important;background:#0b1d2d!important;color:#fff!important;border-color:var(--stats-border)!important}
+ #statsScoreboardV4 .sbv4-goals button,#statsScoreboardV4 .sbv4-controls button{background:linear-gradient(180deg,var(--club-primary),var(--club-primary-dark))!important;color:var(--club-secondary,#fff)!important;border-color:color-mix(in srgb,var(--club-primary) 75%,#fff)!important;box-shadow:0 4px 12px color-mix(in srgb,var(--club-primary) 25%,transparent)!important}
+ #statsScoreboardV4 .sbv4-controls,#statsScoreboardV4 .sbv4-controls button{height:25px!important;min-height:25px!important;font-size:8px!important}
+ .statsMain>.proLivePanel,.statsMain>.pitchCard,.statsMain>.v47HeatMapDock{background:linear-gradient(180deg,rgba(10,27,42,.98),rgba(6,19,30,.98))!important;color:var(--stats-white)!important;border:1px solid var(--stats-border)!important;box-shadow:0 14px 34px rgba(0,0,0,.25)!important;border-radius:12px!important}
+ .statsMain>.proLivePanel,.statsMain>.v47HeatMapDock{padding:8px!important}
+ .statsMain>.pitchCard{padding:8px 10px 10px!important;justify-content:center!important}
+ .proPanelTitle,.fieldTitleRow h3,.v53HeatTitle,.sectionTitle{color:var(--club-primary)!important;text-shadow:0 0 14px color-mix(in srgb,var(--club-primary) 22%,transparent)!important}
+ .pitchCard .fieldTitleRow{height:24px!important;flex-basis:24px!important;margin:0 0 5px!important}
+ .pitchCard #pitch.pitch{flex:0 1 auto!important;width:min(100%,760px)!important;height:auto!important;max-height:calc(100dvh - 190px)!important;aspect-ratio:1.72/1!important;margin:auto!important;border:3px solid #f4fff8!important;border-radius:11px!important;box-shadow:0 0 0 1px color-mix(in srgb,var(--club-primary) 30%,transparent),0 16px 34px rgba(0,0,0,.25)!important}
+ .proLiveList>*{background:#f7fbff!important;color:#122536!important;border:1px solid rgba(255,255,255,.25)!important;border-radius:8px!important;box-shadow:none!important}
+ .proLiveList button,.proLivePanel button{border-radius:8px!important}
+ .v47HeatMapDock .v53HeatMapBox{background:#071728!important;border:1px solid var(--stats-border)!important;border-radius:10px!important}
+ .v53HeatLegend,.small,.muted{color:var(--stats-muted)!important}
+ .statsNavBtn,.statsSidebar button,.statsSidebar a{color:#dbe7f0!important;background:transparent!important}
+ .statsNavBtn.active,.statsSidebar .active{background:linear-gradient(90deg,color-mix(in srgb,var(--club-primary) 88%,#101826),color-mix(in srgb,var(--club-primary-dark) 75%,#101826))!important;color:var(--club-secondary,#fff)!important;border-color:color-mix(in srgb,var(--club-primary) 70%,#fff)!important;box-shadow:0 8px 22px color-mix(in srgb,var(--club-primary) 22%,transparent)!important}
+ .statsLogoBox{color:#fff!important}
+ .statsLogoBox>img:not(.clubBrandLogo),.statsLogoBox>span,.statsLogoBox>small{display:none!important}
+ .statsLogoBox b{display:block!important;color:#fff!important;font-size:15px!important;letter-spacing:.4px!important}
+ .statsLogoBox .clubBrandLogo{width:46px!important;height:46px!important;margin:0 auto 5px!important;filter:drop-shadow(0 6px 12px rgba(0,0,0,.35))!important}
+ .statsMain input,.statsMain select,.statsMain textarea{background:#0b1d2d!important;color:#fff!important;border-color:var(--stats-border)!important}
+ .statsMain button:not(.sbv4-goals button):not(.sbv4-controls button){background:#102638!important;color:#fff!important;border-color:var(--stats-border)!important}
+ .statsMain button:hover{filter:brightness(1.12)!important}
+}
+@media screen and (orientation:landscape) and (max-height:760px){
+ #main>.statsMain{grid-template-rows:32px 76px minmax(0,1fr)!important;grid-template-columns:minmax(155px,.62fr) minmax(390px,1.85fr) minmax(175px,.7fr)!important;gap:7px!important;padding:7px 9px 9px!important}
+ #statsScoreboardV4{height:76px!important;min-height:76px!important;padding:4px 8px!important}
+ #statsScoreboardV4 .sbv4-team input{height:24px!important;line-height:24px!important;font-size:10px!important}
+ #statsScoreboardV4 .sbv4-score{font-size:26px!important}
+ #statsScoreboardV4 .sbv4-controls,#statsScoreboardV4 .sbv4-controls button{height:22px!important;min-height:22px!important;font-size:7px!important}
+ .pitchCard #pitch.pitch{width:min(94%,690px)!important;max-height:calc(100dvh - 160px)!important;aspect-ratio:1.78/1!important}
+}
+@media screen and (orientation:landscape) and (max-width:900px){
+ #main>.statsMain{grid-template-columns:minmax(125px,.58fr) minmax(300px,1.72fr) minmax(135px,.64fr)!important;grid-template-rows:27px 66px minmax(0,1fr)!important;gap:5px!important;padding:5px!important}
+ #statsScoreboardV4{height:66px!important;min-height:66px!important}
+ .pitchCard #pitch.pitch{width:96%!important;max-height:calc(100dvh - 112px)!important}
+}
+</style>
+
 </head>
 <body>
 <!--
@@ -1423,6 +1480,25 @@ MODAIS
  };
  function init(){apply(config())}
  document.addEventListener('DOMContentLoaded',init);window.addEventListener('load',init);setTimeout(init,500);
+})();
+</script>
+
+
+<script id="stats-dynamic-dark-theme-v6">
+(function(){
+ const KEY='stats_club_personalisation_v1';
+ function parse(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {}}}
+ function hexToRgb(h){h=(h||'#58cf23').replace('#','');if(h.length===3)h=h.split('').map(x=>x+x).join('');const n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255]}
+ function mix(hex,base='#061421',amount=.15){const a=hexToRgb(hex),b=hexToRgb(base);return '#'+a.map((v,i)=>Math.round(v*amount+b[i]*(1-amount)).toString(16).padStart(2,'0')).join('')}
+ function apply(){
+  const c=parse(),p=c.primary||'#58cf23';
+  const r=document.documentElement.style;
+  r.setProperty('--stats-bg',mix(p,'#01070d',.05));r.setProperty('--stats-bg-2',mix(p,'#061421',.10));r.setProperty('--stats-surface',mix(p,'#091a29',.08));r.setProperty('--stats-surface-2',mix(p,'#0d2233',.10));
+  document.querySelectorAll('.statsLogoBox span,.statsLogoBox small').forEach(el=>el.style.display='none');
+  document.querySelectorAll('.statsLogoBox > img:not(.clubBrandLogo)').forEach(el=>el.style.display='none');
+ }
+ document.addEventListener('DOMContentLoaded',apply);window.addEventListener('load',apply);setTimeout(apply,700);
+ const old=window.saveClubPersonalisation; if(typeof old==='function')window.saveClubPersonalisation=function(){old.apply(this,arguments);setTimeout(apply,50)};
 })();
 </script>
 
