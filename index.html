@@ -888,6 +888,141 @@ html,body{background:var(--stats-bg)!important;color:var(--stats-white)!importan
 }
 </style>
 
+
+<style id="stats-professional-layout-final-v7">
+/* Override final: aproxima a aplicação real do mockup aprovado */
+:root{
+  --ui-bg:#020914;
+  --ui-panel:#071725;
+  --ui-panel-2:#0a1d2d;
+  --ui-line:rgba(161,190,214,.16);
+  --ui-text:#f5f8fb;
+  --ui-muted:#91a4b5;
+  --ui-accent:var(--club-primary,#56d329);
+  --ui-accent-dark:var(--club-primary-dark,#2d9f18);
+}
+@media screen and (orientation:landscape){
+  html,body{background:var(--ui-bg)!important;color:var(--ui-text)!important}
+  #main.statsShell{
+    grid-template-columns:184px minmax(0,1fr)!important;
+    background:
+      radial-gradient(circle at 55% -15%,color-mix(in srgb,var(--ui-accent) 11%,transparent),transparent 32%),
+      linear-gradient(145deg,#010711,#061522 60%,#020912)!important;
+  }
+  #main>.statsSidebar{
+    width:184px!important;min-width:184px!important;height:100dvh!important;
+    padding:14px 12px!important;box-sizing:border-box!important;
+    background:linear-gradient(180deg,#061421,#071827)!important;
+    border-right:1px solid var(--ui-line)!important;
+    display:flex!important;flex-direction:column!important;gap:8px!important;
+    overflow:hidden!important;
+  }
+  .statsLogoBox{padding:8px 4px 14px!important;text-align:left!important;min-height:70px!important}
+  .statsLogoBox .clubBrandLogo{width:46px!important;height:46px!important;margin:0 0 7px!important;object-fit:contain!important}
+  .statsLogoBox b{display:block!important;font-size:20px!important;line-height:1.05!important;color:#fff!important;letter-spacing:-.5px!important}
+  .statsLogoBox span,.statsLogoBox small,.statsLogoBox>img:not(.clubBrandLogo){display:none!important}
+  .statsNavBtn,.statsSidebar button,.statsSidebar a{
+    min-height:42px!important;border-radius:10px!important;padding:0 12px!important;
+    justify-content:flex-start!important;text-align:left!important;font-size:11px!important;font-weight:800!important;
+    color:#dbe6ef!important;background:transparent!important;border:1px solid transparent!important;
+  }
+  .statsNavBtn.active,.statsSidebar .active{
+    background:linear-gradient(90deg,color-mix(in srgb,var(--ui-accent) 84%,#111827),color-mix(in srgb,var(--ui-accent-dark) 78%,#111827))!important;
+    color:var(--club-secondary,#fff)!important;border-color:color-mix(in srgb,var(--ui-accent) 70%,#fff)!important;
+  }
+  #main>.statsMain{
+    height:100dvh!important;min-width:0!important;padding:12px 14px 12px!important;
+    grid-template-columns:minmax(210px,.72fr) minmax(470px,2.15fr) minmax(250px,.92fr)!important;
+    grid-template-rows:48px 96px minmax(0,1fr)!important;
+    grid-template-areas:"top top top" "score score score" "live pitch heat"!important;
+    gap:10px!important;overflow:hidden!important;
+  }
+  .statsMain>.proTopTools{
+    grid-area:top!important;height:48px!important;min-height:48px!important;
+    display:flex!important;align-items:center!important;padding:0 8px!important;
+    color:#fff!important;background:transparent!important;border:0!important;
+  }
+  .statsMain>.gameHeader{display:none!important}
+  #statsScoreboardV4{
+    grid-area:score!important;width:100%!important;height:96px!important;min-height:96px!important;margin:0!important;
+    padding:8px 14px!important;gap:6px!important;border-radius:14px!important;
+    background:linear-gradient(180deg,rgba(12,28,43,.98),rgba(5,18,30,.98))!important;
+    border:1px solid color-mix(in srgb,var(--ui-accent) 40%,var(--ui-line))!important;
+    box-shadow:0 14px 35px rgba(0,0,0,.28)!important;color:#fff!important;
+  }
+  #statsScoreboardV4 .sbv4-main{grid-template-columns:minmax(0,1fr) 160px minmax(0,1fr)!important;gap:18px!important}
+  #statsScoreboardV4 .sbv4-team input{
+    height:34px!important;line-height:34px!important;background:#091a29!important;color:#fff!important;
+    border:1px solid var(--ui-line)!important;font-size:14px!important;border-radius:9px!important;
+  }
+  #statsScoreboardV4 .sbv4-center{width:160px!important;min-width:160px!important}
+  #statsScoreboardV4 .sbv4-score{font-size:36px!important;color:#fff!important}
+  #statsScoreboardV4 .sbv4-timer{font-size:12px!important;color:var(--ui-accent)!important}
+  #statsScoreboardV4 #periodo{background:#091a29!important;color:#fff!important;border-color:var(--ui-line)!important;height:22px!important;min-height:22px!important}
+  #statsScoreboardV4 .sbv4-goals button,#statsScoreboardV4 .sbv4-controls button{
+    background:linear-gradient(180deg,var(--ui-accent),var(--ui-accent-dark))!important;
+    color:var(--club-secondary,#fff)!important;border-color:color-mix(in srgb,var(--ui-accent) 70%,#fff)!important;
+  }
+  #statsScoreboardV4 .sbv4-controls,#statsScoreboardV4 .sbv4-controls button{height:29px!important;min-height:29px!important;font-size:9px!important}
+  .statsMain>.proLivePanel,.statsMain>.pitchCard,.statsMain>.v47HeatMapDock{
+    height:100%!important;min-height:0!important;margin:0!important;box-sizing:border-box!important;
+    border-radius:14px!important;background:linear-gradient(180deg,rgba(9,26,41,.98),rgba(5,18,29,.98))!important;
+    border:1px solid var(--ui-line)!important;box-shadow:0 14px 34px rgba(0,0,0,.25)!important;color:#fff!important;
+  }
+  .statsMain>.proLivePanel{grid-area:live!important;padding:12px!important;display:flex!important;flex-direction:column!important}
+  .proPanelTitle,.fieldTitleRow h3,.v53HeatTitle{color:var(--ui-accent)!important;font-size:13px!important;font-weight:900!important;text-shadow:none!important}
+  .proLivePanel .proLiveList{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;padding-right:3px!important}
+  .proLiveList>*{background:#eef3f7!important;color:#0a1926!important;border:1px solid rgba(255,255,255,.16)!important;border-radius:8px!important;min-height:31px!important;margin-bottom:5px!important}
+  .v4MinuteTabs{gap:7px!important;margin-top:8px!important}
+  .v4MinuteTabs button{height:32px!important;min-height:32px!important;border-radius:8px!important;font-size:9px!important}
+  .statsMain>.pitchCard{
+    grid-area:pitch!important;padding:10px 12px 12px!important;display:flex!important;flex-direction:column!important;
+    align-items:stretch!important;justify-content:flex-start!important;
+  }
+  .pitchCard .fieldTitleRow{height:28px!important;min-height:28px!important;flex:0 0 28px!important;margin:0 0 6px!important}
+  .pitchCard #pitch.pitch{
+    flex:0 1 auto!important;width:min(100%,900px)!important;height:auto!important;min-height:0!important;
+    max-height:calc(100dvh - 228px)!important;aspect-ratio:1.78/1!important;margin:auto!important;
+    border:3px solid #f7fff9!important;border-radius:12px!important;
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--ui-accent) 24%,transparent),0 16px 32px rgba(0,0,0,.26)!important;
+  }
+  #pitch .cascaisPitchLogo{display:none!important}
+  .statsMain>.v47HeatMapDock{grid-area:heat!important;padding:12px!important;display:flex!important;flex-direction:column!important}
+  .v53HeatHeader{gap:8px!important;margin-bottom:8px!important}
+  .v53HeatFilters{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important}
+  .v53HeatFilters select{min-width:0!important;height:30px!important;background:#0b1e2e!important;color:#fff!important;border:1px solid var(--ui-line)!important;font-size:9px!important}
+  .v47HeatMapDock .v53HeatMapBox{flex:1 1 auto!important;min-height:0!important;height:auto!important;border-radius:10px!important;overflow:hidden!important;background:#071522!important}
+  .v53HeatLegend{font-size:8px!important;color:var(--ui-muted)!important;margin-top:8px!important}
+  .statsMain input,.statsMain select,.statsMain textarea{color:#fff!important}
+  .statsMain button{color:var(--club-secondary,#fff)!important}
+}
+@media screen and (orientation:landscape) and (max-height:760px){
+  #main.statsShell{grid-template-columns:166px minmax(0,1fr)!important}
+  #main>.statsSidebar{width:166px!important;min-width:166px!important;padding:9px!important}
+  #main>.statsMain{grid-template-columns:minmax(185px,.7fr) minmax(410px,2.08fr) minmax(220px,.88fr)!important;grid-template-rows:38px 80px minmax(0,1fr)!important;padding:8px 10px!important;gap:8px!important}
+  #statsScoreboardV4{height:80px!important;min-height:80px!important;padding:5px 10px!important}
+  #statsScoreboardV4 .sbv4-team input{height:27px!important;line-height:27px!important;font-size:11px!important}
+  #statsScoreboardV4 .sbv4-score{font-size:29px!important}
+  #statsScoreboardV4 .sbv4-controls,#statsScoreboardV4 .sbv4-controls button{height:23px!important;min-height:23px!important;font-size:7px!important}
+  .pitchCard #pitch.pitch{max-height:calc(100dvh - 184px)!important;aspect-ratio:1.82/1!important}
+  .statsNavBtn,.statsSidebar button,.statsSidebar a{min-height:34px!important;font-size:9px!important}
+}
+@media screen and (orientation:landscape) and (max-width:980px){
+  #main.statsShell{grid-template-columns:58px minmax(0,1fr)!important}
+  #main>.statsSidebar{width:58px!important;min-width:58px!important;padding:7px 5px!important}
+  .statsLogoBox b,.statsNavBtn span,.statsSidebar .navText{display:none!important}
+  .statsNavBtn,.statsSidebar button,.statsSidebar a{justify-content:center!important;padding:0!important;font-size:0!important}
+  #main>.statsMain{grid-template-columns:minmax(132px,.65fr) minmax(300px,1.85fr) minmax(150px,.72fr)!important;grid-template-rows:28px 68px minmax(0,1fr)!important;padding:5px!important;gap:5px!important}
+  #statsScoreboardV4{height:68px!important;min-height:68px!important;padding:3px 6px!important}
+  #statsScoreboardV4 .sbv4-main{grid-template-columns:minmax(0,1fr) 84px minmax(0,1fr)!important;gap:4px!important}
+  #statsScoreboardV4 .sbv4-center{width:84px!important;min-width:84px!important}
+  #statsScoreboardV4 .sbv4-score{font-size:22px!important}
+  #statsScoreboardV4 .sbv4-team input{height:21px!important;line-height:21px!important;font-size:8px!important}
+  #statsScoreboardV4 .sbv4-controls,#statsScoreboardV4 .sbv4-controls button{height:19px!important;min-height:19px!important;font-size:5px!important}
+  .pitchCard #pitch.pitch{max-height:calc(100dvh - 112px)!important}
+}
+</style>
+
 </head>
 <body>
 <!--
@@ -1499,6 +1634,31 @@ MODAIS
  }
  document.addEventListener('DOMContentLoaded',apply);window.addEventListener('load',apply);setTimeout(apply,700);
  const old=window.saveClubPersonalisation; if(typeof old==='function')window.saveClubPersonalisation=function(){old.apply(this,arguments);setTimeout(apply,50)};
+})();
+</script>
+
+
+<script id="stats-branding-final-v7">
+(function(){
+ const KEY='stats_club_personalisation_v1';
+ function cfg(){try{return Object.assign({name:'StatS',shortName:'StatS',logo:''},JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){return{name:'StatS',shortName:'StatS',logo:''}}}
+ function applyBrand(){
+  const c=cfg();
+  document.querySelectorAll('.statsLogoBox').forEach(box=>{
+    box.querySelectorAll('span,small').forEach(x=>x.style.display='none');
+    box.querySelectorAll('img:not(.clubBrandLogo)').forEach(x=>x.style.display='none');
+    let b=box.querySelector('b'); if(!b){b=document.createElement('b');box.appendChild(b)}
+    b.textContent=(c.shortName||c.name||'StatS').toUpperCase();
+    let img=box.querySelector('.clubBrandLogo');
+    if(c.logo){if(!img){img=document.createElement('img');img.className='clubBrandLogo';box.prepend(img)}img.src=c.logo;img.style.display='block'}
+  });
+  const home=document.getElementById('casa');
+  if(home && (!home.value || home.value==='AD Pastéis')) home.value=c.name||c.shortName||'Equipa da casa';
+  document.querySelectorAll('.cascaisPitchLogo').forEach(img=>img.style.display='none');
+ }
+ document.addEventListener('DOMContentLoaded',applyBrand);window.addEventListener('load',applyBrand);setTimeout(applyBrand,400);
+ const original=window.saveClubPersonalisation;
+ if(typeof original==='function')window.saveClubPersonalisation=function(){original.apply(this,arguments);setTimeout(applyBrand,80)};
 })();
 </script>
 
