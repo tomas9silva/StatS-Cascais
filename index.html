@@ -1023,6 +1023,76 @@ html,body{background:var(--stats-bg)!important;color:var(--stats-white)!importan
 }
 </style>
 
+
+<style id="stats-v8-real-rebuild">
+/* StatS V8 — reconstrução visual efetiva da página Jogo */
+:root{
+ --v8-bg:#020913; --v8-panel:#071827; --v8-panel2:#0a2031;
+ --v8-line:rgba(176,205,228,.16); --v8-text:#f7fbff; --v8-muted:#94a8b9;
+ --v8-accent:var(--club-primary,#22c55e); --v8-accent-dark:var(--club-primary-dark,#15803d);
+}
+@media (orientation:portrait){
+ body::after{content:"Rode o dispositivo para utilizar o StatS";position:fixed;inset:0;z-index:9999999;display:flex;align-items:center;justify-content:center;text-align:center;padding:30px;background:#020913;color:#fff;font:800 22px/1.25 system-ui}
+ body>*{visibility:hidden!important}
+}
+@media (orientation:landscape){
+ html,body{width:100%!important;height:100%!important;overflow:hidden!important;background:var(--v8-bg)!important}
+ #main.statsShell{position:fixed!important;inset:0!important;display:grid!important;grid-template-columns:176px minmax(0,1fr)!important;width:100dvw!important;height:100dvh!important;background:radial-gradient(circle at 52% -10%,color-mix(in srgb,var(--v8-accent) 13%,transparent),transparent 33%),linear-gradient(145deg,#01060d,#061421 60%,#020913)!important}
+ #main>.statsSidebar{position:relative!important;inset:auto!important;width:176px!important;min-width:176px!important;height:100dvh!important;padding:14px 11px!important;box-sizing:border-box!important;background:linear-gradient(180deg,#061421,#071827)!important;border-right:1px solid var(--v8-line)!important;display:flex!important;flex-direction:column!important;gap:7px!important;overflow:hidden!important}
+ .statsLogoBox{min-height:72px!important;padding:4px 6px 12px!important;text-align:left!important;color:#fff!important}
+ .statsLogoBox>img:not(.clubBrandLogo),.statsLogoBox>span,.statsLogoBox>small{display:none!important}
+ .statsLogoBox .clubBrandLogo{display:block!important;width:48px!important;height:48px!important;margin:0 0 6px!important;object-fit:contain!important}
+ .statsLogoBox b{display:block!important;color:#fff!important;font-size:15px!important}
+ .statsNavBtn,.statsSidebar button,.statsSidebar a{width:100%!important;min-height:36px!important;margin:0!important;border-radius:9px!important;background:transparent!important;color:#dce7ef!important;border:1px solid transparent!important;text-align:left!important;padding:0 10px!important;font-size:11px!important}
+ .statsNavBtn.active,.statsSidebar .active{background:linear-gradient(90deg,var(--v8-accent),var(--v8-accent-dark))!important;color:var(--club-secondary,#fff)!important;border-color:color-mix(in srgb,var(--v8-accent) 70%,#fff)!important}
+ #main>.statsMain{position:relative!important;width:auto!important;height:100dvh!important;min-width:0!important;min-height:0!important;box-sizing:border-box!important;padding:9px 11px 10px!important;display:grid!important;grid-template-columns:minmax(155px,.62fr) minmax(420px,1.8fr) minmax(175px,.7fr)!important;grid-template-rows:34px 80px minmax(0,1fr) 96px!important;grid-template-areas:"tools tools tools" "score score score" "live arena heat" "stats field bench"!important;gap:8px!important;overflow:hidden!important}
+ .statsMain>.proTopTools{grid-area:tools!important;margin:0!important;min-height:0!important;height:34px!important;background:transparent!important;border:0!important}
+ .statsMain>.gameHeader{display:none!important}
+ .statsMain>#statsScoreboardV4{grid-area:score!important;margin:0!important;width:100%!important;height:80px!important;min-height:80px!important;padding:5px 9px!important;gap:4px!important;background:linear-gradient(180deg,#0b2031,#071827)!important;border:1px solid color-mix(in srgb,var(--v8-accent) 42%,var(--v8-line))!important;border-radius:12px!important;color:#fff!important;box-shadow:0 12px 28px rgba(0,0,0,.26)!important}
+ #statsScoreboardV4 .sbv4-main{grid-template-columns:minmax(0,1fr) 126px minmax(0,1fr)!important;gap:8px!important}
+ #statsScoreboardV4 .sbv4-team input{height:25px!important;line-height:25px!important;font-size:10px!important;background:#0a1b2a!important;color:#fff!important;border-color:var(--v8-line)!important}
+ #statsScoreboardV4 .sbv4-center{width:126px!important;min-width:126px!important;gap:1px!important}
+ #statsScoreboardV4 .sbv4-score{font-size:27px!important;color:#fff!important}
+ #statsScoreboardV4 .sbv4-timer{font-size:10px!important;color:var(--v8-accent)!important}
+ #statsScoreboardV4 #periodo{height:18px!important;min-height:18px!important;width:90px!important;min-width:90px!important;max-width:90px!important;font-size:7px!important;background:#0a1b2a!important;color:#fff!important;border-color:var(--v8-line)!important}
+ #statsScoreboardV4 .sbv4-goals{width:24px!important;min-width:24px!important;flex-basis:24px!important;gap:3px!important}
+ #statsScoreboardV4 .sbv4-goals button{width:24px!important;min-width:24px!important;height:21px!important;min-height:21px!important;font-size:13px!important}
+ #statsScoreboardV4 .sbv4-controls,#statsScoreboardV4 .sbv4-controls button{height:22px!important;min-height:22px!important;font-size:7px!important}
+ #statsScoreboardV4 .sbv4-goals button,#statsScoreboardV4 .sbv4-controls button{background:linear-gradient(180deg,var(--v8-accent),var(--v8-accent-dark))!important;color:var(--club-secondary,#fff)!important;border-color:transparent!important}
+ .statsMain>.proLivePanel{grid-area:live!important}.statsMain>.pitchCard{grid-area:arena!important}.statsMain>.v47HeatMapDock{grid-area:heat!important}.statsMain>.proStatsPanel{grid-area:stats!important}.statsMain>.proFieldPanel{grid-area:field!important}.statsMain>.proBenchPanel{grid-area:bench!important}
+ .statsMain>.proLivePanel,.statsMain>.pitchCard,.statsMain>.v47HeatMapDock,.statsMain>.proStatsPanel,.statsMain>.proFieldPanel,.statsMain>.proBenchPanel{display:flex!important;flex-direction:column!important;min-width:0!important;min-height:0!important;height:100%!important;margin:0!important;padding:8px!important;box-sizing:border-box!important;background:linear-gradient(180deg,rgba(10,29,44,.98),rgba(5,18,29,.98))!important;color:var(--v8-text)!important;border:1px solid var(--v8-line)!important;border-radius:12px!important;box-shadow:0 12px 28px rgba(0,0,0,.22)!important;overflow:hidden!important}
+ .proPanelTitle,.fieldTitleRow h3,.v53HeatTitle,.sectionTitle{color:var(--v8-accent)!important;text-shadow:none!important}
+ .statsMain>.pitchCard{align-items:stretch!important;justify-content:flex-start!important;padding:7px 10px 9px!important}
+ .pitchCard .fieldTitleRow{flex:0 0 22px!important;height:22px!important;margin:0 0 4px!important}
+ .pitchCard #pitch.pitch{flex:0 0 auto!important;width:min(92%,720px)!important;height:auto!important;max-height:calc(100dvh - 252px)!important;aspect-ratio:1.82/1!important;margin:auto!important;align-self:center!important;border:3px solid #fff!important;border-radius:10px!important;background:repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 12%,rgba(0,0,0,.035) 12% 24%),linear-gradient(180deg,color-mix(in srgb,var(--v8-accent) 72%,#178044),color-mix(in srgb,var(--v8-accent-dark) 76%,#0f6136))!important;box-shadow:0 14px 30px rgba(0,0,0,.28)!important}
+ #pitch .cascaisPitchLogo,#pitch>img:not(.clubBrandLogo){display:none!important}
+ .proLivePanel .proLiveList{flex:1 1 auto!important;min-height:0!important;overflow:auto!important}
+ .proLiveList>*{background:#f7fbff!important;color:#102434!important;border:0!important;border-radius:8px!important}
+ .v47HeatMapDock .v53HeatMapBox{flex:1 1 auto!important;min-height:0!important;background:#061827!important;border:1px solid var(--v8-line)!important;border-radius:9px!important;overflow:hidden!important}
+ .v53HeatLegend,.small,.muted{color:var(--v8-muted)!important}
+ .statsMain>.proStatsPanel,.statsMain>.proFieldPanel,.statsMain>.proBenchPanel{padding:7px!important}
+ .proStatsGrid,.proPlayersRow{flex:1 1 auto!important;min-height:0!important;overflow:auto!important}
+ .legacyActiveCard{display:none!important}
+ .statsMain input,.statsMain select,.statsMain textarea{background:#0a1c2b!important;color:#fff!important;border-color:var(--v8-line)!important}
+ .statsMain button{color:#fff!important}
+}
+@media (orientation:landscape) and (max-height:650px){
+ #main>.statsMain{grid-template-rows:28px 66px minmax(0,1fr) 76px!important;gap:6px!important;padding:6px 8px 7px!important}
+ #statsScoreboardV4{height:66px!important;min-height:66px!important}
+ .pitchCard #pitch.pitch{width:min(90%,640px)!important;max-height:calc(100dvh - 206px)!important}
+ .statsNavBtn,.statsSidebar button,.statsSidebar a{min-height:31px!important;font-size:10px!important}
+}
+@media (orientation:landscape) and (max-width:950px){
+ #main.statsShell{grid-template-columns:58px minmax(0,1fr)!important}
+ #main>.statsSidebar{width:58px!important;min-width:58px!important;padding:6px 5px!important}
+ .statsLogoBox b{display:none!important}.statsLogoBox .clubBrandLogo{width:38px!important;height:38px!important;margin:auto!important}
+ .statsNavBtn,.statsSidebar button,.statsSidebar a{padding:0!important;text-align:center!important;font-size:0!important;min-height:29px!important}
+ #main>.statsMain{grid-template-columns:minmax(120px,.58fr) minmax(300px,1.65fr) minmax(130px,.62fr)!important;grid-template-rows:25px 62px minmax(0,1fr) 66px!important;gap:5px!important;padding:5px!important}
+ #statsScoreboardV4{height:62px!important;min-height:62px!important}
+ .pitchCard #pitch.pitch{width:94%!important;max-height:calc(100dvh - 180px)!important}
+}
+</style>
+
 </head>
 <body>
 <!--
@@ -1659,6 +1729,23 @@ MODAIS
  document.addEventListener('DOMContentLoaded',applyBrand);window.addEventListener('load',applyBrand);setTimeout(applyBrand,400);
  const original=window.saveClubPersonalisation;
  if(typeof original==='function')window.saveClubPersonalisation=function(){original.apply(this,arguments);setTimeout(applyBrand,80)};
+})();
+</script>
+
+
+<script id="stats-v8-brand-sync">
+(function(){
+ function syncBrand(){
+  var root=getComputedStyle(document.documentElement);
+  var p=(root.getPropertyValue('--club-primary')||'#22c55e').trim();
+  var s=(root.getPropertyValue('--club-secondary')||'#ffffff').trim();
+  document.documentElement.style.setProperty('--v8-accent',p);
+  document.querySelectorAll('[style*="#08783f"],[style*="#063d27"],[style*="#0b5a39"]').forEach(function(el){el.style.removeProperty('color');el.style.removeProperty('background');});
+  document.querySelectorAll('img[alt="Símbolo do clube"]').forEach(function(img){ if(!img.classList.contains('clubBrandLogo')) img.style.display='none'; });
+ }
+ document.addEventListener('DOMContentLoaded',syncBrand);
+ window.addEventListener('storage',syncBrand);
+ setInterval(syncBrand,1200);
 })();
 </script>
 
