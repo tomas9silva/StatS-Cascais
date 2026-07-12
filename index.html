@@ -656,20 +656,178 @@ body.club-custom-logo .statsLogoBox>img{display:none!important}
 </style>
 
 
-<style id="arena-focus-update">
-@media (orientation:landscape){
-.arena,.arenaCard,#pitch,.pitchContainer{
-  margin:auto!important;
-  flex:0 1 42vw!important;
-  max-width:42vw!important;
+
+
+
+<style id="stats-horizontal-arena-final">
+/* Layout final da página Arena: horizontal, equilibrado e com Arena ao centro */
+@media screen and (orientation:portrait){
+  #main.statsShell:not(.hidden)::before{
+    content:"Rode o dispositivo para utilizar o StatS";
+    position:fixed;inset:0;z-index:999999;
+    display:flex;align-items:center;justify-content:center;
+    padding:28px;text-align:center;
+    background:#031f15;color:#fff;
+    font:800 clamp(18px,4vw,28px)/1.25 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  }
+  #main.statsShell:not(.hidden) > *{visibility:hidden!important}
 }
-.gameLayout,.statsLayout,.mainGrid,.dashboardGrid,#gameContent{
-  display:grid!important;
-  grid-template-columns:1fr 1.35fr 1fr!important;
-  align-items:center!important;
+
+@media screen and (orientation:landscape){
+  #main.statsShell{
+    display:grid!important;
+    grid-template-columns:72px minmax(0,1fr)!important;
+    width:100dvw!important;height:100dvh!important;
+    overflow:hidden!important;
+    background:linear-gradient(145deg,#063d27 0%,#062b20 52%,#031812 100%)!important;
+  }
+  #main > .statsSidebar{
+    position:relative!important;inset:auto!important;
+    width:72px!important;height:100dvh!important;
+    min-width:72px!important;z-index:80!important;
+  }
+  #main > .statsMain{
+    min-width:0!important;min-height:0!important;
+    width:auto!important;height:100dvh!important;
+    padding:10px 12px 12px!important;
+    display:grid!important;
+    grid-template-columns:minmax(190px,.78fr) minmax(420px,2.05fr) minmax(210px,.88fr)!important;
+    grid-template-rows:44px 108px minmax(0,1fr)!important;
+    grid-template-areas:
+      "top top top"
+      "score score score"
+      "live pitch heat"!important;
+    gap:10px!important;
+    overflow:hidden!important;
+    box-sizing:border-box!important;
+  }
+  .statsMain > .proTopTools{grid-area:top!important;min-height:0!important;margin:0!important}
+  .statsMain > .gameHeader{display:none!important}
+  .statsMain > #statsScoreboardV4{grid-area:score!important}
+  .statsMain > .proLivePanel{grid-area:live!important}
+  .statsMain > .pitchCard{grid-area:pitch!important}
+  .statsMain > .v47HeatMapDock{grid-area:heat!important}
+
+  #statsScoreboardV4{
+    width:100%!important;height:108px!important;min-height:108px!important;
+    margin:0!important;padding:8px 12px!important;gap:6px!important;
+    border-radius:12px!important;
+    align-self:stretch!important;
+  }
+  #statsScoreboardV4 .sbv4-main{
+    grid-template-columns:minmax(0,1fr) 145px minmax(0,1fr)!important;
+    gap:12px!important;
+  }
+  #statsScoreboardV4 .sbv4-team input{height:34px!important;line-height:34px!important;font-size:14px!important}
+  #statsScoreboardV4 .sbv4-goals{width:30px!important;min-width:30px!important;flex-basis:30px!important;gap:4px!important}
+  #statsScoreboardV4 .sbv4-goals button{width:30px!important;min-width:30px!important;height:27px!important;min-height:27px!important;font-size:17px!important}
+  #statsScoreboardV4 .sbv4-center{width:145px!important;min-width:145px!important;gap:2px!important}
+  #statsScoreboardV4 .sbv4-score{font-size:34px!important;gap:8px!important}
+  #statsScoreboardV4 .sbv4-timer{font-size:12px!important}
+  #statsScoreboardV4 #periodo{height:22px!important;min-height:22px!important;width:104px!important;min-width:104px!important;max-width:104px!important;font-size:9px!important}
+  #statsScoreboardV4 .sbv4-controls{height:31px!important;gap:6px!important}
+  #statsScoreboardV4 .sbv4-controls button{height:31px!important;min-height:31px!important;font-size:9px!important;padding:0 5px!important}
+
+  .statsMain > .proLivePanel,
+  .statsMain > .pitchCard,
+  .statsMain > .v47HeatMapDock{
+    min-width:0!important;min-height:0!important;
+    height:100%!important;margin:0!important;
+    border-radius:14px!important;
+    overflow:hidden!important;
+    box-sizing:border-box!important;
+  }
+  .statsMain > .proLivePanel{
+    display:flex!important;flex-direction:column!important;
+    padding:10px!important;
+  }
+  .proLivePanel .proLiveList{
+    flex:1 1 auto!important;min-height:0!important;
+    overflow-y:auto!important;padding-right:3px!important;
+  }
+
+  .statsMain > .pitchCard{
+    display:flex!important;flex-direction:column!important;
+    align-items:stretch!important;justify-content:flex-start!important;
+    padding:10px 12px 12px!important;
+    background:rgba(255,255,255,.97)!important;
+    box-shadow:0 14px 34px rgba(0,0,0,.24)!important;
+  }
+  .pitchCard .fieldTitleRow{flex:0 0 30px!important;margin:0 0 7px!important}
+  .pitchCard #pitch.pitch{
+    flex:1 1 auto!important;
+    width:min(100%,820px)!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:calc(100dvh - 224px)!important;
+    aspect-ratio:1.62/1!important;
+    margin:auto!important;
+    align-self:center!important;
+    border-width:3px!important;
+    border-radius:12px!important;
+  }
+
+  .statsMain > .v47HeatMapDock{
+    display:flex!important;flex-direction:column!important;
+    padding:10px!important;
+  }
+  .v47HeatMapDock .v53HeatHeader{flex:0 0 auto!important}
+  .v47HeatMapDock .v53HeatMapBox{
+    flex:1 1 auto!important;min-height:0!important;
+    width:100%!important;height:auto!important;
+    overflow:hidden!important;
+  }
+  .v47HeatMapDock .v53HeatLegend{flex:0 0 auto!important}
+
+  /* Contraste consistente */
+  .statsMain .proPanel,.statsMain .pitchCard,#statsScoreboardV4{
+    background:#f8fbf9!important;color:#173c2b!important;
+  }
+  .statsMain .proPanelTitle,.statsMain .fieldTitleRow h3,.statsMain .v53HeatTitle{
+    color:#08783f!important;
+  }
+  .statsMain input,.statsMain select,.statsMain textarea{
+    background:#fff!important;color:#173c2b!important;
+  }
+  .statsMain button{color:#fff!important}
+  .statsMain button.active,.statsMain .active{color:#fff!important}
 }
-[class*="card"],.panel,.proPanel{color:#173c2b!important}
-button{color:#fff!important}
+
+/* Portáteis baixos e tablets horizontais */
+@media screen and (orientation:landscape) and (max-height:760px){
+  #main > .statsMain{
+    grid-template-rows:38px 92px minmax(0,1fr)!important;
+    grid-template-columns:minmax(170px,.72fr) minmax(390px,2fr) minmax(190px,.82fr)!important;
+    gap:8px!important;padding:8px 10px 10px!important;
+  }
+  #statsScoreboardV4{height:92px!important;min-height:92px!important;padding:6px 10px!important;gap:4px!important}
+  #statsScoreboardV4 .sbv4-team input{height:29px!important;line-height:29px!important;font-size:12px!important}
+  #statsScoreboardV4 .sbv4-score{font-size:29px!important}
+  #statsScoreboardV4 .sbv4-controls,#statsScoreboardV4 .sbv4-controls button{height:27px!important;min-height:27px!important}
+  .pitchCard #pitch.pitch{max-height:calc(100dvh - 194px)!important}
+}
+
+/* Telemóveis horizontais: laterais compactas, Arena continua central */
+@media screen and (orientation:landscape) and (max-width:900px){
+  #main.statsShell{grid-template-columns:52px minmax(0,1fr)!important}
+  #main > .statsSidebar{width:52px!important;min-width:52px!important}
+  #main > .statsMain{
+    grid-template-columns:minmax(130px,.68fr) minmax(300px,1.9fr) minmax(145px,.72fr)!important;
+    grid-template-rows:30px 78px minmax(0,1fr)!important;
+    gap:6px!important;padding:6px!important;
+  }
+  #statsScoreboardV4{height:78px!important;min-height:78px!important;padding:4px 7px!important}
+  #statsScoreboardV4 .sbv4-main{grid-template-columns:minmax(0,1fr) 92px minmax(0,1fr)!important;gap:5px!important}
+  #statsScoreboardV4 .sbv4-center{width:92px!important;min-width:92px!important}
+  #statsScoreboardV4 .sbv4-score{font-size:24px!important}
+  #statsScoreboardV4 .sbv4-team input{height:24px!important;line-height:24px!important;font-size:9px!important;padding:0 4px!important}
+  #statsScoreboardV4 .sbv4-goals{width:22px!important;min-width:22px!important;flex-basis:22px!important}
+  #statsScoreboardV4 .sbv4-goals button{width:22px!important;min-width:22px!important;height:20px!important;min-height:20px!important;font-size:13px!important}
+  #statsScoreboardV4 .sbv4-timer{font-size:8px!important}
+  #statsScoreboardV4 #periodo{height:17px!important;min-height:17px!important;width:68px!important;min-width:68px!important;max-width:68px!important;font-size:6px!important}
+  #statsScoreboardV4 .sbv4-controls,#statsScoreboardV4 .sbv4-controls button{height:23px!important;min-height:23px!important;font-size:6px!important}
+  .statsMain > .proLivePanel,.statsMain > .pitchCard,.statsMain > .v47HeatMapDock{padding:6px!important;border-radius:10px!important}
+  .pitchCard #pitch.pitch{max-height:calc(100dvh - 132px)!important}
 }
 </style>
 
