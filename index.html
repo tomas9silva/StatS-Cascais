@@ -49,6 +49,18 @@ html,body{background:#eef1f4!important;color:#101418!important}.app{background:#
 @media(max-width:980px){.welcomeShell{grid-template-columns:1fr}.welcomeCard,.welcomePreview{min-height:auto}.welcomeCard h1{font-size:38px}.welcomePreview{padding:18px}.previewDevice{transform:none;max-width:620px}}
 @media(max-width:620px){.welcomeScreen{padding:16px}.welcomeCard{padding:24px 22px}.welcomeBadge{font-size:10px}.welcomeLogoWrap{width:90px;height:90px;border-radius:22px}.welcomeLogo{width:68px;height:68px}.welcomeFallback{font-size:31px}.welcomeCard h1{font-size:31px}.welcomeCard p{font-size:13px}.welcomeHighlights{grid-template-columns:1fr}.welcomeFooter{align-items:stretch}.welcomeNote{max-width:none}.enterButton{width:100%;min-width:0;height:52px}.welcomePreview{display:none}}
 
+
+/* Arena com fluxo rápido igual ao Futebol de Praia */
+.arenaPanel{grid-template-rows:42px 42px 1fr 38px!important}
+.fieldActions{display:flex;align-items:center;justify-content:space-between;padding:7px 12px!important;overflow:visible!important}
+.fieldActions .arenaHint{font-size:9px;font-weight:850;color:#334155}.fieldActions .arenaHint b{color:var(--primary2)}
+.fieldActions .arenaTools{display:flex;gap:6px}.fieldActions .arenaTools button{height:28px;padding:0 10px;border-radius:8px;font-size:8px;font-weight:900}
+.quickArenaCard{width:min(680px,94vw)!important;max-height:84vh;overflow:auto}.quickArenaHead{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}.quickArenaHead h2{margin:0!important;font-size:18px}.quickArenaHead p{margin:4px 0 0;color:#66717c;font-size:10px}.quickArenaClose{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:#fff;color:#101418;font-size:19px}
+.quickPlayers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.quickPlayer{min-height:48px;border:1px solid var(--border);border-radius:11px;background:#fff;color:#101418;padding:8px;text-align:left;font-size:9px;font-weight:900}.quickPlayer span{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--primary);margin-right:7px}
+.quickActions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.quickAction{min-height:54px;border:1px solid var(--border);border-radius:11px;background:#fff;color:#101418;font-size:9px;font-weight:900}.quickAction strong{display:block;font-size:17px;line-height:1.2;margin-bottom:3px}.quickAction:hover,.quickPlayer:hover{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 11%,#fff)}
+.quickBack{margin-top:12px;height:34px;border:1px solid var(--border);border-radius:9px;background:#fff;color:#101418;padding:0 14px;font-size:9px;font-weight:850}.flowPoint{position:absolute;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;background:#fff;border:4px solid var(--primary);box-shadow:0 4px 12px rgba(0,0,0,.28);z-index:6;pointer-events:none}.fieldPoint{cursor:pointer}.fieldPoint:hover{transform:translate(-50%,-50%) scale(1.12)}
+@media(max-width:1100px) and (orientation:landscape){.quickPlayers,.quickActions{grid-template-columns:repeat(4,minmax(0,1fr))}.quickPlayer,.quickAction{min-height:42px}.fieldActions .arenaHint{font-size:8px}}
+
 </style>
 </head>
 <body>
@@ -113,30 +125,23 @@ html,body{background:#eef1f4!important;color:#101418!important}.app{background:#
 <div class="rotate">Rode o dispositivo para utilizar o StatS V3.</div>
 <button class="gear" id="openSettings">⚙</button>
 <div class="app appWaiting" id="mainApp">
-<aside class="sidebar"><div class="brand"><img id="brandLogo" class="brandLogo" alt=""><div class="brandText"><b>Stat<span style="color:var(--primary)">S</span></b><small>PERFORMANCE ANALYTICS</small></div></div><nav class="nav"><button class="active" data-view="jogo">◫ JOGO</button><button data-view="treino">◉ TREINO</button><button data-view="convocatoria">⌁ CONVOCATÓRIA</button><button data-view="estatisticas">▥ ESTATÍSTICAS</button><button data-view="dashboards">▦ DASHBOARDS</button><button id="sideSettings">⚙ DEFINIÇÕES</button></nav><div class="clubCard"><img id="clubLogoSide" alt=""><b id="clubNameSide">Clube</b><small>StatS V3.0</small></div></aside>
+<aside class="sidebar"><div class="brand"><img id="brandLogo" class="brandLogo" alt=""><div class="brandText"><b>Stat<span style="color:var(--primary)">S</span></b><small>PERFORMANCE ANALYTICS</small></div></div><nav class="nav"><button class="active" data-view="jogo">◫ JOGO</button><button data-view="estatisticas">▥ ESTATÍSTICAS</button><button data-view="dashboards">▦ DASHBOARDS</button><button id="sideSettings">⚙ DEFINIÇÕES</button></nav><div class="clubCard"><img id="clubLogoSide" alt=""><b id="clubNameSide">Clube</b><small>StatS V3.0</small></div></aside>
 <main class="main">
 <section class="scoreboard"><div class="team"><img id="homeLogo" alt=""><input id="homeName" value="Nome Clube A"></div><div class="scoreCenter"><div class="scoreRow"><div class="scoreControls"><button class="scoreBtn" data-team="home" data-delta="-1">−</button><button class="scoreBtn" data-team="home" data-delta="1">+</button></div><div class="score"><span id="homeScore">0</span> - <span id="awayScore">0</span></div><div class="scoreControls"><button class="scoreBtn" data-team="away" data-delta="1">+</button><button class="scoreBtn" data-team="away" data-delta="-1">−</button></div></div><div class="timer" id="timer" title="Clique para reiniciar">45:00</div><select class="periodSelect" id="periodSelect"><option value="1">1.º PERÍODO</option><option value="2">2.º PERÍODO</option><option value="3">3.º PERÍODO</option><option value="4">PROLONGAMENTO</option></select><div class="timerActions"><button class="playBtn" id="playBtn">▶ EM JOGO</button><button class="resetBtn" id="resetTimer">↺</button></div></div><div class="team away"><input id="awayName" value="Nome Clube B"><img id="awayLogo" alt=""></div></section>
 <section class="workspace">
 <section class="panel players"><div class="panelTitle"><span>A equipa</span><span id="fieldCount">5/11</span></div><div class="playerTabs"><button class="active" data-player-tab="lista">Lista</button><button data-player-tab="minutos">Minutos</button></div><div class="playerList" id="playerList"></div><button class="addPlayer" id="addPlayer">＋ ADICIONAR JOGADOR</button></section>
-<section class="panel arenaPanel"><div class="tabs"><button class="active" data-arena-tab="arena">ARENA</button><button data-arena-tab="eventos">EVENTOS</button><button data-arena-tab="estatisticas">ESTATÍSTICAS</button><button data-arena-tab="jogador">JOGADOR</button><button data-arena-tab="equipa">EQUIPA</button></div><div class="fieldActions" id="fieldActions">
-<button class="active" data-field-action="passe">↗ Passe</button>
-<button data-field-action="passe_longo">⇢ Passe longo</button>
-<button data-field-action="remate">◎ Remate</button>
-<button data-field-action="golo">⚽ Golo</button>
-<button data-field-action="recuperacao">◆ Recuperação</button>
-<button data-field-action="perda">× Perda</button>
-<button data-field-action="falta">! Falta</button>
-<button data-field-action="canto">⌟ Canto</button>
-<button data-field-action="cartao">▰ Cartão</button>
-<button data-field-action="apagar">⌫ Apagar ponto</button>
-<button id="undoFieldAction">↶ Desfazer</button>
-</div><div class="pitchWrap" id="arenaContent"><div class="pitch" id="pitch"><div class="box left"></div><div class="box right"></div><div class="smallBox left"></div><div class="smallBox right"></div></div></div><div class="legend"><span><i></i>PASSE</span><span><i></i>PASSE LONGO</span><span><i class="dot"></i>FINALIZAÇÃO</span><span>⚽ GOLO</span><span>🛡 DESARME</span></div></section>
+<section class="panel arenaPanel"><div class="tabs"><button class="active" data-arena-tab="arena">ARENA</button><button data-arena-tab="eventos">EVENTOS</button><button data-arena-tab="estatisticas">ESTATÍSTICAS</button><button data-arena-tab="jogador">JOGADOR</button><button data-arena-tab="equipa">EQUIPA</button></div><div class="fieldActions" id="fieldActions"><div class="arenaHint"><b>ARENA RÁPIDA:</b> clica no local do campo, escolhe o jogador e regista a ação.</div><div class="arenaTools"><button id="undoFieldAction">↶ Desfazer</button><button id="deleteArenaPoint">⌫ Apagar ponto</button></div></div><div class="pitchWrap" id="arenaContent"><div class="pitch" id="pitch"><div class="box left"></div><div class="box right"></div><div class="smallBox left"></div><div class="smallBox right"></div></div></div><div class="legend"><span><i></i>PASSE</span><span><i></i>PASSE LONGO</span><span><i class="dot"></i>FINALIZAÇÃO</span><span>⚽ GOLO</span><span>🛡 DESARME</span></div></section>
 <aside class="analytics"><section class="panel heat"><div class="panelTitle"><span>Heatmap</span><select id="heatFilter" class="miniSelect"><option value="todos">Todos</option><option value="equipa">Equipa</option><option value="jogador">Jogador</option><option value="1p">1.º período</option><option value="2p">2.º período</option></select></div><canvas id="heatCanvas"></canvas></section><section class="panel quick"><div class="panelTitle"><span>Estatísticas rápidas</span><span>Ao vivo</span></div><div class="quickGrid"><div class="stat"><b>62%</b><small>Posse</small></div><div class="stat"><b>14</b><small>Remates</small></div><div class="stat"><b>7</b><small>À baliza</small></div><div class="stat"><b>324</b><small>Passes</small></div><div class="stat"><b>89%</b><small>Precisão</small></div><div class="stat"><b>1.84</b><small>xG estimado</small></div></div></section><section class="panel moment"><div class="panelTitle"><span>Momento do jogo</span><span>Intensidade</span></div><canvas id="momentCanvas"></canvas></section></aside>
 </section>
 <section class="bottom"><section class="panel timeline"><div class="panelTitle"><span>Linha do tempo</span><button id="timelineFilter" class="miniBtn">Filtros</button></div><div class="timelineTrack" id="timeline"></div></section><section class="panel summary"><div class="panelTitle"><span>Indicadores</span><span>Equipa</span></div><div class="summaryGrid"><div class="stat"><b>18</b><small>Recuperações</small></div><div class="stat"><b>11</b><small>Perdas</small></div><div class="stat"><b>6</b><small>Cantos</small></div><div class="stat"><b>4</b><small>Faltas</small></div></div></section></section>
 </main></div>
 <div class="toast" id="toast"></div>
 <div class="modal" id="eventModal"><div class="modalCard"><h2>Registar evento</h2><div class="eventChoices" id="eventChoices"><button data-event="⚽ Golo">⚽ Golo</button><button data-event="🎯 Remate">🎯 Remate</button><button data-event="🛡 Recuperação">🛡 Recuperação</button><button data-event="✕ Perda">✕ Perda</button><button data-event="🚩 Canto">🚩 Canto</button><button data-event="🟨 Cartão">🟨 Cartão</button></div><div class="actions"><button id="cancelEvent">Cancelar</button></div></div></div>
+
+<div class="modal" id="quickArenaModal"><div class="modalCard quickArenaCard">
+  <div class="quickArenaHead"><div><h2 id="quickArenaTitle">Escolher jogador</h2><p id="quickArenaSubtitle">Local selecionado no campo</p></div><button class="quickArenaClose" id="closeQuickArena">×</button></div>
+  <div id="quickArenaContent"></div>
+</div></div>
 <div class="modal" id="settingsModal"><div class="modalCard settingsCard">
 <div class="settingsHead"><div><h2>Definições</h2><p>Personalização, jogo, plantel e dados</p></div><button id="closeSettingsX">×</button></div>
 <div class="settingsTabs">
@@ -163,7 +168,7 @@ html,body{background:#eef1f4!important;color:#101418!important}.app{background:#
 </div></div>
 <script>
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const state={home:0,away:0,seconds:45*60,running:false,timerInt:null,logoData:'',players:[],events:[],selectedPlayer:0,playerTab:'lista',arenaTab:'arena',timelineMode:0,fieldAction:'passe',fieldEvents:[],heatPoints:[],periodMinutes:45,maxPlayers:11,attackSide:'right'};
+const state={home:0,away:0,seconds:45*60,running:false,timerInt:null,logoData:'',players:[],events:[],selectedPlayer:0,playerTab:'lista',arenaTab:'arena',timelineMode:0,fieldAction:'passe',arenaFlow:{x:null,y:null,playerIndex:null,action:null},arenaDeleteMode:false,fieldEvents:[],heatPoints:[],periodMinutes:45,maxPlayers:11,attackSide:'right'};
 const basePlayers=Array.from({length:12},(_,i)=>({name:`Jogador ${i+1}`,number:i+1,on:i<5,minutes:i<5?45:0}));
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._x);t._x=setTimeout(()=>t.classList.remove('show'),1800)}
 function updateWelcomeScreen(name,logo){const title=$('#welcomeClubName'),img=$('#welcomeLogo'),fallback=$('#welcomeFallback');if(title)title.textContent=name||'StatS';if(img&&fallback){if(logo){img.src=logo;img.style.display='block';fallback.style.display='none'}else{img.removeAttribute('src');img.style.display='none';fallback.style.display='block'}}}
@@ -172,8 +177,8 @@ function renderScore(){ $('#homeScore').textContent=state.home; $('#awayScore').
 function updateFieldCount(){const n=state.players.filter(p=>p.on).length;$('#fieldCount').textContent=`${n}/11`}
 function renderPlayers(){const list=$('#playerList');list.innerHTML=state.players.map((p,i)=>`<div class="player ${p.on?'':'is-off'} ${state.selectedPlayer===i?'selected':''}" data-player="${i}"><span class="num">${p.number}</span><span>${p.name}</span><b>${state.playerTab==='minutos'?p.minutes+'′':(p.on?'EM CAMPO':'BANCO')}</b><button data-toggle-player="${i}">${p.on?'Ⅱ':'▶'}</button></div>`).join('');updateFieldCount()}
 function addPitchItems(){renderFieldEvents()}
-function renderFieldEvents(){const p=$('#pitch');if(!p)return;p.querySelectorAll('.fieldPoint').forEach(e=>e.remove());(state.fieldEvents||[]).forEach((ev,i)=>{const el=document.createElement('button');el.className='fieldPoint action-'+ev.action;el.style.left=ev.x+'%';el.style.top=ev.y+'%';el.title=ev.label+' — '+(ev.player||'Equipa');el.dataset.fieldIndex=i;el.textContent=fieldActionIcon(ev.action);p.appendChild(el)})}
-function fieldActionIcon(a){return ({passe:'↗',passe_longo:'⇢',remate:'◎',golo:'⚽',recuperacao:'◆',perda:'×',falta:'!',canto:'⌟',cartao:'▰'})[a]||'•'}
+function renderFieldEvents(){const p=$('#pitch');if(!p)return;p.querySelectorAll('.fieldPoint,.flowPoint').forEach(e=>e.remove());(state.fieldEvents||[]).forEach((ev,i)=>{const el=document.createElement('button');el.className='fieldPoint action-'+ev.action;el.style.left=ev.x+'%';el.style.top=ev.y+'%';el.title=ev.label+' — '+(ev.player||'Equipa');el.dataset.fieldIndex=i;el.textContent=fieldActionIcon(ev.action);p.appendChild(el)})}
+function fieldActionIcon(a){return ({passe:'↗',passe_falhado:'PF',assistencia:'A',defesa:'D',remate:'◎',golo:'⚽',recuperacao:'◆',perda:'×',falta:'!',canto:'⌟',cartao_amarelo:'▰',expulsao:'EXP'})[a]||'•'}
 function drawHeat(seed=1){const c=$('#heatCanvas'),r=c.getBoundingClientRect(),d=devicePixelRatio||1;c.width=r.width*d;c.height=r.height*d;const x=c.getContext('2d');x.scale(d,d);x.fillStyle='#061521';x.fillRect(0,0,r.width,r.height);x.strokeStyle='rgba(255,255,255,.65)';x.strokeRect(8,8,r.width-16,r.height-16);let v=seed*9973;const rand=()=>((v=(v*9301+49297)%233280)/233280);for(let i=0;i<8;i++){const gx=r.width*(.2+rand()*.6),gy=r.height*(.18+rand()*.64),rad=r.width*(.08+rand()*.11),g=x.createRadialGradient(gx,gy,0,gx,gy,rad);g.addColorStop(0,'rgba(255,0,0,.95)');g.addColorStop(.35,'rgba(255,220,0,.8)');g.addColorStop(.65,'rgba(0,200,255,.45)');g.addColorStop(1,'rgba(0,0,255,0)');x.fillStyle=g;x.fillRect(gx-rad,gy-rad,rad*2,rad*2)}}
 function drawMoment(){const c=$('#momentCanvas'),r=c.getBoundingClientRect(),d=devicePixelRatio||1;c.width=r.width*d;c.height=r.height*d;const x=c.getContext('2d');x.scale(d,d);x.clearRect(0,0,r.width,r.height);x.strokeStyle='rgba(255,255,255,.08)';for(let i=1;i<4;i++){x.beginPath();x.moveTo(0,r.height*i/4);x.lineTo(r.width,r.height*i/4);x.stroke()}const pts=[.52,.44,.49,.32,.39,.23,.35,.18,.29,.41,.34,.55,.48,.62,.42,.36,.52,.31,.45,.24,.33,.18,.25];x.beginPath();pts.forEach((p,i)=>{const px=i*r.width/(pts.length-1),py=6+p*(r.height-12);i?x.lineTo(px,py):x.moveTo(px,py)});const a=getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();x.strokeStyle=a;x.lineWidth=2.5;x.stroke();x.lineTo(r.width,r.height);x.lineTo(0,r.height);x.closePath();const g=x.createLinearGradient(0,0,0,r.height);g.addColorStop(0,a+'88');g.addColorStop(1,a+'05');x.fillStyle=g;x.fill()}
 function buildTimeline(){const all=state.events.length?state.events:[{time:0,type:'⚽'},{time:5,type:'🛡'},{time:10,type:'●'},{time:15,type:'✕'},{time:20,type:'⚽'},{time:25,type:'🟨'},{time:30,type:'●'},{time:35,type:'⚽'},{time:40,type:'🛡'},{time:45,type:'●'}];const filtered=state.timelineMode===0?all:all.filter((_,i)=>i%2===state.timelineMode-1);$('#timeline').innerHTML=filtered.slice(-10).map(e=>`<span class="tick"><b>${String(e.time).padStart(2,'0')}′</b><i></i><span>${e.type.split(' ')[0]}</span></span>`).join('')}
@@ -202,13 +207,60 @@ $('#homeName').onchange=saveState;$('#awayName').onchange=saveState;
 
 function downloadText(name,text,type='text/plain'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 function csvEscape(v){return '"'+String(v??'').replaceAll('"','""')+'"'}
-function recordFieldAction(e){if(state.arenaTab!=='arena')return;const pitch=e.target.closest('#pitch');if(!pitch||e.target.closest('.fieldPoint'))return;const r=pitch.getBoundingClientRect();const x=Math.max(0,Math.min(100,(e.clientX-r.left)/r.width*100));const y=Math.max(0,Math.min(100,(e.clientY-r.top)/r.height*100));if(state.fieldAction==='apagar'){let best=-1,dist=999;state.fieldEvents.forEach((p,i)=>{const d=Math.hypot(p.x-x,p.y-y);if(d<dist){dist=d;best=i}});if(best>=0&&dist<8)state.fieldEvents.splice(best,1);renderFieldEvents();saveState();drawHeat();return}const labels={passe:'Passe',passe_longo:'Passe longo',remate:'Remate',golo:'Golo',recuperacao:'Recuperação',perda:'Perda',falta:'Falta',canto:'Canto',cartao:'Cartão'};const player=state.players[state.selectedPlayer]?.name||'Equipa';const ev={x:+x.toFixed(2),y:+y.toFixed(2),action:state.fieldAction,label:labels[state.fieldAction],player,time:Math.floor((state.periodMinutes*60-state.seconds)/60),period:$('#periodSelect').value};state.fieldEvents.push(ev);state.heatPoints.push({x,y,weight:['golo','remate'].includes(ev.action)?1.5:1});state.events.push({time:Math.max(0,ev.time),type:fieldActionIcon(ev.action)+' '+ev.label,player,x,y});renderFieldEvents();buildTimeline();drawHeat();saveState();toast(ev.label+' registado no campo')}
+const arenaActions=[
+ {key:'golo',label:'Golo',icon:'⚽',sub:['Golo de pé','Golo de cabeça','Livre direto','Penálti','Autogolo adversário']},
+ {key:'remate',label:'Remate',icon:'◎',sub:['À baliza','Ao poste','Para fora','Bloqueado']},
+ {key:'assistencia',label:'Assistência',icon:'A'},
+ {key:'defesa',label:'Defesa',icon:'D'},
+ {key:'recuperacao',label:'Recuperação de bola',icon:'◆'},
+ {key:'perda',label:'Perda de bola',icon:'×'},
+ {key:'passe',label:'Passe certo',icon:'↗'},
+ {key:'passe_falhado',label:'Passe falhado',icon:'PF'},
+ {key:'falta',label:'Falta',icon:'!'},
+ {key:'canto',label:'Canto',icon:'⌟'},
+ {key:'cartao_amarelo',label:'Cartão amarelo',icon:'▰'},
+ {key:'expulsao',label:'Expulsão',icon:'EXP'}
+];
+function arenaActionByKey(key){return arenaActions.find(a=>a.key===key)||arenaActions[0]}
+function openQuickArena(step='player'){
+ const modal=$('#quickArenaModal'),title=$('#quickArenaTitle'),sub=$('#quickArenaSubtitle'),content=$('#quickArenaContent');
+ if(!modal||!content)return;
+ modal.classList.add('show');
+ const flow=state.arenaFlow;
+ if(step==='player'){
+  title.textContent='Escolher jogador';sub.textContent='Local selecionado no campo';
+  content.innerHTML='<div class="quickPlayers">'+state.players.map((p,i)=>`<button class="quickPlayer" data-arena-player="${i}"><span>${p.number}</span>${p.name}</button>`).join('')+'</div>';
+ }else if(step==='action'){
+  const p=state.players[flow.playerIndex];title.textContent=p?.name||'Jogador';sub.textContent='Escolhe a ação registada neste local';
+  content.innerHTML='<div class="quickActions">'+arenaActions.map(a=>`<button class="quickAction" data-arena-action="${a.key}"><strong>${a.icon}</strong>${a.label}</button>`).join('')+'</div><button class="quickBack" data-arena-back="player">← Voltar aos jogadores</button>';
+ }else if(step==='subtype'){
+  const a=arenaActionByKey(flow.action);title.textContent=a.label;sub.textContent='Seleciona o tipo de '+a.label.toLowerCase();
+  content.innerHTML='<div class="quickActions">'+a.sub.map((label,i)=>`<button class="quickAction" data-arena-subtype="${i}"><strong>${a.icon}</strong>${label}</button>`).join('')+'</div><button class="quickBack" data-arena-back="action">← Voltar às ações</button>';
+ }
+}
+function cancelArenaFlow(){state.arenaFlow={x:null,y:null,playerIndex:null,action:null};$('#quickArenaModal')?.classList.remove('show');renderFieldEvents()}
+function saveArenaEvent(subtype=''){
+ const f=state.arenaFlow,a=arenaActionByKey(f.action),p=state.players[f.playerIndex];
+ if(f.x==null||f.y==null||!p||!a)return;
+ const elapsed=Math.max(0,Math.floor((state.periodMinutes*60-state.seconds)/60));
+ const label=subtype||a.label;
+ const ev={x:+f.x.toFixed(2),y:+f.y.toFixed(2),action:a.key,label,baseLabel:a.label,player:p.name,playerNumber:p.number,time:elapsed,period:$('#periodSelect').value,attackSide:state.attackSide};
+ state.fieldEvents.push(ev);state.heatPoints.push({x:f.x,y:f.y,weight:['golo','remate'].includes(a.key)?1.5:1});state.events.push({time:elapsed,type:a.icon+' '+label,player:p.name,x:f.x,y:f.y,period:ev.period});
+ state.selectedPlayer=f.playerIndex;cancelArenaFlow();renderPlayers();renderFieldEvents();buildTimeline();drawHeat();saveState();toast(label+' — '+p.name)
+}
+function recordFieldAction(e){
+ if(state.arenaTab!=='arena')return;const point=e.target.closest('.fieldPoint');
+ if(point){if(state.arenaDeleteMode){const i=Number(point.dataset.fieldIndex);if(Number.isInteger(i)){state.fieldEvents.splice(i,1);state.heatPoints.splice(Math.min(i,state.heatPoints.length-1),1);renderFieldEvents();drawHeat();saveState();toast('Ponto apagado')}state.arenaDeleteMode=false;$('#deleteArenaPoint')?.classList.remove('active')}return}
+ const pitch=e.target.closest('#pitch');if(!pitch)return;const r=pitch.getBoundingClientRect();const x=Math.max(0,Math.min(100,(e.clientX-r.left)/r.width*100)),y=Math.max(0,Math.min(100,(e.clientY-r.top)/r.height*100));state.arenaFlow={x,y,playerIndex:null,action:null};renderFieldEvents();const temp=document.createElement('span');temp.className='flowPoint';temp.style.left=x+'%';temp.style.top=y+'%';pitch.appendChild(temp);openQuickArena('player')
+}
 function drawHeat(seed=1){const c=$('#heatCanvas'),r=c.getBoundingClientRect(),d=devicePixelRatio||1;c.width=r.width*d;c.height=r.height*d;const x=c.getContext('2d');x.scale(d,d);x.fillStyle='#f4f6f8';x.fillRect(0,0,r.width,r.height);x.strokeStyle='rgba(0,0,0,.48)';x.lineWidth=1.2;x.strokeRect(8,8,r.width-16,r.height-16);x.beginPath();x.moveTo(r.width/2,8);x.lineTo(r.width/2,r.height-8);x.stroke();x.beginPath();x.arc(r.width/2,r.height/2,Math.min(r.width,r.height)*.16,0,Math.PI*2);x.stroke();const points=state.heatPoints?.length?state.heatPoints:[{x:46,y:50,weight:1},{x:52,y:44,weight:1},{x:58,y:55,weight:1}];points.forEach(pt=>{const gx=8+(r.width-16)*pt.x/100,gy=8+(r.height-16)*pt.y/100,rad=Math.max(28,r.width*.12)*(pt.weight||1);const g=x.createRadialGradient(gx,gy,0,gx,gy,rad);g.addColorStop(0,'rgba(255,50,50,.78)');g.addColorStop(.28,'rgba(255,210,0,.62)');g.addColorStop(.60,'rgba(36,107,253,.30)');g.addColorStop(1,'rgba(36,107,253,0)');x.fillStyle=g;x.fillRect(gx-rad,gy-rad,rad*2,rad*2)})}
 function openSettingsTab(name){$('#settingsModal').classList.add('show');$$('[data-settings-tab]').forEach(b=>b.classList.toggle('active',b.dataset.settingsTab===name));$$('[data-settings-pane]').forEach(p=>p.classList.toggle('active',p.dataset.settingsPane===name))}
 $$('[data-settings-tab]').forEach(b=>b.onclick=()=>openSettingsTab(b.dataset.settingsTab));
 $('#closeSettingsX').onclick=()=>$('#settingsModal').classList.remove('show');
 $('#arenaContent').addEventListener('click',recordFieldAction);
-$('#fieldActions').addEventListener('click',e=>{const b=e.target.closest('[data-field-action]');if(!b)return;state.fieldAction=b.dataset.fieldAction;$$('[data-field-action]').forEach(x=>x.classList.toggle('active',x===b));toast('Ação: '+b.textContent.trim())});
+$('#quickArenaContent').addEventListener('click',e=>{const p=e.target.closest('[data-arena-player]'),a=e.target.closest('[data-arena-action]'),s=e.target.closest('[data-arena-subtype]'),back=e.target.closest('[data-arena-back]');if(p){state.arenaFlow.playerIndex=Number(p.dataset.arenaPlayer);openQuickArena('action')}else if(a){state.arenaFlow.action=a.dataset.arenaAction;const obj=arenaActionByKey(state.arenaFlow.action);obj.sub?openQuickArena('subtype'):saveArenaEvent()}else if(s){const obj=arenaActionByKey(state.arenaFlow.action);saveArenaEvent(obj.sub[Number(s.dataset.arenaSubtype)])}else if(back)openQuickArena(back.dataset.arenaBack)});
+$('#closeQuickArena').onclick=cancelArenaFlow;$('#quickArenaModal').addEventListener('click',e=>{if(e.target.id==='quickArenaModal')cancelArenaFlow()});
+$('#deleteArenaPoint').onclick=()=>{state.arenaDeleteMode=!state.arenaDeleteMode;$('#deleteArenaPoint').classList.toggle('active',state.arenaDeleteMode);toast(state.arenaDeleteMode?'Clica no ponto que queres apagar':'Modo apagar desativado')};
 $('#undoFieldAction').onclick=()=>{if(state.fieldEvents.length){state.fieldEvents.pop();state.heatPoints.pop();state.events.pop();renderFieldEvents();buildTimeline();drawHeat();saveState();toast('Última ação anulada')}};
 $('#saveGameSettings').onclick=()=>{state.periodMinutes=Math.max(1,Number($('#setPeriodMinutes').value)||45);state.maxPlayers=Math.max(5,Number($('#setMaxPlayers').value)||11);state.attackSide=$('#setAttackSide').value;state.seconds=state.periodMinutes*60;renderScore();saveState();toast('Definições do jogo guardadas')};
 $('#swapTeams').onclick=()=>{[$('#homeName').value,$('#awayName').value]=[$('#awayName').value,$('#homeName').value];[state.home,state.away]=[state.away,state.home];renderScore();saveState();toast('Equipas trocadas')};
