@@ -1255,4 +1255,312 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
 })();
 </script>
 
+
+
+<style id="statsvision-analysis-center-style">
+/* Centro de Análise: ocupa o espaço livre por baixo do campo e da posse. */
+#arenaContent.hasAnalysisCenter{overflow:hidden!important}
+#arenaContent.hasAnalysisCenter>.arenaBottomSpace{display:none!important}
+#arenaContent>.analysisCenter{
+  width:calc(100% - 6px);
+  min-height:132px;
+  flex:1 1 132px;
+  margin-top:8px;
+  border:1px solid var(--border);
+  border-radius:13px;
+  background:#fff;
+  box-shadow:0 6px 18px rgba(20,31,43,.07);
+  display:grid;
+  grid-template-rows:31px 28px minmax(0,1fr);
+  overflow:hidden;
+  color:#101418;
+}
+.analysisCenterHead{display:flex;align-items:center;justify-content:space-between;padding:0 12px;border-bottom:1px solid #edf1f4}
+.analysisCenterHead strong{font-size:10px;font-weight:950;letter-spacing:.03em}
+.analysisLive{font-size:8px;font-weight:950;color:var(--sv-cyan);letter-spacing:.08em}
+.analysisTabs{display:flex;align-items:end;gap:3px;padding:0 8px;border-bottom:1px solid #edf1f4;overflow-x:auto;scrollbar-width:none}
+.analysisTabs::-webkit-scrollbar{display:none}
+.analysisTabs button{height:27px;flex:0 0 auto;padding:0 11px;border:0!important;border-radius:0!important;background:transparent!important;color:#334155!important;box-shadow:none!important;transform:none!important;font-size:7px;font-weight:950;letter-spacing:.04em}
+.analysisTabs button.active{color:var(--sv-cyan)!important;border-bottom:2px solid var(--sv-cyan)!important}
+.analysisTabs button::after{display:none!important}
+.analysisCenterBody{min-height:0;padding:7px;overflow:auto;background:#fbfcfd}
+.analysisOverviewGrid{height:100%;min-height:116px;display:grid;grid-template-columns:.88fr 1.12fr;grid-template-rows:1fr 1fr;gap:7px}
+.analysisMini{min-width:0;min-height:0;border:1px solid var(--border);border-radius:10px;background:#fff;padding:7px 9px;overflow:hidden}
+.analysisMini h4,.analysisPaneTitle{margin:0 0 6px;font-size:8px;font-weight:950;letter-spacing:.035em;color:#101418;text-transform:uppercase}
+.analysisTraffic{display:grid;gap:3px}
+.analysisTrafficRow{display:grid;grid-template-columns:minmax(52px,1fr) 9px 60px;align-items:center;gap:6px;min-height:16px;border-bottom:1px solid #edf1f4;font-size:7px;font-weight:850}
+.analysisTrafficRow:last-child{border-bottom:0}
+.analysisDot{width:8px;height:8px;border-radius:50%}.analysisDot.good{background:#55b92c}.analysisDot.warn{background:#f8c400}.analysisDot.bad{background:#ef3f24}.analysisDot.neutral{background:#aab6c0}
+.analysisTrafficState{text-align:right;color:#334155;font-size:7px;font-weight:950}
+.riskTop{display:grid;grid-template-columns:1fr auto;align-items:center;gap:7px}
+.riskBar{height:8px;border-radius:999px;background:#e9edf1;overflow:hidden}.riskFill{height:100%;width:0;border-radius:inherit;transition:width .25s ease;background:linear-gradient(90deg,#f8c400,#ef3f24)}
+.riskValue{font-size:8px;font-weight:950}.riskLevel{margin:4px 0 3px;text-align:center;font-size:7px;font-weight:950;color:#d83a22;letter-spacing:.05em}
+.analysisBullets{display:grid;gap:2px}.analysisBullet{display:grid;grid-template-columns:6px minmax(0,1fr);gap:5px;align-items:start;font-size:6.8px;line-height:1.24;color:#334155;font-weight:760}.analysisBullet i{width:5px;height:5px;border-radius:50%;background:#ef5a3c;margin-top:2px}
+.zoneCompact{display:grid;grid-template-columns:88px minmax(0,1fr);gap:9px;align-items:center}.zoneGrid{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:2px;aspect-ratio:1.25/1}.zoneCell{position:relative;display:grid;place-items:center;border:1px solid #d8dee4;border-radius:2px;background:#edf1f4;color:#52616d;font-size:7px;font-weight:950;overflow:hidden}.zoneCell.home{background:linear-gradient(145deg,#38d5e8,#0fb8d1);color:#05222a;border-color:#08a8c0}.zoneCell.away{background:linear-gradient(145deg,#164f9d,#0a2f68);color:#fff;border-color:#0b3776}.zoneCell.equal{background:#e8edf1;color:#657480}.zoneCell.empty{background:#f4f6f8;color:#9aa6af}.zoneCell small{position:absolute;right:2px;bottom:1px;font-size:5px;opacity:.75}.zoneSummary{display:grid;gap:4px;font-size:6.8px;font-weight:850;color:#334155}.zoneSummary b{font-size:11px}.zoneHome{color:#08a8c0}.zoneAway{color:#124c95}.zoneEqual{color:#7b8994}
+.patternList{display:grid;gap:3px;margin-bottom:6px}.patternItem{display:grid;grid-template-columns:6px minmax(0,1fr);gap:5px;font-size:6.8px;line-height:1.22;color:#334155;font-weight:780}.patternItem i{width:5px;height:5px;border-radius:50%;background:var(--sv-cyan);margin-top:2px}.narratorTitle{margin:2px 0 3px;font-size:7px;font-weight:950;letter-spacing:.04em}.narratorText{font-size:6.7px;line-height:1.35;color:#334155;font-weight:720}
+.analysisPane{height:100%;min-height:116px;display:grid;gap:8px}.analysisZonePane{grid-template-columns:minmax(150px,.9fr) minmax(0,1.1fr)}.zoneLargeCard,.analysisListCard{border:1px solid var(--border);border-radius:10px;background:#fff;padding:9px;min-height:0;overflow:auto}.zoneLarge{height:100%;min-height:94px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:3px}.zoneLarge .zoneCell{font-size:8px;border-radius:5px}.zoneMetrics{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:7px}.zoneMetric{border:1px solid var(--border);border-radius:8px;background:#f7f9fa;padding:6px;text-align:center}.zoneMetric b{display:block;font-size:13px}.zoneMetric small{font-size:6px;font-weight:900;color:#66717c}.analysisNote{font-size:6.5px;line-height:1.35;color:#66717c;font-weight:720}
+.patternCards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;height:100%}.patternCard{border:1px solid var(--border);border-radius:10px;background:#fff;padding:9px;display:grid;align-content:start;gap:3px}.patternCard small{font-size:6px;font-weight:900;color:#66717c;text-transform:uppercase}.patternCard b{font-size:13px;color:#101418}.patternCard p{margin:0;font-size:6.8px;line-height:1.3;color:#334155;font-weight:740}
+.alertPane{grid-template-columns:minmax(145px,.7fr) minmax(0,1.3fr)}.riskGaugeCard{border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px;display:grid;align-content:center;gap:7px}.riskBig{font-size:25px;font-weight:950;line-height:1}.riskBig small{font-size:9px;color:#66717c}.alertColumns{display:grid;grid-template-columns:1fr 1fr;gap:7px;min-height:0}.alertList{border:1px solid var(--border);border-radius:10px;background:#fff;padding:8px;overflow:auto}.alertList h4{margin:0 0 6px;font-size:7px;font-weight:950}.alertEntry{display:grid;grid-template-columns:8px minmax(0,1fr);gap:5px;margin-bottom:5px;font-size:6.7px;line-height:1.28;color:#334155;font-weight:760}.alertEntry span:first-child{font-size:8px}.alertEntry:last-child{margin-bottom:0}
+.analysisEmpty{height:100%;display:grid;place-items:center;text-align:center;color:#66717c;font-size:8px;font-weight:850;padding:12px}
+@media(max-width:1100px) and (orientation:landscape){
+ #arenaContent>.analysisCenter{min-height:105px;flex-basis:105px;margin-top:5px;grid-template-rows:25px 23px minmax(0,1fr)}
+ .analysisCenterHead{padding:0 8px}.analysisCenterHead strong{font-size:8px}.analysisLive{font-size:6px}
+ .analysisTabs{padding:0 5px}.analysisTabs button{height:22px;padding:0 7px;font-size:6px}
+ .analysisCenterBody{padding:4px}.analysisOverviewGrid{min-height:88px;gap:4px}.analysisMini{padding:5px 6px;border-radius:7px}.analysisMini h4,.analysisPaneTitle{font-size:6px;margin-bottom:3px}
+ .analysisTrafficRow{min-height:12px;grid-template-columns:minmax(38px,1fr) 7px 43px;gap:3px;font-size:5.5px}.analysisTrafficState{font-size:5.5px}.analysisDot{width:6px;height:6px}
+ .riskBar{height:6px}.riskValue,.riskLevel{font-size:5.8px}.riskLevel{margin:2px 0}.analysisBullet,.patternItem,.narratorText{font-size:5.3px}.analysisBullet i,.patternItem i{width:4px;height:4px}
+ .zoneCompact{grid-template-columns:64px minmax(0,1fr);gap:5px}.zoneSummary{font-size:5.2px;gap:2px}.zoneSummary b{font-size:8px}.zoneCell{font-size:5.5px}.zoneCell small{font-size:4px}.patternList{gap:2px;margin-bottom:3px}.narratorTitle{font-size:5.5px;margin:1px 0}
+ .analysisPane{min-height:88px;gap:4px}.zoneLargeCard,.analysisListCard,.riskGaugeCard,.alertList,.patternCard{padding:5px;border-radius:7px}.zoneMetrics{gap:3px;margin-bottom:4px}.zoneMetric{padding:3px}.zoneMetric b{font-size:9px}.zoneMetric small,.analysisNote,.patternCard small,.patternCard p,.alertEntry{font-size:5px}.patternCard b{font-size:9px}.patternCards,.alertColumns{gap:4px}.riskBig{font-size:18px}.riskBig small{font-size:6px}
+}
+</style>
+
+<script id="statsvision-analysis-center-script">
+(()=>{
+  const ACTION_LABELS={golo:'Golos',remate:'Remates',assistencia:'Assistências',defesa:'Defesas',recuperacao:'Recuperações',perda:'Perdas',passe:'Passes certos',passe_falhado:'Passes falhados',falta:'Faltas',canto:'Cantos',cartao_amarelo:'Cartões amarelos',expulsao:'Expulsões'};
+  const POSITIVE_WEIGHTS={golo:4,remate:2,assistencia:2.2,defesa:1.4,recuperacao:1.8,passe:.65,canto:1.2};
+  const NEGATIVE_WEIGHTS={perda:2,passe_falhado:1.25,falta:.65,cartao_amarelo:1.1,expulsao:2.5};
+  const OFFENSIVE=new Set(['golo','remate','assistencia','passe','canto','recuperacao']);
+  const NEGATIVE=new Set(['perda','passe_falhado','falta','cartao_amarelo','expulsao']);
+  let activeAnalysisView='overview';
+  let lastSignature='';
+
+  const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
+  const events=()=>Array.isArray(state.fieldEvents)?state.fieldEvents:[];
+  const count=action=>events().filter(event=>event.action===action).length;
+  const periodSeconds=()=>Math.max(1,Number(state.periodMinutes)||45)*60;
+  const eventSecond=event=>((Math.max(1,Number(event.period)||1)-1)*periodSeconds())+Math.max(0,Number(event.gameSecond??((Number(event.time)||0)*60)));
+  const currentSecond=()=>((Math.max(1,Number(document.querySelector('#periodSelect')?.value)||1)-1)*periodSeconds())+Math.max(0,periodSeconds()-(Number(state.seconds)||0));
+  const eventTeam=event=>/away|fora|visit|equipa b|team b/i.test(String(event?.team||event?.side||''))?'away':'home';
+
+  function possessionValues(){
+    const possession=state.possession||{};
+    let home=Math.max(0,Number(possession.homeSeconds??possession.home??0)||0);
+    let away=Math.max(0,Number(possession.awaySeconds??possession.away??0)||0);
+    if((possession.active==='home'||possession.active==='away')&&Number(possession.activeSince)){
+      const running=Math.max(0,(Date.now()-Number(possession.activeSince))/1000);
+      if(possession.active==='home')home+=running;else away+=running;
+    }
+    const total=home+away;
+    if(total<=0)return {home,away,total,homePct:50,awayPct:50};
+    const homePct=Math.round(home/total*1000)/10;
+    return {home,away,total,homePct,awayPct:Math.round((100-homePct)*10)/10};
+  }
+
+  function corridorFor(event){
+    const y=clamp(Number(event.y)||0,0,100);
+    if(y>=33.333&&y<=66.667)return 'centro';
+    const top=y<33.333;
+    const side=event.attackSide||state.attackSide||'right';
+    if(side==='right')return top?'esquerdo':'direito';
+    return top?'direito':'esquerdo';
+  }
+
+  function zoneIndex(event){
+    const x=clamp(Number(event.x)||0,0,99.999),y=clamp(Number(event.y)||0,0,99.999);
+    return Math.floor(y/33.333)*3+Math.floor(x/33.333);
+  }
+
+  function zoneAnalysis(){
+    const scores=Array.from({length:9},()=>({home:0,away:0,total:0,events:0}));
+    events().forEach(event=>{
+      const zone=scores[zoneIndex(event)],team=eventTeam(event),positive=POSITIVE_WEIGHTS[event.action]||0,negative=NEGATIVE_WEIGHTS[event.action]||0;
+      if(team==='away'){
+        zone.away+=positive;zone.home+=negative;
+      }else{
+        zone.home+=positive;zone.away+=negative;
+      }
+      zone.total+=positive+negative;zone.events++;
+    });
+    const zones=scores.map((score,index)=>{
+      let owner='empty';
+      if(score.total>0){const difference=score.home-score.away;owner=Math.abs(difference)<.75?'equal':difference>0?'home':'away'}
+      return {...score,index,owner,strength:score.total?Math.min(1,Math.abs(score.home-score.away)/Math.max(1,score.total)):0};
+    });
+    const summary={home:zones.filter(z=>z.owner==='home').length,away:zones.filter(z=>z.owner==='away').length,equal:zones.filter(z=>z.owner==='equal'||z.owner==='empty').length};
+    const mostActive=zones.slice().sort((a,b)=>b.events-a.events)[0];
+    return {zones,summary,mostActive};
+  }
+
+  function recentEvents(minutes=5){
+    const now=currentSecond(),windowSeconds=minutes*60;
+    return events().filter(event=>{const second=eventSecond(event);return second<=now&&second>=Math.max(0,now-windowSeconds)});
+  }
+
+  function analysisStats(){
+    const all=events(),possession=possessionValues(),recent=recentEvents(5);
+    const losses=all.filter(e=>e.action==='perda'||e.action==='passe_falhado');
+    const recoveries=all.filter(e=>e.action==='recuperacao');
+    const shots=all.filter(e=>e.action==='remate'||e.action==='golo');
+    const dangerousLosses=losses.filter(event=>{
+      const x=Number(event.x)||0,y=Number(event.y)||0,progress=(event.attackSide||state.attackSide||'right')==='right'?x:100-x;
+      return progress<67&&y>=27&&y<=73;
+    });
+    const recentLosses=recent.filter(e=>e.action==='perda'||e.action==='passe_falhado');
+    const reds=count('expulsao'),yellows=count('cartao_amarelo');
+    const transitionGap=Math.max(0,losses.length-recoveries.length);
+    let risk=0;
+    if(all.length||possession.total){
+      risk+=Math.min(36,dangerousLosses.length*12);
+      risk+=Math.min(22,recentLosses.length*7);
+      risk+=Math.max(0,possession.awayPct-45)*.9;
+      risk+=Math.min(18,transitionGap*4.5);
+      risk+=Math.min(12,yellows*4)+reds*18;
+    }
+    risk=Math.round(clamp(risk,0,100));
+    const riskLevel=risk>=75?'CRÍTICO':risk>=55?'ELEVADO':risk>=30?'ATENÇÃO':all.length||possession.total?'CONTROLADO':'SEM DADOS';
+    const riskClass=risk>=75?'bad':risk>=55?'bad':risk>=30?'warn':all.length||possession.total?'good':'neutral';
+    return {all,possession,recent,losses,recoveries,shots,dangerousLosses,recentLosses,reds,yellows,transitionGap,risk,riskLevel,riskClass};
+  }
+
+  function trafficStatus(stats){
+    if(!stats.all.length&&!stats.possession.total)return [
+      {label:'ATAQUE',state:'SEM DADOS',className:'neutral'},
+      {label:'DEFESA',state:'SEM DADOS',className:'neutral'},
+      {label:'TRANSIÇÕES',state:'SEM DADOS',className:'neutral'}
+    ];
+    const attack=stats.shots.length>=3||count('golo')>0?['POSITIVO','good']:stats.shots.length||stats.all.length<5?['ATENÇÃO','warn']:['PROBLEMA','bad'];
+    const defence=stats.dangerousLosses.length>=4||stats.possession.awayPct>=62?['PROBLEMA','bad']:stats.dangerousLosses.length>=2||stats.possession.awayPct>=50?['ATENÇÃO','warn']:['POSITIVO','good'];
+    const transitions=stats.recoveries.length>=stats.losses.length?['POSITIVO','good']:stats.recoveries.length+2>=stats.losses.length?['ATENÇÃO','warn']:['PROBLEMA','bad'];
+    return [{label:'ATAQUE',state:attack[0],className:attack[1]},{label:'DEFESA',state:defence[0],className:defence[1]},{label:'TRANSIÇÕES',state:transitions[0],className:transitions[1]}];
+  }
+
+  function detectedPatterns(stats){
+    const attackEvents=stats.all.filter(event=>OFFENSIVE.has(event.action));
+    const corridors={esquerdo:0,centro:0,direito:0};attackEvents.forEach(event=>corridors[corridorFor(event)]++);
+    const dominant=Object.entries(corridors).sort((a,b)=>b[1]-a[1])[0];
+    const corridorPct=attackEvents.length?Math.round(dominant[1]/attackEvents.length*100):0;
+    const finals=stats.shots;
+    const afterRecovery=finals.filter(final=>stats.recoveries.some(rec=>Number(rec.period)===Number(final.period)&&eventSecond(rec)<=eventSecond(final)&&eventSecond(final)-eventSecond(rec)<=60)).length;
+    const players={};finals.forEach(event=>{const name=event.player||'Sem jogador';players[name]=(players[name]||0)+1});
+    const topPlayer=Object.entries(players).sort((a,b)=>b[1]-a[1])[0];
+    const windows={};stats.all.forEach(event=>{const start=Math.floor((Number(event.time)||0)/10)*10;windows[start]=(windows[start]||0)+1});
+    const peak=Object.entries(windows).sort((a,b)=>b[1]-a[1])[0];
+    const patterns=[];
+    if(attackEvents.length)patterns.push(`${corridorPct}% das ações ofensivas pelo corredor ${dominant[0]}`);
+    if(finals.length)patterns.push(`${afterRecovery} de ${finals.length} finalizações surgiram até 60 s após recuperação`);
+    if(topPlayer)patterns.push(`${topPlayer[0]} participou em ${Math.round(topPlayer[1]/Math.max(1,finals.length)*100)}% das finalizações`);
+    if(peak)patterns.push(`Maior concentração de ações entre ${String(peak[0]).padStart(2,'0')}:00 e ${String(Number(peak[0])+10).padStart(2,'0')}:00`);
+    if(!patterns.length)patterns.push('Regista ações no campo para o sistema identificar padrões táticos');
+    return {patterns,corridors,dominant,corridorPct,afterRecovery,topPlayer,peak};
+  }
+
+  function alerts(stats,patterns,zones){
+    const negative=[],positive=[];
+    if(stats.dangerousLosses.length>=2)negative.push(`${stats.dangerousLosses.length} perdas perigosas na zona central ou defensiva`);
+    if(stats.recentLosses.length>=3)negative.push(`${stats.recentLosses.length} perdas nos últimos 5 minutos`);
+    if(stats.possession.total&&stats.possession.awayPct>=55)negative.push(`Equipa B com ${stats.possession.awayPct.toFixed(1)}% de posse`);
+    if(stats.losses.length>=stats.recoveries.length+3)negative.push(`Desequilíbrio nas transições: ${stats.losses.length} perdas para ${stats.recoveries.length} recuperações`);
+    if(stats.reds)negative.push(`${stats.reds} expulsão${stats.reds===1?'':'ões'} registada${stats.reds===1?'':'s'}`);
+    const negativeCorridors={esquerdo:0,centro:0,direito:0};stats.losses.forEach(event=>negativeCorridors[corridorFor(event)]++);
+    const lossLane=Object.entries(negativeCorridors).sort((a,b)=>b[1]-a[1])[0];
+    if(lossLane&&lossLane[1]>=3)negative.push(`Perdas repetidas no corredor ${lossLane[0]} (${lossLane[1]})`);
+    if(stats.possession.total&&stats.possession.homePct>=55)positive.push(`Equipa A controla ${stats.possession.homePct.toFixed(1)}% da posse`);
+    if(stats.recoveries.length&&stats.recoveries.length>=stats.losses.length)positive.push(`Balanço positivo: ${stats.recoveries.length} recuperações para ${stats.losses.length} perdas`);
+    if(patterns.afterRecovery>=2)positive.push(`${patterns.afterRecovery} finalizações criadas após recuperação`);
+    if(zones.summary.home>=4)positive.push(`Equipa A domina ${zones.summary.home} das 9 zonas`);
+    if(count('golo')&&stats.shots.length)positive.push(`Conversão de ${Math.round(count('golo')/stats.shots.length*100)}% nas finalizações registadas`);
+    if(!negative.length)negative.push(stats.all.length||stats.possession.total?'Sem alertas críticos neste momento':'A aguardar dados do jogo');
+    if(!positive.length)positive.push(stats.all.length||stats.possession.total?'Ainda sem tendência positiva consolidada':'Regista posse e ações para gerar sinais positivos');
+    return {negative,positive};
+  }
+
+  function narrator(stats,patterns){
+    if(!stats.all.length&&!stats.possession.total)return 'O narrador tático será atualizado automaticamente à medida que registares ações e posse de bola.';
+    const pieces=[];
+    if(stats.possession.total){
+      const leader=stats.possession.homePct>=stats.possession.awayPct?'A Equipa A':'A Equipa B';
+      const pct=Math.max(stats.possession.homePct,stats.possession.awayPct).toFixed(1);
+      pieces.push(`${leader} controla ${pct}% da posse`);
+    }
+    if(patterns.dominant&&patterns.dominant[1]>0)pieces.push(`a maior incidência ofensiva surge pelo corredor ${patterns.dominant[0]}`);
+    if(stats.losses.length>stats.recoveries.length)pieces.push(`a reação à perda exige atenção (${stats.losses.length} perdas e ${stats.recoveries.length} recuperações)`);
+    else if(stats.recoveries.length)pieces.push(`as transições apresentam saldo favorável`);
+    pieces.push(`o risco defensivo está ${stats.riskLevel.toLowerCase()}`);
+    return pieces.join('. ').replace(/\. ([a-zà-ú])/g,(match,letter)=>'. '+letter.toUpperCase())+'.';
+  }
+
+  function trafficHtml(items){return items.map(item=>`<div class="analysisTrafficRow"><span>${item.label}</span><i class="analysisDot ${item.className}"></i><span class="analysisTrafficState">${item.state}</span></div>`).join('')}
+  function bulletsHtml(items,limit=3){return items.slice(0,limit).map(item=>`<div class="analysisBullet"><i></i><span>${item}</span></div>`).join('')}
+  function patternsHtml(items,limit=3){return items.slice(0,limit).map(item=>`<div class="patternItem"><i></i><span>${item}</span></div>`).join('')}
+  function zoneCellsHtml(zones,large=false){return zones.map(zone=>`<div class="zoneCell ${zone.owner}" title="Zona ${zone.index+1}: A ${zone.home.toFixed(1)} · B ${zone.away.toFixed(1)}"><span>${zone.owner==='home'?'A':zone.owner==='away'?'B':zone.owner==='equal'?'=':'·'}</span><small>${zone.events||''}</small></div>`).join('')}
+  function riskColor(risk){return risk>=75?'#dc2626':risk>=55?'#ef5a3c':risk>=30?'#f8c400':'#55b92c'}
+
+  function overviewHtml(stats,patterns,zones,allAlerts){
+    const traffic=trafficStatus(stats);
+    return `<div class="analysisOverviewGrid">
+      <article class="analysisMini"><h4>Semáforo tático</h4><div class="analysisTraffic">${trafficHtml(traffic)}</div></article>
+      <article class="analysisMini"><h4>Índice de risco</h4><div class="riskTop"><div class="riskBar"><div class="riskFill" style="width:${stats.risk}%;background:${riskColor(stats.risk)}"></div></div><span class="riskValue">${stats.risk}/100</span></div><div class="riskLevel" style="color:${riskColor(stats.risk)}">${stats.riskLevel}</div><div class="analysisBullets">${bulletsHtml(allAlerts.negative)}</div></article>
+      <article class="analysisMini"><h4>Batalha das zonas</h4><div class="zoneCompact"><div class="zoneGrid">${zoneCellsHtml(zones.zones)}</div><div class="zoneSummary"><span><b class="zoneHome">${zones.summary.home}</b> A domina</span><span><b class="zoneAway">${zones.summary.away}</b> B domina</span><span><b class="zoneEqual">${zones.summary.equal}</b> equilibradas</span></div></div></article>
+      <article class="analysisMini"><h4>Padrões detetados</h4><div class="patternList">${patternsHtml(patterns.patterns)}</div><div class="narratorTitle">NARRADOR TÁTICO</div><div class="narratorText">${narrator(stats,patterns)}</div></article>
+    </div>`;
+  }
+
+  function zonesHtml(zones){
+    const active=zones.mostActive&&zones.mostActive.events?`Zona ${zones.mostActive.index+1} (${zones.mostActive.events} ações)`:'Sem zona dominante';
+    return `<div class="analysisPane analysisZonePane"><div class="zoneLargeCard"><div class="zoneLarge">${zoneCellsHtml(zones.zones,true)}</div></div><div class="analysisListCard"><div class="analysisPaneTitle">Controlo territorial estimado</div><div class="zoneMetrics"><div class="zoneMetric"><b class="zoneHome">${zones.summary.home}</b><small>A DOMINA</small></div><div class="zoneMetric"><b class="zoneAway">${zones.summary.away}</b><small>B DOMINA</small></div><div class="zoneMetric"><b class="zoneEqual">${zones.summary.equal}</b><small>EQUILÍBRIO</small></div></div><div class="patternList"><div class="patternItem"><i></i><span>Zona mais ativa: ${active}</span></div><div class="patternItem"><i></i><span>As recuperações, passes, remates e golos reforçam o controlo da Equipa A.</span></div><div class="patternItem"><i></i><span>As perdas, passes falhados e ações negativas reforçam a influência da Equipa B.</span></div></div><div class="analysisNote">Estimativa construída apenas com as ações registadas na aplicação; não substitui dados de tracking.</div></div></div>`;
+  }
+
+  function patternsPaneHtml(patterns,stats){
+    const finals=stats.shots.length,conversion=finals?Math.round(count('golo')/finals*100):0;
+    const dominantLabel=patterns.dominant&&patterns.dominant[1]?`Corredor ${patterns.dominant[0]}`:'Sem dados';
+    const topPlayer=patterns.topPlayer?patterns.topPlayer[0]:'Sem dados';
+    return `<div class="patternCards"><article class="patternCard"><small>Canal preferencial</small><b>${dominantLabel}</b><p>${patterns.corridorPct}% das ações ofensivas registadas.</p></article><article class="patternCard"><small>Transição para remate</small><b>${patterns.afterRecovery}/${finals}</b><p>Finalizações até 60 segundos após uma recuperação.</p></article><article class="patternCard"><small>Jogador mais envolvido</small><b>${topPlayer}</b><p>${patterns.topPlayer?patterns.topPlayer[1]+' finalizações registadas.':'Regista remates para calcular.'}</p></article><article class="patternCard"><small>Conversão ofensiva</small><b>${conversion}%</b><p>${count('golo')} golos em ${finals} finalizações registadas.</p></article></div>`;
+  }
+
+  function alertsPaneHtml(stats,allAlerts){
+    return `<div class="analysisPane alertPane"><div class="riskGaugeCard"><div class="analysisPaneTitle">Risco defensivo</div><div class="riskBig" style="color:${riskColor(stats.risk)}">${stats.risk}<small>/100</small></div><div class="riskBar"><div class="riskFill" style="width:${stats.risk}%;background:${riskColor(stats.risk)}"></div></div><div class="riskLevel" style="color:${riskColor(stats.risk)}">${stats.riskLevel}</div></div><div class="alertColumns"><div class="alertList"><h4>ATENÇÃO</h4>${allAlerts.negative.map(item=>`<div class="alertEntry"><span>⚠</span><span>${item}</span></div>`).join('')}</div><div class="alertList"><h4>SINAIS POSITIVOS</h4>${allAlerts.positive.map(item=>`<div class="alertEntry"><span>✓</span><span>${item}</span></div>`).join('')}</div></div></div>`;
+  }
+
+  function panelMarkup(){
+    return `<section class="analysisCenter" id="analysisCenter" aria-label="Centro de Análise"><div class="analysisCenterHead"><strong>CENTRO DE ANÁLISE</strong><span class="analysisLive">AO VIVO</span></div><div class="analysisTabs" role="tablist"><button type="button" class="active" data-analysis-tab="overview">VISÃO GERAL</button><button type="button" data-analysis-tab="zones">ZONAS</button><button type="button" data-analysis-tab="patterns">PADRÕES</button><button type="button" data-analysis-tab="alerts">ALERTAS</button></div><div class="analysisCenterBody" id="analysisCenterBody"></div></section>`;
+  }
+
+  function mountAnalysisCenter(){
+    const wrap=document.querySelector('#arenaContent');
+    if(!wrap||state.arenaTab!=='arena'||!wrap.querySelector('#pitch'))return null;
+    let center=wrap.querySelector(':scope > #analysisCenter');
+    if(!center){
+      const holder=document.createElement('div');holder.innerHTML=panelMarkup();center=holder.firstElementChild;
+      const bar=wrap.querySelector(':scope > #possessionBar');
+      if(bar)bar.insertAdjacentElement('afterend',center);else wrap.appendChild(center);
+      center.querySelector('.analysisTabs').addEventListener('click',event=>{
+        const button=event.target.closest('[data-analysis-tab]');if(!button)return;
+        activeAnalysisView=button.dataset.analysisTab;
+        center.querySelectorAll('[data-analysis-tab]').forEach(item=>item.classList.toggle('active',item===button));
+        renderAnalysisCenter(true);
+      });
+    }
+    wrap.classList.add('hasAnalysisCenter');
+    const spacer=wrap.querySelector(':scope > .arenaBottomSpace');if(spacer)spacer.style.display='none';
+    return center;
+  }
+
+  function renderAnalysisCenter(force=false){
+    const center=mountAnalysisCenter();if(!center)return;
+    const stats=analysisStats(),zones=zoneAnalysis(),patterns=detectedPatterns(stats),allAlerts=alerts(stats,patterns,zones);
+    const signature=JSON.stringify({view:activeAnalysisView,events:stats.all.length,risk:stats.risk,home:stats.possession.homePct,away:stats.possession.awayPct,zones:zones.summary,shots:stats.shots.length,losses:stats.losses.length,recoveries:stats.recoveries.length,last:stats.all.at(-1)?.gameSecond||0});
+    if(!force&&signature===lastSignature)return;lastSignature=signature;
+    center.querySelectorAll('[data-analysis-tab]').forEach(button=>button.classList.toggle('active',button.dataset.analysisTab===activeAnalysisView));
+    const body=center.querySelector('#analysisCenterBody');
+    if(activeAnalysisView==='zones')body.innerHTML=zonesHtml(zones);
+    else if(activeAnalysisView==='patterns')body.innerHTML=patternsPaneHtml(patterns,stats);
+    else if(activeAnalysisView==='alerts')body.innerHTML=alertsPaneHtml(stats,allAlerts);
+    else body.innerHTML=overviewHtml(stats,patterns,zones,allAlerts);
+  }
+
+  const previousRenderArena=window.renderArenaTab;
+  window.renderArenaTab=renderArenaTab=function(tab){
+    const result=previousRenderArena(tab);
+    if(tab==='arena')setTimeout(()=>{mountAnalysisCenter();renderAnalysisCenter(true)},0);
+    return result;
+  };
+
+  ['homeName','awayName','periodSelect'].forEach(id=>document.querySelector('#'+id)?.addEventListener('input',()=>renderAnalysisCenter(true)));
+  document.querySelector('#clearMatch')?.addEventListener('click',()=>setTimeout(()=>renderAnalysisCenter(true),20));
+  document.querySelector('#undoFieldAction')?.addEventListener('click',()=>setTimeout(()=>renderAnalysisCenter(true),20));
+  setInterval(()=>renderAnalysisCenter(false),800);
+  setTimeout(()=>{mountAnalysisCenter();renderAnalysisCenter(true)},260);
+})();
+</script>
+
 </body></html>
