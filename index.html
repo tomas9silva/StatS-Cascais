@@ -1284,7 +1284,7 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
 .analysisTabs button.active{color:var(--sv-cyan)!important;border-bottom:2px solid var(--sv-cyan)!important}
 .analysisTabs button::after{display:none!important}
 .analysisCenterBody{min-height:0;padding:7px;overflow:auto;background:#fbfcfd}
-.analysisOverviewGrid{height:100%;min-height:116px;display:grid;grid-template-columns:.88fr 1.12fr;grid-template-rows:1fr 1fr;gap:7px}
+.analysisOverviewGrid{height:100%;min-height:116px;display:grid;grid-template-columns:.88fr 1.12fr;grid-template-rows:minmax(0,1fr);gap:7px}
 .analysisMini{min-width:0;min-height:0;border:1px solid var(--border);border-radius:10px;background:#fff;padding:7px 9px;overflow:hidden}
 .analysisMini h4,.analysisPaneTitle{margin:0 0 6px;font-size:8px;font-weight:950;letter-spacing:.035em;color:#101418;text-transform:uppercase}
 .analysisTraffic{display:grid;gap:3px}
@@ -1490,8 +1490,6 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
     return `<div class="analysisOverviewGrid">
       <article class="analysisMini"><h4>Semáforo tático</h4><div class="analysisTraffic">${trafficHtml(traffic)}</div></article>
       <article class="analysisMini"><h4>Índice de risco</h4><div class="riskTop"><div class="riskBar"><div class="riskFill" style="width:${stats.risk}%;background:${riskColor(stats.risk)}"></div></div><span class="riskValue">${stats.risk}/100</span></div><div class="riskLevel" style="color:${riskColor(stats.risk)}">${stats.riskLevel}</div><div class="analysisBullets">${bulletsHtml(allAlerts.negative)}</div></article>
-      <article class="analysisMini"><h4>Batalha das zonas</h4><div class="zoneCompact"><div class="zoneGrid">${zoneCellsHtml(zones.zones)}</div><div class="zoneSummary"><span><b class="zoneHome">${zones.summary.home}</b> A domina</span><span><b class="zoneAway">${zones.summary.away}</b> B domina</span><span><b class="zoneEqual">${zones.summary.equal}</b> equilibradas</span></div></div></article>
-      <article class="analysisMini"><h4>Padrões detetados</h4><div class="patternList">${patternsHtml(patterns.patterns)}</div><div class="narratorTitle">NARRADOR TÁTICO</div><div class="narratorText">${narrator(stats,patterns)}</div></article>
     </div>`;
   }
 
