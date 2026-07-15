@@ -1772,4 +1772,180 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
 })();
 </script>
 
+
+
+<style id="statsvision-goal-assist-creation-v19">
+.assistChoices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.assistChoice{min-height:50px;border:1px solid var(--border);border-radius:11px;background:#fff;color:#101418;padding:8px;text-align:left;font-size:8px;font-weight:900;display:flex;align-items:center;gap:8px}.assistChoice span{width:25px;height:25px;flex:0 0 25px;border-radius:50%;display:grid;place-items:center;background:var(--primary);color:#101418;font-weight:950}.assistChoice.special span{background:color-mix(in srgb,var(--secondary) 12%,#fff);color:var(--secondary)}.assistChoice:hover{border-color:var(--secondary);background:color-mix(in srgb,var(--secondary) 7%,#fff)}
+.proEventAssist{color:var(--secondary)!important;font-weight:850!important}.playerStatsList .playerStatRow{grid-template-columns:34px minmax(105px,1fr) repeat(6,minmax(42px,auto))}.creationHint{margin:0 0 9px;padding:7px 9px;border-radius:9px;background:color-mix(in srgb,var(--secondary) 7%,#fff);border:1px solid color-mix(in srgb,var(--secondary) 22%,var(--border));font-size:7px;color:#43515d;font-weight:800;line-height:1.4}
+@media(max-width:1100px) and (orientation:landscape){.assistChoices{grid-template-columns:repeat(4,minmax(0,1fr))}.assistChoice{min-height:40px;padding:5px;font-size:6.5px}.assistChoice span{width:21px;height:21px;flex-basis:21px}.playerStatsList .playerStatRow{grid-template-columns:28px minmax(78px,1fr) repeat(6,minmax(34px,auto));gap:5px}.playerStatMetric{min-width:34px!important;font-size:6px}.playerStatMetric b{font-size:9px!important}}
+</style>
+<script id="statsvision-goal-assist-creation-v19-script">
+(()=>{
+  /* Mantém as ações defensivas e de recuperação existentes e reorganiza criação/assistência. */
+  const goal=arenaActions.find(action=>action.key==='golo');
+  const creation=arenaActions.find(action=>action.key==='passe');
+  const shot=arenaActions.find(action=>action.key==='remate');
+  const save=arenaActions.find(action=>action.key==='defesa');
+  const foul=arenaActions.find(action=>action.key==='falta');
+  const failedPass=arenaActions.find(action=>action.key==='passe_falhado');
+  if(goal)goal.sub=['Dentro da área','Fora da área','Livre direto','Penálti','Cabeceamento','Após canto','Autogolo adversário'];
+  if(creation){creation.label='Criação';creation.sub=['Passe-chave','Canto conquistado','Cruzamento eficaz','Entrada na área'];}
+  if(shot)shot.sub=['Enquadrado','Defendido','Bloqueado','Ao poste/barra','Para fora'];
+  if(save){save.label='Defesa / golo sofrido';save.sub=['Defesa simples','Defesa difícil','Golo sofrido'];}
+  if(foul)foul.sub=['Falta cometida','Falta sofrida'];
+  if(failedPass)failedPass.label='Passe falhado importante';
+  const assistIndex=arenaActions.findIndex(action=>action.key==='assistencia');
+  if(assistIndex>=0)arenaActions.splice(assistIndex,1);
+
+  const hiddenFromMainMenu=new Set(['canto']);
+  const actionForSubtype=(baseKey,subtype)=>{
+    if(baseKey==='passe'&&subtype==='Canto conquistado')return 'canto';
+    return baseKey;
+  };
+  const actionObj=key=>arenaActions.find(action=>action.key===key)||arenaActions[0];
+  const safe=value=>String(value??'').replace(/[&<>\"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[char]));
+  const actionIcon=key=>{
+    const found=actionObj(key);
+    if(found?.icon&&String(found.icon).includes('<svg'))return found.icon;
+    return `<span aria-hidden="true">${safe(found?.icon||'•')}</span>`;
+  };
+  const eventClock=event=>typeof timelineClock==='function'?timelineClock(event):`${String(Number(event?.time)||0).padStart(2,'0')}:00`;
+  const eventTone=key=>['defesa','recuperacao'].includes(key)?'defense':['perda','passe_falhado','falta','cartao_amarelo','expulsao'].includes(key)?'negative':['substituicao'].includes(key)?'neutral':'offense';
+
+  function resetExtendedFlow(){
+    state.arenaFlow.goalType=null;
+    state.arenaFlow.creationType=null;
+    state.arenaFlow.assistPlayerIndex=null;
+    state.arenaFlow.assistType=null;
+  }
+
+  function showArenaStep(step='player'){
+    const modal=$('#quickArenaModal'),title=$('#quickArenaTitle'),subtitle=$('#quickArenaSubtitle'),content=$('#quickArenaContent');
+    if(!modal||!content)return;
+    modal.classList.add('show');
+    const flow=state.arenaFlow;
+    if(step==='player'){
+      resetExtendedFlow();
+      title.textContent='Escolher jogador';subtitle.textContent='Apenas jogadores em campo';
+      const available=state.players.map((player,index)=>({player,index})).filter(item=>item.player.on);
+      const shown=available.length?available:state.players.map((player,index)=>({player,index}));
+      content.innerHTML='<div class="quickPlayers">'+shown.map(({player,index})=>`<button class="quickPlayer" data-v19-player="${index}"><span>${player.number}</span>${safe(player.name)}</button>`).join('')+'</div>';
+      return;
+    }
+    if(step==='action'){
+      const player=state.players[flow.playerIndex];title.textContent=player?.name||'Jogador';subtitle.textContent='Escolhe a ação registada neste local';
+      const actions=arenaActions.filter(action=>!hiddenFromMainMenu.has(action.key));
+      content.innerHTML='<div class="quickActions">'+actions.map(action=>`<button class="quickAction iconTone-${eventTone(action.key)}" data-v19-action="${action.key}"><strong>${actionIcon(action.key)}</strong>${safe(action.label)}</button>`).join('')+'</div><button class="quickBack" data-v19-back="player">← Voltar aos jogadores</button>';
+      return;
+    }
+    if(step==='subtype'){
+      const action=actionObj(flow.action);title.textContent=action.label;subtitle.textContent=flow.action==='golo'?'Escolhe primeiro o tipo de golo':'Seleciona o detalhe da ação';
+      const hint=flow.action==='passe'?'<p class="creationHint">A categoria Criação inclui o passe-chave e outras ações que geram perigo.</p>':'';
+      content.innerHTML=hint+'<div class="quickActions">'+(action.sub||[]).map((label,index)=>`<button class="quickAction iconTone-${eventTone(action.key)}" data-v19-subtype="${index}"><strong>${actionIcon(action.key)}</strong>${safe(label)}</button>`).join('')+'</div><button class="quickBack" data-v19-back="action">← Voltar às ações</button>';
+      return;
+    }
+    if(step==='assist'){
+      title.textContent='Assistência';subtitle.textContent=`Golo: ${flow.goalType||'Golo'} · escolhe quem fez o último passe`;
+      const scorerIndex=Number(flow.playerIndex);
+      const available=state.players.map((player,index)=>({player,index})).filter(item=>item.player.on&&item.index!==scorerIndex);
+      content.innerHTML='<div class="assistChoices">'+available.map(({player,index})=>`<button class="assistChoice" data-v19-assist-player="${index}"><span>${player.number}</span>${safe(player.name)}</button>`).join('')+
+      '<button class="assistChoice special" data-v19-assist-type="none"><span>—</span>Sem assistência</button><button class="assistChoice special" data-v19-assist-type="opponent"><span>EA</span>Erro adversário</button></div><button class="quickBack" data-v19-back="subtype">← Voltar ao tipo de golo</button>';
+    }
+  }
+
+  function finishArenaEvent(subtype='',assist={type:'none',playerIndex:null}){
+    const flow=state.arenaFlow,baseAction=actionObj(flow.action),player=state.players[flow.playerIndex];
+    if(flow.x==null||flow.y==null||!player||!baseAction)return;
+    const gameSecond=Math.max(0,(state.periodMinutes*60)-state.seconds),elapsed=Math.floor(gameSecond/60),period=$('#periodSelect').value;
+    const finalAction=actionForSubtype(baseAction.key,subtype);
+    let label=subtype||baseAction.label;
+    if(baseAction.key==='golo')label=`Golo · ${subtype||'Sem tipo'}`;
+    const event={x:+flow.x.toFixed(2),y:+flow.y.toFixed(2),action:finalAction,label,baseLabel:baseAction.label,player:player.name,playerNumber:player.number,time:elapsed,gameSecond,period,attackSide:state.attackSide,team:'home'};
+    if(baseAction.key==='passe')event.creationType=subtype;
+    if(baseAction.key==='golo'){
+      event.goalType=subtype;
+      event.assistType=assist.type||'none';
+      if(assist.type==='player'){
+        const assistant=state.players[assist.playerIndex];
+        if(assistant){event.assistPlayer=assistant.name;event.assistPlayerNumber=assistant.number;}
+      }else if(assist.type==='opponent')event.assistPlayer='Erro adversário';
+      else event.assistPlayer='Sem assistência';
+    }
+    state.fieldEvents.push(event);
+    state.heatPoints.push({x:flow.x,y:flow.y,weight:['golo','remate'].includes(finalAction)?1.5:1});
+    state.events.push({...event,type:label});
+    state.selectedPlayer=flow.playerIndex;
+    cancelArenaFlow();
+    renderPlayers();renderFieldEvents();buildTimeline();drawHeat();saveState();
+    toast(label+' — '+player.name+(event.assistPlayer?` · Assistência: ${event.assistPlayer}`:''));
+    if(typeof updateAllLive==='function')updateAllLive();
+    if(state.arenaTab==='eventos')renderV19Events();
+  }
+
+  window.openQuickArena=showArenaStep;
+  const quick=$('#quickArenaContent');
+  quick?.addEventListener('click',event=>{
+    const player=event.target.closest('[data-v19-player]'),action=event.target.closest('[data-v19-action]'),subtype=event.target.closest('[data-v19-subtype]'),assistPlayer=event.target.closest('[data-v19-assist-player]'),assistType=event.target.closest('[data-v19-assist-type]'),back=event.target.closest('[data-v19-back]');
+    if(!player&&!action&&!subtype&&!assistPlayer&&!assistType&&!back)return;
+    event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
+    if(player){state.arenaFlow.playerIndex=Number(player.dataset.v19Player);showArenaStep('action');return;}
+    if(action){state.arenaFlow.action=action.dataset.v19Action;const selected=actionObj(state.arenaFlow.action);selected.sub?.length?showArenaStep('subtype'):finishArenaEvent();return;}
+    if(subtype){const selected=actionObj(state.arenaFlow.action),label=selected.sub[Number(subtype.dataset.v19Subtype)];if(selected.key==='golo'){state.arenaFlow.goalType=label;showArenaStep('assist');}else finishArenaEvent(label);return;}
+    if(assistPlayer){finishArenaEvent(state.arenaFlow.goalType,{type:'player',playerIndex:Number(assistPlayer.dataset.v19AssistPlayer)});return;}
+    if(assistType){finishArenaEvent(state.arenaFlow.goalType,{type:assistType.dataset.v19AssistType});return;}
+    if(back)showArenaStep(back.dataset.v19Back);
+  },true);
+
+  window.timelineSummary=function(event){
+    if(event?.action==='golo'&&event.goalType)return `Golo · ${event.goalType}`;
+    return String(event?.label||event?.type||({remate:'Remate',defesa:'Defesa',recuperacao:'Recuperação de bola',perda:'Perda de bola',passe:'Criação',passe_falhado:'Passe falhado importante',falta:'Falta',canto:'Canto conquistado',cartao_amarelo:'Cartão amarelo',expulsao:'Expulsão'}[event?.action]||'Evento')).replace(/^[⚽🎯🎁🧤🛡️❌⚠️✅🚩🟨🟥🛑•]+\s*/u,'').trim();
+  };
+  window.timelinePlayer=function(event){
+    const player=String(event?.player||'Equipa');
+    return event?.action==='golo'&&event.assistPlayer?`${player} · Assistência: ${event.assistPlayer}`:player;
+  };
+  window.buildTimeline=function(){
+    const timeline=$('#timeline');if(!timeline)return;
+    const all=(state.events||[]).slice().sort((a,b)=>timelineTotalSeconds(a)-timelineTotalSeconds(b));
+    if(!all.length){timeline.innerHTML='<span class="timelineEmpty">Sem eventos registados</span>';return;}
+    timeline.innerHTML=all.map(event=>{const key=event.action||'evento',title=safe(timelineSummary(event)),player=safe(timelinePlayer(event));return `<span class="tick tone-${eventTone(key)}" title="${title}"><span class="timelineTime">${eventClock(event)}</span><span class="timelineCard"><span class="timelineEmoji">${actionIcon(key)}</span><span class="timelineText"><strong>${title}</strong><small>${player}</small></span></span></span>`}).join('');
+    timeline.scrollLeft=timeline.scrollWidth;
+  };
+
+  window.renderPlayerStats=function(){
+    const list=$('#playerStatsList');if(!list)return;
+    const events=typeof filteredStatEvents==='function'?filteredStatEvents():(state.fieldEvents||[]);
+    list.innerHTML=state.players.map(player=>{
+      const own=events.filter(event=>event.playerNumber===player.number||event.player===player.name);
+      const count=key=>own.filter(event=>event.action===key).length;
+      const assists=events.filter(event=>event.action==='golo'&&(event.assistPlayerNumber===player.number||event.assistPlayer===player.name)).length;
+      const keyPasses=own.filter(event=>event.creationType==='Passe-chave'||event.label==='Passe-chave').length;
+      return `<div class="playerStatRow"><span class="playerStatNumber">${player.number}</span><span class="playerStatName">${safe(player.name)}</span><span class="playerStatMetric"><b>${own.length}</b>Total</span><span class="playerStatMetric"><b>${count('golo')}</b>Golos</span><span class="playerStatMetric"><b>${assists}</b>Assist.</span><span class="playerStatMetric"><b>${keyPasses}</b>P.-chave</span><span class="playerStatMetric"><b>${count('remate')}</b>Remates</span><span class="playerStatMetric"><b>${count('recuperacao')}</b>Recup.</span></div>`;
+    }).join('');
+  };
+
+  function renderV19Events(){
+    const content=$('#arenaContent');if(!content)return;
+    const entries=(state.events||[]).map((event,index)=>({event,index})).reverse();
+    content.innerHTML=`<div class="proEventsView"><header class="proEventsHead"><div><h2>Eventos recentes</h2><p>Minuto, ação, jogador, localização e assistência.</p></div><span class="proEventsCount">${entries.length} ${entries.length===1?'evento':'eventos'}</span></header><div class="proEventsList">${entries.map(({event,index})=>{const key=event.action||'evento',theme=eventTone(key),color=theme==='offense'?'var(--action-offense)':theme==='defense'?'var(--action-defense)':theme==='negative'?'var(--action-negative)':'var(--action-neutral)',team=event.team==='away'?($('#awayName')?.value||'Equipa B'):($('#homeName')?.value||'Equipa A'),assist=event.action==='golo'&&event.assistPlayer?`Assistência: ${event.assistPlayer}`:(event.creationType||'');return `<article class="proEventCard" style="--event-color:${color}"><div class="proEventTime"><strong>${eventClock(event)}</strong><small>${safe(event.period||1)}.º PERÍODO</small></div><div class="proEventIcon">${actionIcon(key)}</div><div class="proEventMain"><span class="proEventTag">${safe(timelineSummary(event))}</span><strong>${safe(event.player||'Equipa')}</strong><small>${safe(team)}</small></div><div class="proEventDetail"><strong>${safe(event.label||timelineSummary(event))}</strong><small class="${assist?'proEventAssist':''}">${safe(assist||'Ação registada no campo')}</small></div><div class="proEventActions"><button type="button" data-pro-edit="${index}" title="Editar">✎</button><button type="button" data-pro-delete="${index}" title="Eliminar">×</button></div></article>`}).join('')||`<div class="proEventsEmpty"><div>${actionIcon('evento')}<br>Ainda não existem eventos.<br>Regista uma ação na arena para ela aparecer aqui.</div></div>`}</div></div>`;
+  }
+  const renderBeforeV19=window.renderArenaTab;
+  window.renderArenaTab=function(tab){
+    if(tab==='eventos'){
+      state.arenaTab='eventos';$$('[data-arena-tab]').forEach(button=>button.classList.toggle('active',button.dataset.arenaTab==='eventos'));$('.legend').style.display='none';renderV19Events();return;
+    }
+    return renderBeforeV19(tab);
+  };
+
+  const originalExport=$('#exportCsv');
+  if(originalExport)originalExport.onclick=()=>{
+    const rows=[['minuto','segundo','periodo','acao','tipo','jogador','numero','assistencia','tipo_assistencia','x','y'],...(state.fieldEvents||[]).map(event=>[event.time,event.gameSecond,event.period,event.action,event.goalType||event.creationType||event.label,event.player,event.playerNumber,event.assistPlayer||'',event.assistType||'',event.x,event.y])];
+    downloadText('stats-acoes-completas.csv',rows.map(row=>row.map(csvEscape).join(';')).join('\n'),'text/csv');
+  };
+
+  const eventChoices=$('#eventChoices');
+  if(eventChoices)eventChoices.innerHTML=arenaActions.filter(action=>!hiddenFromMainMenu.has(action.key)).map(action=>`<button data-event="${safe(action.label)}">${actionIcon(action.key)} <span>${safe(action.label)}</span></button>`).join('');
+  buildTimeline();
+})();
+</script>
 </body></html>
