@@ -93,46 +93,6 @@ html,body{background:#eef1f4!important;color:#101418!important}.app{background:#
 }
 </style>
 
-<style id="statsvision-all-button-blue-animation">
-/* Animação azul aplicada a todos os botões, sem bloquear cliques. */
-button{
-  position:relative;
-  overflow:hidden;
-  isolation:isolate;
-  cursor:pointer;
-  transition:transform .20s ease,border-color .20s ease,box-shadow .20s ease,filter .20s ease!important;
-}
-button::after{
-  content:"";
-  position:absolute;
-  inset:-2px;
-  z-index:2;
-  pointer-events:none;
-  opacity:0;
-  background:linear-gradient(105deg,transparent 8%,rgba(36,107,253,.08) 28%,rgba(36,107,253,.48) 48%,rgba(16,199,223,.20) 66%,transparent 90%);
-  transform:translateX(-145%) skewX(-16deg);
-}
-button:hover,button:focus-visible{
-  transform:translateY(-1px);
-  border-color:#246bfd!important;
-  background:linear-gradient(90deg,#e9f0ff,#e7fbff)!important;
-  color:#124fc4!important;
-  box-shadow:0 7px 18px rgba(36,107,253,.20)!important;
-  filter:saturate(1.04);
-}
-button:hover::after,button:focus-visible::after{
-  opacity:1;
-  animation:allButtonsBlueSweep .72s ease both;
-}
-#sideSettings:hover,#sideSettings:focus-visible{transform:translateX(4px)}
-@keyframes allButtonsBlueSweep{
-  0%{transform:translateX(-145%) skewX(-16deg)}
-  100%{transform:translateX(145%) skewX(-16deg)}
-}
-@media (prefers-reduced-motion:reduce){
-  button,button::after{transition:none!important;animation:none!important}
-}
-</style>
 
 <style id="statsvision-events-feed-v2">
 /* Eventos recentes — leitura rápida e hierarquia visual. */
@@ -145,6 +105,16 @@ button:hover::after,button:focus-visible::after{
 @media(max-width:760px){.eventsFeedCard{grid-template-columns:50px 36px minmax(0,1fr) 54px}.eventsFeedDetail{grid-column:3/5;border-left:0;border-top:1px solid #e4e9ed;padding:7px 0 0}.eventsFeedActions{grid-column:4;grid-row:1}}
 </style>
 
+
+<style id="statsvision-performance-cleanup">
+/* Interação leve: sem varrimentos animados globais nem repinturas pesadas ao mover o rato. */
+button{transition:border-color .12s ease,background-color .12s ease,color .12s ease,transform .12s ease!important;will-change:auto!important}
+button::after{content:none!important;display:none!important;animation:none!important}
+button:hover,button:focus-visible{transform:none!important;filter:none!important;border-color:#246bfd!important;box-shadow:0 2px 7px rgba(36,107,253,.10)!important}
+.heat .panelTitle{gap:6px!important}.heatFilterGroup{display:flex;align-items:center;justify-content:flex-end;gap:4px;min-width:0}.heatFilterGroup .miniSelect{width:auto!important;max-width:96px!important;min-width:0!important;padding:3px 5px!important;font-size:6.5px!important;text-overflow:ellipsis}
+#heatStatFilter{max-width:112px!important}
+@media(max-width:1100px) and (orientation:landscape){.heatFilterGroup{gap:3px}.heatFilterGroup .miniSelect{max-width:72px!important;font-size:5.7px!important;padding-inline:3px!important}#heatStatFilter{max-width:82px!important}}
+</style>
 </head>
 <body>
 
@@ -479,7 +449,7 @@ $('#clearMatch').onclick=()=>{if(confirm('Limpar o jogo atual?')){pauseTimer();s
 $('#fullReset').onclick=()=>{if(confirm('Apagar todos os dados e definições?')){localStorage.removeItem('statsv3');localStorage.removeItem('statsv3_match');location.reload()}};
 $('#restoreTheme').onclick=()=>{$('#setPrimary').value='#36c96f';$('#setSecondary').value='#246bfd';toast('Cores predefinidas repostas')};
 
-load();$('#setPeriodMinutes').value=state.periodMinutes;$('#setMaxPlayers').value=state.maxPlayers;$('#setAttackSide').value=state.attackSide;renderArenaTab('arena');setTimeout(()=>{drawHeat();drawMoment()},50);addEventListener('resize',()=>{drawHeat();drawMoment()});
+load();$('#setPeriodMinutes').value=state.periodMinutes;$('#setMaxPlayers').value=state.maxPlayers;$('#setAttackSide').value=state.attackSide;renderArenaTab('arena');setTimeout(()=>{drawHeat();drawMoment()},50);
 </script>
 
 <style id="statsvision-upgrade">
@@ -573,8 +543,8 @@ function dotsHtml(events,heat=false){return events.map(e=>`<span class="${heat?'
 function renderPlayerDetail(){const content=$('#arenaContent');content.innerHTML=`<div class="contentView analysisDetail"><div><div class="playerSelector">${state.players.map((p,i)=>`<button class="${i===state.selectedPlayer?'active':''}" data-detail-player="${i}">${p.number} ${p.name}</button>`).join('')}</div><div class="detailFilters"><select id="playerPart"><option value="all">Jogo completo</option><option value="1">1.ª parte</option><option value="2">2.ª parte</option></select><select id="playerAction"><option value="all">Todas as ações</option>${arenaActions.map(a=>`<option value="${a.key}">${a.label}</option>`).join('')}</select></div></div><div class="detailBoards"><div class="miniPitchCard"><h3>Heatmap do jogador</h3><div class="miniPitch" id="playerHeatPitch"></div></div><div class="miniPitchCard"><h3>Ações do jogador</h3><div class="miniPitch" id="playerActionPitch"></div></div></div></div>`;const refresh=()=>{const p=state.players[state.selectedPlayer],ev=filteredDetailEvents(p?.number||'all',$('#playerPart').value,$('#playerAction').value);$('#playerHeatPitch').innerHTML=dotsHtml(ev,true);$('#playerActionPitch').innerHTML=dotsHtml(ev,false)};content.querySelectorAll('[data-detail-player]').forEach(b=>b.onclick=()=>{state.selectedPlayer=+b.dataset.detailPlayer;renderPlayerDetail()});$('#playerPart').onchange=refresh;$('#playerAction').onchange=refresh;refresh()}
 function renderTeamDetail(){const content=$('#arenaContent');content.innerHTML=`<div class="contentView analysisDetail"><div class="detailFilters"><select id="teamPart"><option value="all">Jogo completo</option><option value="1">1.ª parte</option><option value="2">2.ª parte</option></select><select id="teamAction"><option value="all">Todas as estatísticas</option>${arenaActions.map(a=>`<option value="${a.key}">${a.label}</option>`).join('')}</select></div><div class="detailBoards"><div class="miniPitchCard"><h3>Arena geral — distribuição</h3><div class="miniPitch" id="teamHeatPitch"></div></div><div class="miniPitchCard"><h3>Arena geral — ações</h3><div class="miniPitch" id="teamActionPitch"></div></div></div></div>`;const refresh=()=>{const ev=filteredDetailEvents('all',$('#teamPart').value,$('#teamAction').value);$('#teamHeatPitch').innerHTML=dotsHtml(ev,true);$('#teamActionPitch').innerHTML=dotsHtml(ev,false)};$('#teamPart').onchange=refresh;$('#teamAction').onchange=refresh;refresh()}
 const originalRender=renderArenaTab;window.renderArenaTab=renderArenaTab=function(tab){if(tab==='eventos'){state.arenaTab=tab;$$('[data-arena-tab]').forEach(b=>b.classList.toggle('active',b.dataset.arenaTab===tab));$('.legend').style.display='none';renderEventsEditable();return}if(tab==='jogador'){state.arenaTab=tab;$$('[data-arena-tab]').forEach(b=>b.classList.toggle('active',b.dataset.arenaTab===tab));$('.legend').style.display='none';renderPlayerDetail();return}if(tab==='equipa'){state.arenaTab=tab;$$('[data-arena-tab]').forEach(b=>b.classList.toggle('active',b.dataset.arenaTab===tab));$('.legend').style.display='none';renderTeamDetail();return}originalRender(tab);ensurePossession();updateAllLive()}
-$('#arenaContent').addEventListener('click',e=>{const del=e.target.closest('[data-delete-event]'),edit=e.target.closest('[data-edit-event]');if(del){const i=+del.dataset.deleteEvent;state.events.splice(i,1);saveState();renderEventsEditable();buildTimeline();updateAllLive()}if(edit){const i=+edit.dataset.editEvent,ev=state.events[i];const type=prompt('Editar evento:',ev.type||'');if(type!==null)ev.type=type;const player=prompt('Jogador:',ev.player||'');if(player!==null)ev.player=player;saveState();renderEventsEditable();buildTimeline()}})
-function updateAllLive(){ensurePossession();updatePossession();updateLiveStats();drawHeat();drawMoment()}
+/* Editor antigo removido: a edição final é feita apenas pela mini arena V20. */
+function updateAllLive(){ensurePossession();updatePossession();updateLiveStats();drawMoment()}
 const oldSaveArena=saveArenaEvent;window.saveArenaEvent=saveArenaEvent=function(subtype=''){oldSaveArena(subtype);updateAllLive()}
 const oldAddEvent=addEvent;window.addEvent=addEvent=function(type){oldAddEvent(type);updateAllLive()}
 $('#clearMatch').addEventListener('click',()=>{state.possession={home:0,contest:0,away:0,log:[]};saveExtra();setTimeout(updateAllLive,0)});
@@ -975,7 +945,7 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
   cleanFieldRenderer();
   mountPossession();
   if(possessionInterval)clearInterval(possessionInterval);
-  possessionInterval=setInterval(refreshPossession,500);
+  possessionInterval=setInterval(()=>{if(!document.hidden)refreshPossession()},1000);
   setTimeout(()=>{configureAttackPanel();mountPossession();refreshPossession()},180);
 })();
 </script>
@@ -1025,13 +995,18 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
     return {pad,fw,fh};
   }
   function filteredHeatEvents(){
-    const filter=$('#heatFilter')?.value||'all';
+    const scopeFilter=$('#heatFilter')?.value||'all';
+    const statFilter=$('#heatStatFilter')?.value||'all';
     const selected=state.players?.[state.selectedPlayer];
     return (state.fieldEvents||[]).filter(event=>{
-      if(filter==='1'||filter==='2')return String(event.period)===filter;
-      if(filter==='player')return selected&&String(event.playerNumber)===String(selected.number);
-      if(filter.startsWith('player:'))return String(event.playerNumber)===filter.slice(7);
-      return true;
+      let scopeMatch=true;
+      if(scopeFilter==='1'||scopeFilter==='2')scopeMatch=String(event.period)===scopeFilter;
+      else if(scopeFilter==='player')scopeMatch=Boolean(selected)&&String(event.playerNumber)===String(selected.number);
+      else if(scopeFilter.startsWith('player:'))scopeMatch=String(event.playerNumber)===scopeFilter.slice(7);
+      if(!scopeMatch)return false;
+      if(statFilter==='all')return true;
+      if(statFilter==='advertencia')return event.action==='advertencia'||event.action==='cartao_amarelo'||event.action==='expulsao'||(Boolean(event.warningType)&&event.warningType!=='Sem advertência');
+      return event.action===statFilter;
     });
   }
   function heatColor(value){
@@ -1092,24 +1067,50 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
     const heatFilter=$('#heatFilter'),attackFilter=$('#attackFilter');
     if(heatTitle)heatTitle.textContent='Heatmap';
     if(attackTitle)attackTitle.textContent='Ataques';
+
+    let heatStatFilter=$('#heatStatFilter');
+    if(heatFilter&&!heatStatFilter){
+      const group=document.createElement('div');group.className='heatFilterGroup';
+      heatFilter.parentNode.insertBefore(group,heatFilter);group.appendChild(heatFilter);
+      heatStatFilter=document.createElement('select');heatStatFilter.id='heatStatFilter';heatStatFilter.className='miniSelect';heatStatFilter.setAttribute('aria-label','Filtrar heatmap por estatística');group.appendChild(heatStatFilter);
+    }
+
     if(heatFilter){
       const current=heatFilter.value||'all',players=(state.players||[]).map(player=>`<option value="player:${String(player.number).replace(/&/g,'&amp;').replace(/"/g,'&quot;')}">${String(player.number).replace(/&/g,'&amp;').replace(/</g,'&lt;')} — ${String(player.name).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</option>`).join('');
-      heatFilter.innerHTML=`<option value="all">Todas as ações</option><option value="1">1.ª parte</option><option value="2">2.ª parte</option><optgroup label="Heatmap individual">${players}</optgroup>`;
+      heatFilter.innerHTML=`<option value="all">Jogo completo</option><option value="1">1.ª parte</option><option value="2">2.ª parte</option><optgroup label="Jogador individual">${players}</optgroup>`;
       heatFilter.value=Array.from(heatFilter.options).some(option=>option.value===current)?current:'all';heatFilter.onchange=null;
     }
+
+    if(heatStatFilter){
+      const current=heatStatFilter.value||'all';
+      const catalog=(window.arenaActions||(typeof arenaActions!=='undefined'?arenaActions:[])||[]),excluded=new Set(['observacao','substituicao','cartao_amarelo','expulsao']),seen=new Set(),options=[];
+      for(const action of catalog){if(!action?.key||excluded.has(action.key)||seen.has(action.key))continue;seen.add(action.key);options.push(`<option value="${String(action.key).replace(/&/g,'&amp;').replace(/"/g,'&quot;')}">${String(action.label||action.key).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</option>`)}
+      heatStatFilter.innerHTML=`<option value="all">Todas as estatísticas</option>${options.join('')}`;
+      heatStatFilter.value=Array.from(heatStatFilter.options).some(option=>option.value===current)?current:'all';
+    }
+
     if(attackFilter){
       const value=['all','1','2'].includes(attackFilter.value)?attackFilter.value:'all';
       attackFilter.innerHTML='<option value="all">Jogo</option><option value="1">1.ª parte</option><option value="2">2.ª parte</option>';
       attackFilter.value=value;
     }
   }
-  let mapsFrame=0;function drawBothMaps(){cancelAnimationFrame(mapsFrame);mapsFrame=requestAnimationFrame(()=>{drawRealHeat();drawAttackLanes()})}
+  let mapsFrame=0,lastMapsKey='';
+  function mapsKey(){
+    const heat=$('#heatCanvas'),attack=$('#attackCanvas'),events=(state.fieldEvents||[]).map(event=>[event.id||'',event.action||'',event.x??'',event.y??'',event.period??'',event.playerNumber??'',event.warningType||'',event.team||'',event.attackSide||''].join(':')).join('|');
+    return [$('#heatFilter')?.value||'all',$('#heatStatFilter')?.value||'all',$('#attackFilter')?.value||'all',heat?.clientWidth||0,heat?.clientHeight||0,attack?.clientWidth||0,attack?.clientHeight||0,state.attackSide||'right',events].join('§');
+  }
+  function drawBothMaps(force=false){
+    const key=mapsKey();if(!force&&key===lastMapsKey)return;lastMapsKey=key;
+    cancelAnimationFrame(mapsFrame);mapsFrame=requestAnimationFrame(()=>{drawRealHeat();drawAttackLanes()});
+  }
   window.drawHeat=drawHeat=drawBothMaps;
-  $('#heatFilter')?.addEventListener('change',()=>{drawBothMaps();toast('Heatmap atualizado')});
-  $('#attackFilter')?.addEventListener('change',()=>{drawBothMaps();toast('Ataques por corredor atualizados')});
-  window.addEventListener('resize',drawBothMaps,{passive:true});
+  $('#heatFilter')?.addEventListener('change',()=>{drawBothMaps(true);toast('Heatmap atualizado')});
+  $('#heatStatFilter')?.addEventListener('change',()=>{drawBothMaps(true);toast('Heatmap por estatística atualizado')});
+  $('#attackFilter')?.addEventListener('change',()=>{drawBothMaps(true);toast('Ataques por corredor atualizados')});
+  window.addEventListener('resize',()=>drawBothMaps(true),{passive:true});
   configureDualMaps();
-  setTimeout(()=>{configureDualMaps();drawBothMaps()},260);
+  setTimeout(()=>{configureDualMaps();drawBothMaps(true)},260);
 })();
 </script>
 
@@ -1284,11 +1285,11 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
   }
 
   window.drawMoment=drawMoment=renderAttackMomentum;
-  window.addEventListener('resize',renderAttackMomentum);
+  let momentumResizeFrame=0;window.addEventListener('resize',()=>{cancelAnimationFrame(momentumResizeFrame);momentumResizeFrame=requestAnimationFrame(renderAttackMomentum)},{passive:true});
   document.querySelector('#periodSelect')?.addEventListener('change',renderAttackMomentum);
   document.querySelector('#homeName')?.addEventListener('input',renderAttackMomentum);
   document.querySelector('#awayName')?.addEventListener('input',renderAttackMomentum);
-  setInterval(renderAttackMomentum,400);
+  setInterval(()=>{if(!document.hidden)renderAttackMomentum()},1000);
   setTimeout(renderAttackMomentum,120);
 })();
 </script>
@@ -1632,7 +1633,7 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
   ['homeName','awayName','periodSelect'].forEach(id=>document.querySelector('#'+id)?.addEventListener('input',()=>renderAnalysisCenter(true)));
   document.querySelector('#clearMatch')?.addEventListener('click',()=>setTimeout(()=>renderAnalysisCenter(true),20));
   document.querySelector('#undoFieldAction')?.addEventListener('click',()=>setTimeout(()=>renderAnalysisCenter(true),20));
-  setInterval(()=>renderAnalysisCenter(false),1800);
+  setInterval(()=>{if(!document.hidden&&document.querySelector('#analysisCenter'))renderAnalysisCenter(false)},4000);
   setTimeout(()=>{mountAnalysisCenter();renderAnalysisCenter(true)},260);
 })();
 </script>
@@ -2363,10 +2364,11 @@ body{min-width:900px}
   }
   normaliseIds();
 
-  window.saveState=saveState=function(){
-    const payload={home:state.home,away:state.away,seconds:state.seconds,players:state.players,events:state.events,homeName:q('#homeName')?.value||'',awayName:q('#awayName')?.value||'',period:q('#periodSelect')?.value||'1',fieldEvents:state.fieldEvents,heatPoints:state.heatPoints,periodMinutes:state.periodMinutes,maxPlayers:state.maxPlayers,attackSide:state.attackSide,plays:state.plays,observations:state.observations,currentPlay:state.currentPlay,playMode:state.playMode,statsSection:state.statsSection,eventFilters:state.eventFilters};
-    try{localStorage.setItem('statsv3_match',JSON.stringify(payload))}catch(error){}
-  };
+  let saveStateTimer=0,pendingStatePayload=null;
+  function buildStatePayload(){return {home:state.home,away:state.away,seconds:state.seconds,players:state.players,events:state.events,homeName:q('#homeName')?.value||'',awayName:q('#awayName')?.value||'',period:q('#periodSelect')?.value||'1',fieldEvents:state.fieldEvents,heatPoints:state.heatPoints,periodMinutes:state.periodMinutes,maxPlayers:state.maxPlayers,attackSide:state.attackSide,plays:state.plays,observations:state.observations,currentPlay:state.currentPlay,playMode:state.playMode,statsSection:state.statsSection,eventFilters:state.eventFilters}}
+  function flushStateSave(){if(!pendingStatePayload)return;const payload=pendingStatePayload;pendingStatePayload=null;clearTimeout(saveStateTimer);saveStateTimer=0;try{localStorage.setItem('statsv3_match',JSON.stringify(payload))}catch(error){}}
+  window.saveState=saveState=function(immediate=false){pendingStatePayload=buildStatePayload();if(immediate){flushStateSave();return}clearTimeout(saveStateTimer);saveStateTimer=setTimeout(flushStateSave,90)};
+  window.addEventListener('pagehide',()=>saveState(true),{capture:true});
 
   /* Catálogo final de ações. */
   const catalog=window.arenaActions||arenaActions;
@@ -2391,6 +2393,7 @@ body{min-width:900px}
     const tools=q('.arenaTools');if(!tools)return;
     q('#togglePlayMode',tools)?.remove();
     if(!q('#clearArenaVisual',tools))tools.insertAdjacentHTML('beforeend','<button type="button" id="clearArenaVisual" class="clearArenaBtn">⌫ Limpar arena</button>');
+    const clearButton=q('#clearArenaVisual',tools);if(clearButton)clearButton.onclick=event=>{event.preventDefault();event.stopPropagation();clearArenaVisual()};
   }
   function playLinkHtml(a,b,klass='playLink'){
     const dx=Number(b.x)-Number(a.x),dy=Number(b.y)-Number(a.y),length=Math.sqrt(dx*dx+dy*dy),angle=Math.atan2(dy,dx)*180/Math.PI;
@@ -2403,12 +2406,6 @@ body{min-width:900px}
     installArenaTools();
   };
   function clearArenaVisual(message='Arena limpa sem remover estatísticas'){state.currentPlay=[];state.playMode=false;state.arenaFlow={x:null,y:null,playerIndex:null,action:null,team:'home'};q('#quickArenaModal')?.classList.remove('show');renderFieldEvents();saveState();toast(message)}
-  function togglePlayMode(){
-    if(state.playMode){state.playMode=false;state.currentPlay=[];toast('Modo de criação de jogadas terminado')}
-    else{state.playMode=true;state.currentPlay=[];toast('Criação de jogada ativa')}
-    installArenaTools();renderFieldEvents();saveState();
-  }
-  document.addEventListener('click',event=>{if(event.target.closest('#togglePlayMode')){event.preventDefault();event.stopPropagation();togglePlayMode()}if(event.target.closest('#clearArenaVisual')){event.preventDefault();event.stopPropagation();clearArenaVisual()}},true);
 
   /* Fluxo de registo próprio/adversário. */
   function resetFlowDetails(){Object.assign(state.arenaFlow,{goalType:null,creationType:null,assistPlayerIndex:null,assistType:null,foulType:null,warningType:'Sem advertência',observationCategory:observationCategories[0],observationText:''})}
@@ -2582,7 +2579,7 @@ body{min-width:900px}
   const analysisOverlay=document.createElement('div');analysisOverlay.id='analysisOnlyOverlay';analysisOverlay.innerHTML='<div class="analysisOnlyDialog" role="dialog" aria-modal="true"><div class="analysisOnlyToolbar"><strong>CENTRO DE ANÁLISE — AMPLIADO</strong><button type="button" id="closeAnalysisOnly">DIMINUIR</button></div><div class="analysisOnlyStage" id="analysisOnlyStage"></div></div>';document.body.appendChild(analysisOverlay);
   let analysisRefresh=null;
   function cloneAnalysisCenter(){const original=q('#analysisCenter'),stage=q('#analysisOnlyStage');if(!original||!stage)return;const clone=original.cloneNode(true);clone.id='analysisCenterExpanded';q('.analysisCenterZoomBtn',clone)?.remove();stage.replaceChildren(clone);qa('[data-analysis-tab]',clone).forEach(button=>button.onclick=()=>{q(`#analysisCenter [data-analysis-tab="${button.dataset.analysisTab}"]`)?.click();setTimeout(cloneAnalysisCenter,30)})}
-  function openAnalysisOnly(){cloneAnalysisCenter();analysisOverlay.classList.add('show');analysisRefresh=setInterval(cloneAnalysisCenter,700)}
+  function openAnalysisOnly(){cloneAnalysisCenter();analysisOverlay.classList.add('show');analysisRefresh=setInterval(()=>{if(!document.hidden)cloneAnalysisCenter()},1200)}
   function closeAnalysisOnly(){analysisOverlay.classList.remove('show');clearInterval(analysisRefresh);analysisRefresh=null}
   function installAnalysisZoom(){const head=q('#analysisCenter .analysisCenterHead');if(!head||q('.analysisCenterZoomBtn',head))return;const button=document.createElement('button');button.type='button';button.className='analysisCenterZoomBtn';button.title='Aumentar apenas o Centro de Análise';button.setAttribute('aria-label','Aumentar apenas o Centro de Análise');button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>';button.onclick=event=>{event.preventDefault();event.stopPropagation();openAnalysisOnly()};head.appendChild(button)}
   q('#closeAnalysisOnly').onclick=closeAnalysisOnly;analysisOverlay.addEventListener('click',event=>{if(event.target===analysisOverlay)closeAnalysisOnly()});document.addEventListener('keydown',event=>{if(event.key==='Escape'&&analysisOverlay.classList.contains('show'))closeAnalysisOnly()});
