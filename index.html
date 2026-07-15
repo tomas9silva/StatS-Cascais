@@ -3269,21 +3269,21 @@ button:hover,button:focus-visible{transform:none!important;filter:none!important
 
 /* Reserva no painel central exatamente o espaço que antes pertencia ao Centro de Análise. */
 #arenaContent.hasMomentumBelow>.pitch{
-  max-height:calc(100% - 190px)!important;
+  max-height:calc(100% - 210px)!important;
 }
 @supports (width:1cqw){
   #arenaContent.hasMomentumBelow>.pitch{
-    width:min(calc(100cqw - 6px),calc((100cqh - 190px) * 105 / 68))!important;
+    width:min(calc(100cqw - 6px),calc((100cqh - 210px) * 105 / 68))!important;
   }
 }
 #arenaContent.hasMomentumBelow>.momentumPanel{
   position:relative!important;
   width:calc(100% - 6px)!important;
   max-width:calc(100% - 6px)!important;
-  height:125px!important;
-  min-height:125px!important;
-  max-height:125px!important;
-  flex:0 0 125px!important;
+  height:145px!important;
+  min-height:145px!important;
+  max-height:145px!important;
+  flex:0 0 145px!important;
   margin:5px 0 0!important;
   padding:0 8px 7px!important;
   display:grid!important;
@@ -3311,7 +3311,7 @@ button:hover,button:focus-visible{transform:none!important;filter:none!important
 
 /* O painel direito dá prioridade ao Centro de Análise. */
 .analytics{
-  grid-template-rows:minmax(122px,.78fr) minmax(92px,.52fr) minmax(225px,1.48fr)!important;
+  grid-template-rows:minmax(122px,.88fr) minmax(92px,.60fr) minmax(200px,1.18fr)!important;
 }
 .analytics>#analysisCenter{
   position:relative!important;
@@ -3322,7 +3322,7 @@ button:hover,button:focus-visible{transform:none!important;filter:none!important
   max-height:none!important;
   margin:0!important;
   display:grid!important;
-  grid-template-rows:36px 31px minmax(0,1fr)!important;
+  grid-template-rows:34px 29px minmax(0,1fr)!important;
   overflow:hidden!important;
   border:1px solid var(--border)!important;
   border-radius:14px!important;
@@ -3393,22 +3393,22 @@ button:hover,button:focus-visible{transform:none!important;filter:none!important
 .analytics>#analysisCenter .zoneCompact{grid-template-columns:72px minmax(0,1fr)!important}
 
 @media(max-width:1100px) and (orientation:landscape){
-  #arenaContent.hasMomentumBelow>.pitch{max-height:calc(100% - 154px)!important}
+  #arenaContent.hasMomentumBelow>.pitch{max-height:calc(100% - 166px)!important}
   @supports (width:1cqw){
-    #arenaContent.hasMomentumBelow>.pitch{width:min(calc(100cqw - 4px),calc((100cqh - 154px) * 105 / 68))!important}
+    #arenaContent.hasMomentumBelow>.pitch{width:min(calc(100cqw - 4px),calc((100cqh - 166px) * 105 / 68))!important}
   }
   #arenaContent.hasMomentumBelow>.momentumPanel{
-    height:101px!important;
-    min-height:101px!important;
-    max-height:101px!important;
-    flex-basis:101px!important;
+    height:113px!important;
+    min-height:113px!important;
+    max-height:113px!important;
+    flex-basis:113px!important;
     padding:0 5px 5px!important;
     grid-template-rows:26px minmax(0,1fr)!important;
   }
   #arenaContent.hasMomentumBelow>.momentumPanel .momentumTitle{height:26px!important}
-  .analytics{grid-template-rows:minmax(105px,.72fr) minmax(80px,.46fr) minmax(190px,1.5fr)!important}
-  .analytics>#analysisCenter{grid-template-rows:31px 27px minmax(0,1fr)!important}
-  .analytics>#analysisCenter .analysisTabs button{height:26px!important;font-size:4.4px!important}
+  .analytics{grid-template-rows:minmax(105px,.76fr) minmax(80px,.46fr) minmax(170px,1.18fr)!important}
+  .analytics>#analysisCenter{grid-template-rows:29px 25px minmax(0,1fr)!important}
+  .analytics>#analysisCenter .analysisTabs button{height:24px!important;font-size:4.4px!important}
 }
 </style>
 </body></html>
