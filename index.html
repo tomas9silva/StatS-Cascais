@@ -2606,42 +2606,82 @@ button:hover,button:focus-visible{transform:none!important;filter:none!important
 
 
 
-<style id="statsvision-attack-momentum-classic-v24">
-/* Attack Momentum clássico: gráfico contínuo em montanha, com leitura imediata. */
-.analytics{grid-template-rows:minmax(0,1fr) .70fr minmax(150px,1.12fr)!important}
-.momentumPanel{padding:0 8px 7px!important;grid-template-rows:36px minmax(0,1fr) 27px!important}
-.momentumCanvasWrap{
-  border:1px solid #d6dee5!important;
-  border-radius:10px!important;
-  background:linear-gradient(180deg,rgba(16,199,223,.055) 0 49.5%,#c7d1da 49.5% 50.5%,rgba(7,27,43,.055) 50.5% 100%)!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.8)!important;
+
+<style id="statsvision-analysis-center-compact-v25">
+/* Centro de Análise novamente compacto: não cresce para ocupar todo o espaço livre. */
+#arenaContent>.analysisCenter{
+  height:105px!important;
+  min-height:105px!important;
+  max-height:105px!important;
+  flex:0 0 105px!important;
+  margin-top:5px!important;
+  grid-template-rows:25px 23px minmax(0,1fr)!important;
 }
-.momentumTeamDot.home{background:#10c7df!important}
-.momentumTeamDot.away{background:#071b2b!important}
-.momentumDirection{font-weight:900!important;color:#52616d!important}
-.momentumLegend{padding-top:5px!important}
-.momentumLegend>span{border-right:1px solid #e2e8ed;padding:0 4px!important}
-.momentumLegend>span:last-child{border-right:0}
-.momentumLegend b{font-size:10px!important}
-.momentumLegend small{font-size:6.2px!important;letter-spacing:.025em}
+#arenaContent.hasAnalysisCenter>.pitch{
+  max-height:calc(100% - 170px)!important;
+}
+@supports (width:1cqw){
+  #arenaContent.hasAnalysisCenter>.pitch{
+    width:min(calc(100cqw - 6px),calc((100cqh - 170px) * 105 / 68))!important;
+  }
+}
+.panelZoomStage>.arenaPanel.panelExpanded #arenaContent>.analysisCenter{
+  min-height:135px!important;
+  max-height:135px!important;
+  height:135px!important;
+  flex:0 0 135px!important;
+}
 @media(max-width:1100px) and (orientation:landscape){
-  .analytics{grid-template-rows:minmax(0,1fr) .64fr minmax(126px,1.08fr)!important}
-  .momentumPanel{grid-template-rows:31px minmax(0,1fr) 23px!important;padding:0 5px 5px!important}
-  .momentumLegend b{font-size:8px!important}.momentumLegend small{font-size:5.3px!important}
+  #arenaContent>.analysisCenter{
+    height:86px!important;
+    min-height:86px!important;
+    max-height:86px!important;
+    flex:0 0 86px!important;
+    margin-top:4px!important;
+    grid-template-rows:23px 20px minmax(0,1fr)!important;
+  }
+  #arenaContent.hasAnalysisCenter>.pitch{max-height:calc(100% - 136px)!important}
+  @supports (width:1cqw){
+    #arenaContent.hasAnalysisCenter>.pitch{
+      width:min(calc(100cqw - 4px),calc((100cqh - 136px) * 105 / 68))!important;
+    }
+  }
+  .panelZoomStage>.arenaPanel.panelExpanded #arenaContent>.analysisCenter{
+    min-height:110px!important;
+    max-height:110px!important;
+    height:110px!important;
+    flex-basis:110px!important;
+  }
 }
 </style>
 
-<script id="statsvision-attack-momentum-classic-v24-script">
+<style id="statsvision-attack-momentum-bars-v25">
+/* Attack Momentum em barras verticais, acima e abaixo da linha central, ao estilo SofaScore. */
+.analytics{grid-template-rows:minmax(0,1fr) .72fr minmax(128px,.96fr)!important}
+.momentumPanel{padding:0 7px 6px!important;display:grid!important;grid-template-rows:34px minmax(0,1fr) 25px!important;overflow:hidden!important}
+.momentumTitle{height:34px!important;padding:0 3px!important}
+.momentumTitle>span:first-child{font-size:10px!important;letter-spacing:.035em;text-transform:none!important;color:#101418!important}
+.momentumDirection{display:flex!important;align-items:center!important;gap:4px!important;color:#66717c!important;font-size:7px!important;font-weight:900!important;white-space:nowrap!important}
+.momentumTeamDot{display:inline-block!important;width:7px!important;height:7px!important;border-radius:2px!important}
+.momentumTeamDot.home{background:#10c7df!important}.momentumTeamDot.away{background:#071b2b!important}
+.momentumCanvasWrap{position:relative!important;min-height:0!important;overflow:hidden!important;border:1px solid #d6dee5!important;border-radius:9px!important;background:#fbfcfd!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.85)!important}
+.momentumPanel canvas{display:block!important;width:100%!important;height:100%!important;min-height:0!important}
+.momentumLegend{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:4px!important;align-items:center!important;padding-top:4px!important}
+.momentumLegend>span{min-width:0!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:3px!important;color:#66717c!important;font-size:6px!important;font-weight:900!important;white-space:nowrap!important;border-right:1px solid #e2e8ed!important}
+.momentumLegend>span:last-child{border-right:0!important}.momentumLegend b{font-size:9px!important;color:#101418!important}.momentumLegend small{font-size:6px!important;color:#66717c!important;font-weight:900!important}
+@media(max-width:1100px) and (orientation:landscape){
+  .analytics{grid-template-rows:minmax(0,1fr) .66fr minmax(112px,.94fr)!important}
+  .momentumPanel{grid-template-rows:29px minmax(0,1fr) 21px!important;padding:0 4px 4px!important}
+  .momentumTitle{height:29px!important}.momentumTitle>span:first-child{font-size:8px!important}.momentumDirection{font-size:6px!important}
+  .momentumLegend>span,.momentumLegend small{font-size:5px!important}.momentumLegend b{font-size:7px!important}
+}
+</style>
+
+<script id="statsvision-attack-momentum-bars-v25-script">
 (()=>{
   const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
   const HOME='#10c7df';
   const AWAY='#071b2b';
-
-  function withAlpha(hex,alpha){
-    const value=String(hex||'').replace('#','');
-    if(value.length!==6)return hex;
-    return `rgba(${parseInt(value.slice(0,2),16)},${parseInt(value.slice(2,4),16)},${parseInt(value.slice(4,6),16)},${alpha})`;
-  }
 
   function configuredPeriods(){
     const setting=Number(document.querySelector('#setPeriods')?.value);
@@ -2705,115 +2745,91 @@ button:hover,button:focus-visible{transform:none!important;filter:none!important
     let previous=0;
     const values=home.map((homeSeconds,index)=>{
       const awaySeconds=away[index],total=homeSeconds+awaySeconds;
-      if(total<=0){previous*=.68;return {value:previous,total:0};}
+      if(total<=0){previous*=.34;return {value:Math.abs(previous)<.02?0:previous,total:0};}
       const balance=(homeSeconds-awaySeconds)/Math.max(1,total);
       const activity=clamp(total/(binSeconds*.62),0,1);
-      const raw=balance*(.38+.62*activity);
-      previous=previous*.42+raw*.58;
+      const raw=balance*(.34+.66*activity);
+      previous=previous*.30+raw*.70;
       return {value:clamp(previous,-1,1),total};
     });
 
-    /* Os remates e golos criam picos claros, como no modelo anterior. */
     (state.fieldEvents||[]).forEach(event=>{
       if(event.action!=='remate'&&event.action!=='golo')return;
       const second=absoluteEventSecond(event,periodSeconds,periods);
       const index=clamp(Math.floor(second/binSeconds),0,binCount-1);
       const sign=eventTeam(event)==='away'?-1:1;
-      const boost=event.action==='golo'?.82:.48;
+      const boost=event.action==='golo'?.88:.48;
       values[index].value=clamp(values[index].value+sign*boost,-1,1);
-      values[index].event=event.action;
-      values[index].eventTeam=sign>0?'home':'away';
       values[index].total=Math.max(values[index].total,1);
-      if(index>0)values[index-1].value=clamp(values[index-1].value+sign*boost*.28,-1,1);
-      if(index<binCount-1)values[index+1].value=clamp(values[index+1].value+sign*boost*.36,-1,1);
+      if(index>0)values[index-1].value=clamp(values[index-1].value+sign*boost*.24,-1,1);
+      if(index<binCount-1)values[index+1].value=clamp(values[index+1].value+sign*boost*.30,-1,1);
     });
 
-    /* Suavização curta: mantém picos, mas elimina serrilhado. */
     return values.map((point,index,array)=>{
       const before=array[index-1]?.value??point.value;
       const after=array[index+1]?.value??point.value;
-      return {...point,value:clamp(before*.18+point.value*.64+after*.18,-1,1)};
+      return {...point,value:clamp(before*.12+point.value*.76+after*.12,-1,1)};
     });
   }
 
-  function drawGrid(ctx,width,height,padX,padY,mid,periods){
-    const chartW=width-padX*2,chartH=height-padY*2;
-    ctx.save();
-    ctx.strokeStyle='rgba(111,128,141,.16)';ctx.lineWidth=1;
-    [0.25,0.75].forEach(ratio=>{const y=padY+chartH*ratio;ctx.beginPath();ctx.moveTo(padX,y);ctx.lineTo(width-padX,y);ctx.stroke()});
-    for(let period=1;period<periods;period++){
-      const x=padX+chartW*period/periods;
-      ctx.setLineDash([3,3]);ctx.strokeStyle='rgba(82,97,109,.36)';ctx.beginPath();ctx.moveTo(x,padY);ctx.lineTo(x,height-padY);ctx.stroke();ctx.setLineDash([]);
-    }
-    ctx.strokeStyle='#8fa0ad';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(padX,mid);ctx.lineTo(width-padX,mid);ctx.stroke();
-    ctx.restore();
+  function roundedBar(ctx,x,y,w,h,r){
+    const radius=Math.max(0,Math.min(r,w/2,Math.abs(h)/2));
+    const top=h>=0?y:y+h,bottom=h>=0?y+h:y;
+    ctx.beginPath();
+    ctx.moveTo(x+radius,top);
+    ctx.arcTo(x+w,top,x+w,bottom,radius);
+    ctx.arcTo(x+w,bottom,x,bottom,radius);
+    ctx.arcTo(x,bottom,x,top,radius);
+    ctx.arcTo(x,top,x+w,top,radius);
+    ctx.closePath();
+    ctx.fill();
   }
 
-  function smoothPath(ctx,points){
-    if(!points.length)return;
-    ctx.moveTo(points[0].x,points[0].y);
-    for(let index=1;index<points.length;index++){
-      const current=points[index],previous=points[index-1];
-      const midX=(previous.x+current.x)/2,midY=(previous.y+current.y)/2;
-      ctx.quadraticCurveTo(previous.x,previous.y,midX,midY);
-    }
-    const last=points[points.length-1];ctx.lineTo(last.x,last.y);
-  }
-
-  function drawMountain(ctx,points,mid,color,positive,height){
-    const sidePoints=points.map(point=>({x:point.x,y:positive?Math.min(mid,point.y):Math.max(mid,point.y)}));
-    ctx.save();
-    ctx.beginPath();ctx.rect(0,positive?0:mid,(sidePoints[sidePoints.length-1]?.x||0)+20,positive?mid:height-mid);ctx.clip();
-    const gradient=ctx.createLinearGradient(0,positive?8:mid,0,positive?mid:height-8);
-    gradient.addColorStop(0,withAlpha(color,.72));gradient.addColorStop(1,withAlpha(color,.16));
-    ctx.beginPath();smoothPath(ctx,sidePoints);ctx.lineTo(sidePoints[sidePoints.length-1].x,mid);ctx.lineTo(sidePoints[0].x,mid);ctx.closePath();ctx.fillStyle=gradient;ctx.fill();
-    ctx.beginPath();smoothPath(ctx,sidePoints);ctx.strokeStyle=color;ctx.lineWidth=2.4;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke();
-    ctx.restore();
-  }
-
-  function roundedLabel(ctx,x,y,text,fill){
-    const radius=6,w=16,h=16,left=x-w/2,top=y-h/2;
-    ctx.beginPath();ctx.moveTo(left+radius,top);ctx.arcTo(left+w,top,left+w,top+h,radius);ctx.arcTo(left+w,top+h,left,top+h,radius);ctx.arcTo(left,top+h,left,top,radius);ctx.arcTo(left,top,left+w,top,radius);ctx.closePath();ctx.fillStyle=fill;ctx.fill();
-    ctx.fillStyle='#fff';ctx.font='950 8px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,x,y+.3);
-  }
-
-  function renderClassicMomentum(){
+  function renderBarsMomentum(){
     const canvas=document.querySelector('#momentCanvas');if(!canvas)return;
     const bounds=canvas.getBoundingClientRect();
     const width=Math.max(1,bounds.width),height=Math.max(1,bounds.height),dpr=window.devicePixelRatio||1;
     canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);
     const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);
 
-    const padX=7,padY=7,chartW=Math.max(1,width-padX*2),chartH=Math.max(1,height-padY*2),mid=padY+chartH/2;
+    const padX=6,padY=6,chartW=Math.max(1,width-padX*2),chartH=Math.max(1,height-padY*2),mid=padY+chartH/2;
     const periods=configuredPeriods();
-    const binCount=clamp(Math.round(chartW/11),20,38);
+
+    ctx.fillStyle='rgba(16,199,223,.035)';ctx.fillRect(padX,padY,chartW,chartH/2);
+    ctx.fillStyle='rgba(7,27,43,.028)';ctx.fillRect(padX,mid,chartW,chartH/2);
+    ctx.strokeStyle='rgba(111,128,141,.14)';ctx.lineWidth=1;
+    [0.25,0.75].forEach(ratio=>{const y=padY+chartH*ratio;ctx.beginPath();ctx.moveTo(padX,y);ctx.lineTo(width-padX,y);ctx.stroke()});
+    for(let period=1;period<periods;period++){
+      const x=padX+chartW*period/periods;
+      ctx.setLineDash([3,3]);ctx.strokeStyle='rgba(82,97,109,.30)';ctx.beginPath();ctx.moveTo(x,padY);ctx.lineTo(x,height-padY);ctx.stroke();ctx.setLineDash([]);
+    }
+    ctx.strokeStyle='#8fa0ad';ctx.lineWidth=1.35;ctx.beginPath();ctx.moveTo(padX,mid);ctx.lineTo(width-padX,mid);ctx.stroke();
+
+    const binCount=clamp(Math.floor(chartW/5.2),30,68);
     const series=buildSeries(binCount);
-    const maxValue=Math.max(.42,...series.map(point=>Math.abs(point.value)));
-    const amplitude=chartH/2-12;
-    const points=series.map((point,index)=>({
-      x:padX+(index/(Math.max(1,binCount-1)))*chartW,
-      y:mid-(point.value/maxValue)*amplitude,
-      ...point
-    }));
+    const maxValue=Math.max(.40,...series.map(point=>Math.abs(point.value)));
+    const slot=chartW/binCount;
+    const gap=Math.min(1.5,slot*.24);
+    const barWidth=Math.max(1.2,slot-gap);
+    const maxHeight=chartH/2-11;
 
-    drawGrid(ctx,width,height,padX,padY,mid,periods);
-    drawMountain(ctx,points,mid,HOME,true,height);
-    drawMountain(ctx,points,mid,AWAY,false,height);
-
-    ctx.save();ctx.font='950 7px system-ui';ctx.textBaseline='top';ctx.fillStyle=HOME;ctx.textAlign='left';ctx.fillText('EQUIPA A',padX+4,padY+3);ctx.textBaseline='bottom';ctx.fillStyle=AWAY;ctx.fillText('EQUIPA B',padX+4,height-padY-3);ctx.restore();
-
-    points.forEach(point=>{
-      if(!point.event)return;
-      const isHome=point.eventTeam==='home';
-      const markerY=clamp(point.y+(isHome?-8:8),padY+10,height-padY-10);
-      roundedLabel(ctx,point.x,markerY,point.event==='golo'?'G':'R',point.event==='golo'?'#16a34a':'#f59e0b');
+    series.forEach((point,index)=>{
+      if(Math.abs(point.value)<.018)return;
+      const x=padX+index*slot+gap/2;
+      const magnitude=Math.max(2.2,Math.abs(point.value)/maxValue*maxHeight);
+      const isHome=point.value>=0;
+      ctx.fillStyle=isHome?HOME:AWAY;
+      roundedBar(ctx,x,mid,barWidth,isHome?-magnitude:magnitude,Math.min(1.5,barWidth/2));
     });
 
-    const hasData=series.some(point=>point.total>0||point.event);
+    ctx.font='950 6.5px system-ui';ctx.textAlign='left';ctx.fillStyle=HOME;ctx.textBaseline='top';ctx.fillText('EQUIPA A',padX+3,padY+2);
+    ctx.fillStyle=AWAY;ctx.textBaseline='bottom';ctx.fillText('EQUIPA B',padX+3,height-padY-2);
+
+    const hasData=series.some(point=>point.total>0||Math.abs(point.value)>.04);
     if(!hasData){
-      const label='Inicia a posse da Equipa A ou B';ctx.font='850 8px system-ui';const textWidth=ctx.measureText(label).width;
-      const x=width/2-textWidth/2-10,y=mid-11,w=textWidth+20,h=22,r=7;
-      ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();ctx.fillStyle='rgba(255,255,255,.94)';ctx.fill();ctx.strokeStyle='#d6dee5';ctx.stroke();ctx.fillStyle='#66717c';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,width/2,mid);
+      const label='Inicia a posse da Equipa A ou B';ctx.font='850 7px system-ui';const textWidth=ctx.measureText(label).width;
+      const x=width/2-textWidth/2-9,y=mid-10,w=textWidth+18,h=20,r=7;
+      ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();ctx.fillStyle='rgba(255,255,255,.95)';ctx.fill();ctx.strokeStyle='#d6dee5';ctx.stroke();ctx.fillStyle='#66717c';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,width/2,mid);
     }
 
     const events=state.fieldEvents||[];
@@ -2824,12 +2840,12 @@ button:hover,button:focus-visible{transform:none!important;filter:none!important
     if(shotsNode)shotsNode.textContent=shots;if(goalsNode)goalsNode.textContent=goals;if(redsNode)redsNode.textContent=reds;
   }
 
-  window.drawMoment=drawMoment=renderClassicMomentum;
+  window.drawMoment=drawMoment=renderBarsMomentum;
   let resizeFrame=0;
-  window.addEventListener('resize',()=>{cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(renderClassicMomentum)},{passive:true});
-  document.querySelector('#periodSelect')?.addEventListener('change',renderClassicMomentum);
-  setInterval(()=>{if(!document.hidden)renderClassicMomentum()},1000);
-  setTimeout(renderClassicMomentum,180);
+  window.addEventListener('resize',()=>{cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(renderBarsMomentum)},{passive:true});
+  document.querySelector('#periodSelect')?.addEventListener('change',renderBarsMomentum);
+  setInterval(()=>{if(!document.hidden)renderBarsMomentum()},1000);
+  setTimeout(renderBarsMomentum,180);
 })();
 </script>
 
