@@ -1948,4 +1948,288 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
   buildTimeline();
 })();
 </script>
+
+
+<style id="statsvision-panel-zoom-style">
+/* Ampliação dos cartões da página principal num pop-up, sem mudar de página. */
+.zoomablePanel{position:relative!important}
+.zoomablePanel>.panelTitle>:last-child{margin-right:29px!important}
+.zoomablePanel.arenaPanel>.tabs{padding-right:39px!important}
+.panelZoomBtn{
+  position:absolute!important;
+  top:7px!important;
+  right:7px!important;
+  z-index:35!important;
+  width:23px!important;
+  height:23px!important;
+  min-width:23px!important;
+  padding:0!important;
+  display:grid!important;
+  place-items:center!important;
+  border:1px solid #cfd8df!important;
+  border-radius:7px!important;
+  background:rgba(255,255,255,.96)!important;
+  color:#233340!important;
+  box-shadow:0 3px 9px rgba(20,31,43,.10)!important;
+  transform:none!important;
+  filter:none!important;
+}
+.panelZoomBtn:hover,.panelZoomBtn:focus-visible{
+  border-color:var(--secondary)!important;
+  background:#edf4ff!important;
+  color:var(--secondary)!important;
+  box-shadow:0 5px 13px rgba(36,107,253,.18)!important;
+  transform:translateY(-1px)!important;
+}
+.panelZoomBtn::after,.panelZoomToolbar button::after{display:none!important}
+.panelZoomBtn svg{width:12px;height:12px;display:block;pointer-events:none}
+.panelZoomBtn .collapseIcon{display:none}
+.panelExpanded>.panelZoomBtn .expandIcon{display:none}
+.panelExpanded>.panelZoomBtn .collapseIcon{display:block}
+
+#panelZoomOverlay{
+  position:fixed;
+  inset:0;
+  z-index:2600;
+  display:none;
+  place-items:center;
+  padding:clamp(8px,2vw,22px);
+  background:rgba(6,18,29,.74);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+#panelZoomOverlay.show{display:grid}
+.panelZoomDialog{
+  width:min(1480px,97vw);
+  height:min(920px,95vh);
+  min-width:0;
+  min-height:0;
+  display:grid;
+  grid-template-rows:44px minmax(0,1fr);
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.35);
+  border-radius:18px;
+  background:#eef1f4;
+  box-shadow:0 28px 80px rgba(0,0,0,.38);
+}
+.panelZoomToolbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:0 10px 0 16px;
+  border-bottom:1px solid #d8dee4;
+  background:#fff;
+}
+.panelZoomToolbar strong{font-size:11px;font-weight:950;letter-spacing:.045em;color:#101418;text-transform:uppercase}
+.panelZoomToolbarActions{display:flex;align-items:center;gap:7px}
+.panelZoomToolbar button{
+  height:30px!important;
+  padding:0 11px!important;
+  border:1px solid #d2dbe2!important;
+  border-radius:8px!important;
+  background:#fff!important;
+  color:#263744!important;
+  box-shadow:none!important;
+  transform:none!important;
+  font-size:8px!important;
+  font-weight:950!important;
+  letter-spacing:.04em;
+}
+.panelZoomToolbar button:hover,.panelZoomToolbar button:focus-visible{border-color:var(--secondary)!important;background:#edf4ff!important;color:var(--secondary)!important;transform:none!important}
+.panelZoomClose{width:31px!important;padding:0!important;font-size:17px!important;line-height:1!important}
+.panelZoomStage{min-width:0;min-height:0;padding:10px;overflow:hidden;background:#eef1f4}
+.panelZoomStage>.panel.panelExpanded{
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-width:none!important;
+  max-height:none!important;
+  margin:0!important;
+  border-radius:14px!important;
+  box-shadow:0 10px 30px rgba(20,31,43,.12)!important;
+}
+.panelZoomStage>.panel.panelExpanded>.panelZoomBtn{top:10px!important;right:10px!important;width:28px!important;height:28px!important}
+.panelZoomStage>.panel.panelExpanded>.panelZoomBtn svg{width:14px;height:14px}
+.panelZoomStage>.panel.panelExpanded>.panelTitle>:last-child{margin-right:38px!important}
+.panelZoomStage>.panel.panelExpanded.arenaPanel>.tabs{padding-right:48px!important}
+
+/* Arena ampliada: mantém campo, posse e Centro de Análise no mesmo pop-up. */
+.panelZoomStage>.arenaPanel.panelExpanded{grid-template-rows:48px 48px minmax(0,1fr) 34px!important}
+.panelZoomStage>.arenaPanel.panelExpanded #arenaContent.pitchWrap,
+.panelZoomStage>.arenaPanel.panelExpanded #arenaContent.hasAnalysisCenter{
+  padding:8px 10px 6px!important;
+  overflow:auto!important;
+  align-items:center!important;
+}
+.panelZoomStage>.arenaPanel.panelExpanded #arenaContent>.pitch{
+  width:min(72%,760px)!important;
+  max-width:760px!important;
+  max-height:48%!important;
+  height:auto!important;
+}
+.panelZoomStage>.arenaPanel.panelExpanded #arenaContent>.possessionBar{width:min(92%,1040px)!important;padding-top:9px!important}
+.panelZoomStage>.arenaPanel.panelExpanded #arenaContent>.analysisCenter{
+  width:min(96%,1180px)!important;
+  min-height:190px!important;
+  flex:1 0 190px!important;
+  margin-top:10px!important;
+}
+.panelZoomStage>.arenaPanel.panelExpanded .possessionBtn{min-height:62px!important}
+.panelZoomStage>.arenaPanel.panelExpanded .analysisCenterHead strong{font-size:11px!important}
+.panelZoomStage>.arenaPanel.panelExpanded .analysisTabs button{font-size:8px!important;padding:0 13px!important}
+.panelZoomStage>.arenaPanel.panelExpanded .analysisCenterBody{padding:9px!important}
+.panelZoomStage>.arenaPanel.panelExpanded .analysisOverviewGrid{min-height:150px!important}
+
+/* Melhor aproveitamento do espaço nos restantes cartões ampliados. */
+.panelZoomStage>.players.panelExpanded{padding:0 16px 16px!important}
+.panelZoomStage>.players.panelExpanded .panelTitle{height:52px!important;font-size:13px!important}
+.panelZoomStage>.players.panelExpanded .playerTabs{grid-template-columns:180px 180px!important;justify-content:start!important;margin-bottom:12px!important}
+.panelZoomStage>.players.panelExpanded .playerTabs button{height:38px!important;font-size:10px!important}
+.panelZoomStage>.players.panelExpanded .playerList{grid-template-columns:repeat(auto-fit,minmax(245px,1fr))!important;align-content:start!important;gap:10px!important}
+.panelZoomStage>.players.panelExpanded .player{height:46px!important;grid-template-columns:34px minmax(0,1fr) 70px 32px!important;font-size:11px!important;padding:0 10px!important}
+.panelZoomStage>.players.panelExpanded .num{width:28px!important;height:28px!important}
+.panelZoomStage>.players.panelExpanded .player button{width:28px!important;height:28px!important}
+.panelZoomStage>.players.panelExpanded .addPlayer{height:42px!important;font-size:10px!important}
+
+.panelZoomStage>.mapMini.panelExpanded{padding:0 18px 18px!important;display:flex!important;flex-direction:column!important}
+.panelZoomStage>.mapMini.panelExpanded .panelTitle{height:54px!important;flex-basis:54px!important;padding:0 8px!important}
+.panelZoomStage>.mapMini.panelExpanded .panelTitle span{font-size:13px!important}
+.panelZoomStage>.mapMini.panelExpanded .miniSelect{height:34px!important;max-width:150px!important;font-size:10px!important;padding:0 9px!important}
+.panelZoomStage>.mapMini.panelExpanded canvas{width:min(100%,1080px)!important;height:auto!important;max-width:1080px!important;max-height:calc(100% - 6px)!important;aspect-ratio:105/68!important;margin:auto!important}
+
+.panelZoomStage>.quick.panelExpanded{padding:0 18px 18px!important;display:grid!important;grid-template-rows:54px minmax(0,1fr)!important}
+.panelZoomStage>.quick.panelExpanded .panelTitle{height:54px!important;font-size:13px!important}
+.panelZoomStage>.quick.panelExpanded .quickGrid{height:auto!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px!important}
+.panelZoomStage>.quick.panelExpanded .stat{border-radius:14px!important}
+.panelZoomStage>.quick.panelExpanded .stat b{font-size:clamp(30px,5vw,58px)!important}
+.panelZoomStage>.quick.panelExpanded .stat small{font-size:11px!important}
+
+.panelZoomStage>.momentumPanel.panelExpanded{padding:0 18px 16px!important;grid-template-rows:54px minmax(0,1fr) 58px!important}
+.panelZoomStage>.momentumPanel.panelExpanded .momentumTitle{height:54px!important}
+.panelZoomStage>.momentumPanel.panelExpanded .momentumTitle>span:first-child{font-size:14px!important}
+.panelZoomStage>.momentumPanel.panelExpanded .momentumDirection{font-size:9px!important}
+.panelZoomStage>.momentumPanel.panelExpanded .momentumLegend b{font-size:18px!important}
+.panelZoomStage>.momentumPanel.panelExpanded .momentumLegend small{font-size:8px!important}
+
+.panelZoomStage>.timeline.panelExpanded{padding:0 16px 16px!important;display:grid!important;grid-template-rows:52px minmax(0,1fr)!important}
+.panelZoomStage>.timeline.panelExpanded .panelTitle{height:52px!important;font-size:13px!important}
+.panelZoomStage>.timeline.panelExpanded .timelineTrack{height:100%!important;min-height:0!important;overflow:auto!important;justify-content:flex-start!important;gap:18px!important;padding:20px!important}
+.panelZoomStage>.timeline.panelExpanded .tick{min-width:150px!important;font-size:9px!important}
+.panelZoomStage>.timeline.panelExpanded .timelineCard{min-width:140px!important}
+
+@media(max-width:1100px) and (orientation:landscape){
+  #panelZoomOverlay{padding:6px}
+  .panelZoomDialog{width:98vw;height:96vh;grid-template-rows:38px minmax(0,1fr);border-radius:13px}
+  .panelZoomToolbar{padding-left:11px}.panelZoomToolbar strong{font-size:9px}
+  .panelZoomToolbar button{height:27px!important;font-size:7px!important}
+  .panelZoomStage{padding:6px}
+  .panelZoomStage>.arenaPanel.panelExpanded{grid-template-rows:40px 38px minmax(0,1fr) 26px!important}
+  .panelZoomStage>.arenaPanel.panelExpanded #arenaContent>.pitch{width:min(62%,600px)!important;max-height:45%!important}
+  .panelZoomStage>.arenaPanel.panelExpanded #arenaContent>.analysisCenter{min-height:135px!important;flex-basis:135px!important}
+  .panelZoomStage>.arenaPanel.panelExpanded .possessionBtn{min-height:46px!important}
+  .panelZoomStage>.quick.panelExpanded .quickGrid{gap:8px!important}
+  .panelZoomStage>.players.panelExpanded .playerList{grid-template-columns:repeat(auto-fit,minmax(205px,1fr))!important}
+}
+</style>
+
+<script id="statsvision-panel-zoom-script">
+(()=>{
+  const iconExpand='<svg class="expandIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const iconCollapse='<svg class="collapseIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  let activePanel=null,placeholder=null;
+
+  const overlay=document.createElement('div');
+  overlay.id='panelZoomOverlay';
+  overlay.setAttribute('aria-hidden','true');
+  overlay.innerHTML='<div class="panelZoomDialog" role="dialog" aria-modal="true" aria-labelledby="panelZoomTitle"><div class="panelZoomToolbar"><strong id="panelZoomTitle">AMPLIAR PAINEL</strong><div class="panelZoomToolbarActions"><button type="button" id="panelZoomMinimize">DIMINUIR</button><button type="button" class="panelZoomClose" id="panelZoomClose" aria-label="Fechar">×</button></div></div><div class="panelZoomStage" id="panelZoomStage"></div></div>';
+  document.body.appendChild(overlay);
+  const stage=overlay.querySelector('#panelZoomStage');
+  const title=overlay.querySelector('#panelZoomTitle');
+
+  function getPanelTitle(panel){
+    if(panel.classList.contains('arenaPanel'))return 'Arena, posse e Centro de Análise';
+    if(panel.classList.contains('players'))return 'Equipa e minutos dos jogadores';
+    if(panel.classList.contains('heat'))return 'Heatmap';
+    if(panel.classList.contains('attackMap'))return 'Ataques por corredor';
+    if(panel.classList.contains('quick'))return 'Estatísticas rápidas';
+    if(panel.classList.contains('moment'))return 'Attack Momentum';
+    if(panel.classList.contains('timeline'))return 'Linha do tempo';
+    return panel.querySelector('.panelTitle span:first-child')?.textContent?.trim()||'Painel';
+  }
+
+  function redraw(){
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      try{window.dispatchEvent(new Event('resize'))}catch(error){}
+      try{if(typeof window.drawHeat==='function')window.drawHeat()}catch(error){}
+      try{if(typeof window.drawMoment==='function')window.drawMoment()}catch(error){}
+    }));
+  }
+
+  function openPanel(panel){
+    if(!panel||activePanel===panel)return;
+    if(activePanel)closePanel();
+    placeholder=document.createComment('posição original do painel ampliado');
+    panel.parentNode.insertBefore(placeholder,panel);
+    activePanel=panel;
+    title.textContent=getPanelTitle(panel);
+    panel.classList.add('panelExpanded');
+    const zoomButton=panel.querySelector(':scope > .panelZoomBtn');
+    if(zoomButton){zoomButton.setAttribute('aria-label','Diminuir painel');zoomButton.title='Diminuir';}
+    stage.appendChild(panel);
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden','false');
+    document.documentElement.classList.add('panelZoomOpen');
+    redraw();
+  }
+
+  function closePanel(){
+    if(!activePanel)return;
+    const panel=activePanel;
+    if(placeholder?.parentNode)placeholder.parentNode.insertBefore(panel,placeholder);
+    placeholder?.remove();
+    panel.classList.remove('panelExpanded');
+    const zoomButton=panel.querySelector(':scope > .panelZoomBtn');
+    if(zoomButton){zoomButton.setAttribute('aria-label','Aumentar painel');zoomButton.title='Aumentar';}
+    activePanel=null;placeholder=null;
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden','true');
+    document.documentElement.classList.remove('panelZoomOpen');
+    redraw();
+  }
+
+  function addZoomButton(panel){
+    if(!panel||panel.dataset.zoomReady==='1'||panel.closest('.modal')||panel.closest('#panelZoomOverlay'))return;
+    panel.dataset.zoomReady='1';
+    panel.classList.add('zoomablePanel');
+    const button=document.createElement('button');
+    button.type='button';
+    button.className='panelZoomBtn';
+    button.setAttribute('aria-label','Aumentar painel');
+    button.title='Aumentar';
+    button.innerHTML=iconExpand+iconCollapse;
+    button.addEventListener('click',event=>{
+      event.preventDefault();event.stopPropagation();
+      panel.classList.contains('panelExpanded')?closePanel():openPanel(panel);
+    });
+    panel.appendChild(button);
+  }
+
+  function install(root=document){
+    root.querySelectorAll?.('#mainApp .main .panel').forEach(addZoomButton);
+  }
+
+  overlay.querySelector('#panelZoomMinimize').addEventListener('click',closePanel);
+  overlay.querySelector('#panelZoomClose').addEventListener('click',closePanel);
+  overlay.addEventListener('click',event=>{if(event.target===overlay)closePanel()});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&activePanel)closePanel()});
+  document.querySelectorAll('[data-view],#sideSettings').forEach(button=>button.addEventListener('click',()=>{if(activePanel)closePanel()}));
+
+  install();
+  const app=document.querySelector('#mainApp');
+  if(app)new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{if(node.nodeType===1){if(node.matches?.('.panel'))addZoomButton(node);install(node)}}))).observe(app,{childList:true,subtree:true});
+})();
+</script>
+
 </body></html>
