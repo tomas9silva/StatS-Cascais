@@ -2948,4 +2948,53 @@ button:hover,button:focus-visible{transform:none!important;filter:none!important
 }
 </style>
 
+
+<style id="statsvision-analysis-center-fill-space-v29">
+/* Centro de Análise: usa toda a área disponível e elimina o scroll interno. */
+.analysisCenterBody{
+  overflow:hidden!important;
+  display:grid!important;
+  grid-template-rows:minmax(0,1fr)!important;
+  align-items:stretch!important;
+}
+.analysisCenterBody>div{
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  align-self:stretch!important;
+}
+.liveSummaryGrid{
+  height:100%!important;
+  min-height:0!important;
+  align-items:stretch!important;
+  grid-auto-rows:minmax(0,1fr)!important;
+}
+.liveSummaryCard{
+  height:100%!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  align-content:stretch!important;
+  grid-template-rows:auto minmax(0,1fr) auto!important;
+}
+.liveSummaryNarrative p,.liveSummaryImprove p{
+  align-self:start!important;
+}
+.liveSummaryItems{
+  align-content:start!important;
+  overflow:hidden!important;
+}
+.analysisPane,.analysisOverviewGrid,.patternCards,.alertPane{
+  height:100%!important;
+  min-height:0!important;
+  overflow:hidden!important;
+}
+.zoneLargeCard,.analysisListCard,.riskGaugeCard,.alertList,.patternCard,.analysisMini{
+  min-height:0!important;
+  overflow:hidden!important;
+}
+@media(max-width:1100px) and (orientation:landscape){
+  .analysisCenterBody{padding:4px!important}
+  .liveSummaryCard{padding:5px 6px!important}
+}
+</style>
 </body></html>
