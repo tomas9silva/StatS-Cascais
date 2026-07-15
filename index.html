@@ -3048,128 +3048,68 @@ button:hover,button:focus-visible{transform:none!important;filter:none!important
 }
 </style>
 
-<style id="statsvision-analysis-center-full-inner-space-v31">
-/* V31 — todo o conteúdo fica dentro do quadrado do Centro de Análise e usa-o por completo. */
+<style id="statsvision-analysis-center-main-scroll-v31">
+/* V31 — correção apenas na página principal; a ampliação mantém o comportamento anterior. */
 #arenaContent.hasAnalysisCenter>.analysisCenter{
-  display:grid!important;
-  grid-template-rows:26px 23px minmax(0,1fr)!important;
   overflow:hidden!important;
 }
-#arenaContent.hasAnalysisCenter>.analysisCenter>.analysisCenterBody,
-.analysisOnlyStage .analysisCenter>.analysisCenterBody{
+#arenaContent.hasAnalysisCenter>.analysisCenter>.analysisCenterBody{
   width:100%!important;
-  height:100%!important;
+  height:auto!important;
   min-width:0!important;
   min-height:0!important;
-  overflow:hidden!important;
-  display:grid!important;
-  grid-template-rows:minmax(0,1fr)!important;
-  align-items:stretch!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  display:block!important;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
 }
-#arenaContent.hasAnalysisCenter .analysisCenterBody>div,
-.analysisOnlyStage .analysisCenterBody>div{
+#arenaContent.hasAnalysisCenter .analysisCenterBody>div{
   width:100%!important;
-  height:100%!important;
+  height:auto!important;
   min-width:0!important;
-  min-height:0!important;
+  min-height:100%!important;
   margin:0!important;
-  align-self:stretch!important;
 }
-#arenaContent.hasAnalysisCenter .liveSummaryGrid,
-.analysisOnlyStage .liveSummaryGrid{
+#arenaContent.hasAnalysisCenter .liveSummaryGrid{
   display:grid!important;
   grid-template-columns:repeat(3,minmax(0,1fr))!important;
-  grid-template-rows:minmax(0,1fr)!important;
+  grid-template-rows:auto!important;
   align-items:stretch!important;
-  height:100%!important;
-  min-height:0!important;
+  height:auto!important;
+  min-height:100%!important;
 }
-#arenaContent.hasAnalysisCenter .liveSummaryCard,
-.analysisOnlyStage .liveSummaryCard{
-  height:100%!important;
-  min-height:0!important;
-  display:grid!important;
-  grid-template-rows:auto minmax(0,1fr) auto!important;
-  align-content:stretch!important;
-  overflow:hidden!important;
+#arenaContent.hasAnalysisCenter .liveSummaryCard{
+  width:100%!important;
+  height:auto!important;
+  min-height:100%!important;
+  align-self:stretch!important;
+  overflow:visible!important;
 }
 #arenaContent.hasAnalysisCenter .liveSummaryCard p,
-#arenaContent.hasAnalysisCenter .liveSummaryItems,
-.analysisOnlyStage .liveSummaryCard p,
-.analysisOnlyStage .liveSummaryItems{
+#arenaContent.hasAnalysisCenter .liveSummaryItems{
   min-height:0!important;
-  align-self:stretch!important;
-  align-content:start!important;
-  overflow:hidden!important;
+  overflow:visible!important;
 }
 #arenaContent.hasAnalysisCenter .analysisOverviewGrid,
 #arenaContent.hasAnalysisCenter .analysisPane,
 #arenaContent.hasAnalysisCenter .patternCards,
-#arenaContent.hasAnalysisCenter .alertPane,
-.analysisOnlyStage .analysisOverviewGrid,
-.analysisOnlyStage .analysisPane,
-.analysisOnlyStage .patternCards,
-.analysisOnlyStage .alertPane{
+#arenaContent.hasAnalysisCenter .alertPane{
   width:100%!important;
-  height:100%!important;
+  height:auto!important;
   min-width:0!important;
+  min-height:100%!important;
+  overflow:visible!important;
+}
+#arenaContent.hasAnalysisCenter .analysisMini,
+#arenaContent.hasAnalysisCenter .zoneLargeCard,
+#arenaContent.hasAnalysisCenter .analysisListCard,
+#arenaContent.hasAnalysisCenter .riskGaugeCard,
+#arenaContent.hasAnalysisCenter .alertList,
+#arenaContent.hasAnalysisCenter .patternCard{
+  height:auto!important;
   min-height:0!important;
-  align-self:stretch!important;
-  overflow:hidden!important;
-}
-
-/* A ampliação usa o interior completo do quadrado, sem criar uma coluna exterior nem scroll. */
-.analysisOnlyStage{
-  padding:0!important;
-  overflow:hidden!important;
-}
-.analysisOnlyStage .analysisCenter{
-  width:100%!important;
-  height:100%!important;
-  min-height:0!important;
-  max-height:none!important;
-  display:grid!important;
-  grid-template-rows:48px 42px minmax(0,1fr)!important;
-  margin:0!important;
-  overflow:hidden!important;
-}
-.analysisOnlyStage .analysisCenterBody{
-  padding:14px!important;
-}
-.analysisOnlyStage .liveSummaryGrid{
-  gap:14px!important;
-}
-.analysisOnlyStage .liveSummaryCard{
-  padding:18px!important;
-  gap:14px!important;
-}
-.analysisOnlyStage .liveSummaryCard p{
-  display:flex!important;
-  align-items:center!important;
-}
-.analysisOnlyStage .liveSummaryItems{
-  display:grid!important;
-  align-content:center!important;
-  gap:14px!important;
-}
-.analysisOnlyStage .analysisMini,
-.analysisOnlyStage .zoneLargeCard,
-.analysisOnlyStage .analysisListCard,
-.analysisOnlyStage .riskGaugeCard,
-.analysisOnlyStage .alertList,
-.analysisOnlyStage .patternCard{
-  height:100%!important;
-  min-height:0!important;
-  overflow:hidden!important;
-}
-
-@media(max-width:1100px) and (orientation:landscape){
-  #arenaContent.hasAnalysisCenter>.analysisCenter{
-    grid-template-rows:23px 20px minmax(0,1fr)!important;
-  }
-  .analysisOnlyStage .analysisCenterBody{padding:8px!important}
-  .analysisOnlyStage .liveSummaryGrid{gap:8px!important}
-  .analysisOnlyStage .liveSummaryCard{padding:10px!important;gap:8px!important}
+  overflow:visible!important;
 }
 </style>
 </body></html>
