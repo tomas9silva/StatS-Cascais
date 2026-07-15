@@ -1289,7 +1289,7 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
   document.querySelector('#periodSelect')?.addEventListener('change',renderAttackMomentum);
   document.querySelector('#homeName')?.addEventListener('input',renderAttackMomentum);
   document.querySelector('#awayName')?.addEventListener('input',renderAttackMomentum);
-  setInterval(()=>{if(!document.hidden)renderAttackMomentum()},1000);
+  /* Atualização periódica transferida para o renderer clássico V24. */
   setTimeout(renderAttackMomentum,120);
 })();
 </script>
@@ -2603,5 +2603,234 @@ button:hover,button:focus-visible{transform:none!important;filter:none!important
 #heatFilter{max-width:105px!important}
 @media(max-width:1100px) and (orientation:landscape){#heatFilter{max-width:76px!important}.arenaObservationForm textarea{min-height:76px}}
 </style>
+
+
+
+<style id="statsvision-attack-momentum-classic-v24">
+/* Attack Momentum clássico: gráfico contínuo em montanha, com leitura imediata. */
+.analytics{grid-template-rows:minmax(0,1fr) .70fr minmax(150px,1.12fr)!important}
+.momentumPanel{padding:0 8px 7px!important;grid-template-rows:36px minmax(0,1fr) 27px!important}
+.momentumCanvasWrap{
+  border:1px solid #d6dee5!important;
+  border-radius:10px!important;
+  background:linear-gradient(180deg,rgba(16,199,223,.055) 0 49.5%,#c7d1da 49.5% 50.5%,rgba(7,27,43,.055) 50.5% 100%)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8)!important;
+}
+.momentumTeamDot.home{background:#10c7df!important}
+.momentumTeamDot.away{background:#071b2b!important}
+.momentumDirection{font-weight:900!important;color:#52616d!important}
+.momentumLegend{padding-top:5px!important}
+.momentumLegend>span{border-right:1px solid #e2e8ed;padding:0 4px!important}
+.momentumLegend>span:last-child{border-right:0}
+.momentumLegend b{font-size:10px!important}
+.momentumLegend small{font-size:6.2px!important;letter-spacing:.025em}
+@media(max-width:1100px) and (orientation:landscape){
+  .analytics{grid-template-rows:minmax(0,1fr) .64fr minmax(126px,1.08fr)!important}
+  .momentumPanel{grid-template-rows:31px minmax(0,1fr) 23px!important;padding:0 5px 5px!important}
+  .momentumLegend b{font-size:8px!important}.momentumLegend small{font-size:5.3px!important}
+}
+</style>
+
+<script id="statsvision-attack-momentum-classic-v24-script">
+(()=>{
+  const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
+  const HOME='#10c7df';
+  const AWAY='#071b2b';
+
+  function withAlpha(hex,alpha){
+    const value=String(hex||'').replace('#','');
+    if(value.length!==6)return hex;
+    return `rgba(${parseInt(value.slice(0,2),16)},${parseInt(value.slice(2,4),16)},${parseInt(value.slice(4,6),16)},${alpha})`;
+  }
+
+  function configuredPeriods(){
+    const setting=Number(document.querySelector('#setPeriods')?.value);
+    const current=Number(document.querySelector('#periodSelect')?.value)||1;
+    return clamp(Number.isFinite(setting)&&setting>=2?setting:Math.max(2,current),2,4);
+  }
+
+  function localElapsedSeconds(){
+    const duration=Math.max(1,Number(state.periodMinutes)||45)*60;
+    return clamp(duration-(Number(state.seconds)||0),0,duration);
+  }
+
+  function eventTeam(event){
+    return /away|fora|visit|equipa b|team b/i.test(String(event?.team||event?.side||event?.club||''))?'away':'home';
+  }
+
+  function absoluteEventSecond(event,periodSeconds,periods){
+    const period=clamp(Number(event?.period)||1,1,periods);
+    const local=clamp(Number(event?.gameSecond??((Number(event?.time)||0)*60))||0,0,periodSeconds);
+    return (period-1)*periodSeconds+local;
+  }
+
+  function addDuration(home,away,start,end,team,totalSeconds,binSeconds){
+    start=clamp(Number(start)||0,0,totalSeconds);
+    end=clamp(Number(end)||start,start,totalSeconds);
+    if(end<=start)end=Math.min(totalSeconds,start+1);
+    const first=clamp(Math.floor(start/binSeconds),0,home.length-1);
+    const last=clamp(Math.floor(Math.max(start,end-.001)/binSeconds),0,home.length-1);
+    for(let index=first;index<=last;index++){
+      const binStart=index*binSeconds,binEnd=binStart+binSeconds;
+      const overlap=Math.max(0,Math.min(end,binEnd)-Math.max(start,binStart));
+      if(team==='away')away[index]+=overlap;else if(team==='home')home[index]+=overlap;
+    }
+  }
+
+  function buildSeries(binCount){
+    const periods=configuredPeriods();
+    const periodSeconds=Math.max(1,Number(state.periodMinutes)||45)*60;
+    const totalSeconds=periodSeconds*periods;
+    const binSeconds=totalSeconds/binCount;
+    const home=Array(binCount).fill(0),away=Array(binCount).fill(0);
+    const logs=Array.isArray(state.possession?.log)?state.possession.log:[];
+
+    logs.forEach(log=>{
+      if(log?.team!=='home'&&log?.team!=='away')return;
+      const period=clamp(Number(log.period)||1,1,periods);
+      const localEnd=clamp(Number(log.elapsedSeconds??log.gameSecond??((Number(log.time)||0)*60))||0,0,periodSeconds);
+      const duration=Math.max(.5,Number(log.duration)||1);
+      const end=(period-1)*periodSeconds+localEnd;
+      addDuration(home,away,Math.max((period-1)*periodSeconds,end-duration),end,log.team,totalSeconds,binSeconds);
+    });
+
+    const possession=state.possession||{};
+    if((possession.active==='home'||possession.active==='away')&&Number(possession.activeSince)){
+      const period=clamp(Number(document.querySelector('#periodSelect')?.value)||1,1,periods);
+      const duration=Math.max(0,(Date.now()-Number(possession.activeSince))/1000);
+      const end=(period-1)*periodSeconds+localElapsedSeconds();
+      addDuration(home,away,Math.max((period-1)*periodSeconds,end-duration),end,possession.active,totalSeconds,binSeconds);
+    }
+
+    let previous=0;
+    const values=home.map((homeSeconds,index)=>{
+      const awaySeconds=away[index],total=homeSeconds+awaySeconds;
+      if(total<=0){previous*=.68;return {value:previous,total:0};}
+      const balance=(homeSeconds-awaySeconds)/Math.max(1,total);
+      const activity=clamp(total/(binSeconds*.62),0,1);
+      const raw=balance*(.38+.62*activity);
+      previous=previous*.42+raw*.58;
+      return {value:clamp(previous,-1,1),total};
+    });
+
+    /* Os remates e golos criam picos claros, como no modelo anterior. */
+    (state.fieldEvents||[]).forEach(event=>{
+      if(event.action!=='remate'&&event.action!=='golo')return;
+      const second=absoluteEventSecond(event,periodSeconds,periods);
+      const index=clamp(Math.floor(second/binSeconds),0,binCount-1);
+      const sign=eventTeam(event)==='away'?-1:1;
+      const boost=event.action==='golo'?.82:.48;
+      values[index].value=clamp(values[index].value+sign*boost,-1,1);
+      values[index].event=event.action;
+      values[index].eventTeam=sign>0?'home':'away';
+      values[index].total=Math.max(values[index].total,1);
+      if(index>0)values[index-1].value=clamp(values[index-1].value+sign*boost*.28,-1,1);
+      if(index<binCount-1)values[index+1].value=clamp(values[index+1].value+sign*boost*.36,-1,1);
+    });
+
+    /* Suavização curta: mantém picos, mas elimina serrilhado. */
+    return values.map((point,index,array)=>{
+      const before=array[index-1]?.value??point.value;
+      const after=array[index+1]?.value??point.value;
+      return {...point,value:clamp(before*.18+point.value*.64+after*.18,-1,1)};
+    });
+  }
+
+  function drawGrid(ctx,width,height,padX,padY,mid,periods){
+    const chartW=width-padX*2,chartH=height-padY*2;
+    ctx.save();
+    ctx.strokeStyle='rgba(111,128,141,.16)';ctx.lineWidth=1;
+    [0.25,0.75].forEach(ratio=>{const y=padY+chartH*ratio;ctx.beginPath();ctx.moveTo(padX,y);ctx.lineTo(width-padX,y);ctx.stroke()});
+    for(let period=1;period<periods;period++){
+      const x=padX+chartW*period/periods;
+      ctx.setLineDash([3,3]);ctx.strokeStyle='rgba(82,97,109,.36)';ctx.beginPath();ctx.moveTo(x,padY);ctx.lineTo(x,height-padY);ctx.stroke();ctx.setLineDash([]);
+    }
+    ctx.strokeStyle='#8fa0ad';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(padX,mid);ctx.lineTo(width-padX,mid);ctx.stroke();
+    ctx.restore();
+  }
+
+  function smoothPath(ctx,points){
+    if(!points.length)return;
+    ctx.moveTo(points[0].x,points[0].y);
+    for(let index=1;index<points.length;index++){
+      const current=points[index],previous=points[index-1];
+      const midX=(previous.x+current.x)/2,midY=(previous.y+current.y)/2;
+      ctx.quadraticCurveTo(previous.x,previous.y,midX,midY);
+    }
+    const last=points[points.length-1];ctx.lineTo(last.x,last.y);
+  }
+
+  function drawMountain(ctx,points,mid,color,positive,height){
+    const sidePoints=points.map(point=>({x:point.x,y:positive?Math.min(mid,point.y):Math.max(mid,point.y)}));
+    ctx.save();
+    ctx.beginPath();ctx.rect(0,positive?0:mid,(sidePoints[sidePoints.length-1]?.x||0)+20,positive?mid:height-mid);ctx.clip();
+    const gradient=ctx.createLinearGradient(0,positive?8:mid,0,positive?mid:height-8);
+    gradient.addColorStop(0,withAlpha(color,.72));gradient.addColorStop(1,withAlpha(color,.16));
+    ctx.beginPath();smoothPath(ctx,sidePoints);ctx.lineTo(sidePoints[sidePoints.length-1].x,mid);ctx.lineTo(sidePoints[0].x,mid);ctx.closePath();ctx.fillStyle=gradient;ctx.fill();
+    ctx.beginPath();smoothPath(ctx,sidePoints);ctx.strokeStyle=color;ctx.lineWidth=2.4;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke();
+    ctx.restore();
+  }
+
+  function roundedLabel(ctx,x,y,text,fill){
+    const radius=6,w=16,h=16,left=x-w/2,top=y-h/2;
+    ctx.beginPath();ctx.moveTo(left+radius,top);ctx.arcTo(left+w,top,left+w,top+h,radius);ctx.arcTo(left+w,top+h,left,top+h,radius);ctx.arcTo(left,top+h,left,top,radius);ctx.arcTo(left,top,left+w,top,radius);ctx.closePath();ctx.fillStyle=fill;ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='950 8px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,x,y+.3);
+  }
+
+  function renderClassicMomentum(){
+    const canvas=document.querySelector('#momentCanvas');if(!canvas)return;
+    const bounds=canvas.getBoundingClientRect();
+    const width=Math.max(1,bounds.width),height=Math.max(1,bounds.height),dpr=window.devicePixelRatio||1;
+    canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);
+    const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);
+
+    const padX=7,padY=7,chartW=Math.max(1,width-padX*2),chartH=Math.max(1,height-padY*2),mid=padY+chartH/2;
+    const periods=configuredPeriods();
+    const binCount=clamp(Math.round(chartW/11),20,38);
+    const series=buildSeries(binCount);
+    const maxValue=Math.max(.42,...series.map(point=>Math.abs(point.value)));
+    const amplitude=chartH/2-12;
+    const points=series.map((point,index)=>({
+      x:padX+(index/(Math.max(1,binCount-1)))*chartW,
+      y:mid-(point.value/maxValue)*amplitude,
+      ...point
+    }));
+
+    drawGrid(ctx,width,height,padX,padY,mid,periods);
+    drawMountain(ctx,points,mid,HOME,true,height);
+    drawMountain(ctx,points,mid,AWAY,false,height);
+
+    ctx.save();ctx.font='950 7px system-ui';ctx.textBaseline='top';ctx.fillStyle=HOME;ctx.textAlign='left';ctx.fillText('EQUIPA A',padX+4,padY+3);ctx.textBaseline='bottom';ctx.fillStyle=AWAY;ctx.fillText('EQUIPA B',padX+4,height-padY-3);ctx.restore();
+
+    points.forEach(point=>{
+      if(!point.event)return;
+      const isHome=point.eventTeam==='home';
+      const markerY=clamp(point.y+(isHome?-8:8),padY+10,height-padY-10);
+      roundedLabel(ctx,point.x,markerY,point.event==='golo'?'G':'R',point.event==='golo'?'#16a34a':'#f59e0b');
+    });
+
+    const hasData=series.some(point=>point.total>0||point.event);
+    if(!hasData){
+      const label='Inicia a posse da Equipa A ou B';ctx.font='850 8px system-ui';const textWidth=ctx.measureText(label).width;
+      const x=width/2-textWidth/2-10,y=mid-11,w=textWidth+20,h=22,r=7;
+      ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();ctx.fillStyle='rgba(255,255,255,.94)';ctx.fill();ctx.strokeStyle='#d6dee5';ctx.stroke();ctx.fillStyle='#66717c';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,width/2,mid);
+    }
+
+    const events=state.fieldEvents||[];
+    const shots=events.filter(event=>event.action==='remate'||event.action==='golo').length;
+    const goals=events.filter(event=>event.action==='golo').length;
+    const reds=events.filter(event=>event.action==='expulsao'||event.warningType==='Cartão vermelho').length;
+    const shotsNode=document.querySelector('#momentSaves'),goalsNode=document.querySelector('#momentGoals'),redsNode=document.querySelector('#momentReds');
+    if(shotsNode)shotsNode.textContent=shots;if(goalsNode)goalsNode.textContent=goals;if(redsNode)redsNode.textContent=reds;
+  }
+
+  window.drawMoment=drawMoment=renderClassicMomentum;
+  let resizeFrame=0;
+  window.addEventListener('resize',()=>{cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(renderClassicMomentum)},{passive:true});
+  document.querySelector('#periodSelect')?.addEventListener('change',renderClassicMomentum);
+  setInterval(()=>{if(!document.hidden)renderClassicMomentum()},1000);
+  setTimeout(renderClassicMomentum,180);
+})();
+</script>
 
 </body></html>
