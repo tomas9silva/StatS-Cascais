@@ -1454,12 +1454,12 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
 
   function mountAnalysisCenter(){
     const wrap=document.querySelector('#arenaContent');
-    if(!wrap||state.arenaTab!=='arena'||!wrap.querySelector('#pitch'))return null;
-    let center=wrap.querySelector(':scope > #analysisCenter');
+    const analytics=document.querySelector('.analytics');
+    if(!wrap||!analytics||state.arenaTab!=='arena'||!wrap.querySelector('#pitch'))return null;
+    let center=document.querySelector('#analysisCenter');
     if(!center){
       const holder=document.createElement('div');holder.innerHTML=panelMarkup();center=holder.firstElementChild;
-      const bar=wrap.querySelector(':scope > #possessionBar');
-      if(bar)bar.insertAdjacentElement('afterend',center);else wrap.appendChild(center);
+      analytics.appendChild(center);
       center.querySelector('.analysisTabs').addEventListener('click',event=>{
         const button=event.target.closest('[data-analysis-tab]');if(!button)return;
         activeAnalysisView=button.dataset.analysisTab;
@@ -1467,7 +1467,15 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
         renderAnalysisCenter(true);
       });
     }
-    wrap.classList.add('hasAnalysisCenter');
+    if(center.parentElement!==analytics&&!center.closest('.analysisOnlyStage'))analytics.appendChild(center);
+    let momentum=document.querySelector('#momentumParking > .momentumPanel')||document.querySelector('.analytics > .momentumPanel')||document.querySelector('#arenaContent > .momentumPanel');
+    if(momentum&&!momentum.closest('.panelZoomStage')){
+      const bar=wrap.querySelector(':scope > #possessionBar');
+      if(bar)bar.insertAdjacentElement('afterend',momentum);else wrap.appendChild(momentum);
+      wrap.classList.add('hasMomentumBelow');
+      requestAnimationFrame(()=>{if(typeof drawMoment==='function')drawMoment()});
+    }
+    wrap.classList.remove('hasAnalysisCenter');
     const spacer=wrap.querySelector(':scope > .arenaBottomSpace');if(spacer)spacer.style.display='none';
     return center;
   }
@@ -1488,6 +1496,12 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
 
   const previousRenderArena=window.renderArenaTab;
   window.renderArenaTab=renderArenaTab=function(tab){
+    const momentum=document.querySelector('#arenaContent > .momentumPanel');
+    if(momentum){
+      let parking=document.querySelector('#momentumParking');
+      if(!parking){parking=document.createElement('div');parking.id='momentumParking';parking.hidden=true;document.body.appendChild(parking)}
+      parking.appendChild(momentum);
+    }
     const result=previousRenderArena(tab);
     if(tab==='arena')setTimeout(()=>{mountAnalysisCenter();renderAnalysisCenter(true)},0);
     return result;
@@ -3247,6 +3261,154 @@ button:hover,button:focus-visible{transform:none!important;filter:none!important
   #analysisCenter .svInsightContent{padding:6px 8px!important;gap:4px!important}#analysisCenter .svInsightContent p,#analysisCenter .svInsightList span{font-size:5.2px!important}
   #analysisCenter .svInsightList span{padding:4px 5px 4px 15px!important}#analysisCenter .svInsightList span:before{left:6px!important;width:4px!important;height:4px!important}
   #analysisCenter .svInsightImprove footer{margin:0 8px 6px!important;padding:4px 5px!important;font-size:4.8px!important}
+}
+</style>
+<style id="statsvision-swap-momentum-analysis-v33">
+/* V33 — Attack Momentum no centro, por baixo da posse; Centro de Análise no painel direito. */
+#momentumParking{display:none!important}
+
+/* Reserva no painel central exatamente o espaço que antes pertencia ao Centro de Análise. */
+#arenaContent.hasMomentumBelow>.pitch{
+  max-height:calc(100% - 190px)!important;
+}
+@supports (width:1cqw){
+  #arenaContent.hasMomentumBelow>.pitch{
+    width:min(calc(100cqw - 6px),calc((100cqh - 190px) * 105 / 68))!important;
+  }
+}
+#arenaContent.hasMomentumBelow>.momentumPanel{
+  position:relative!important;
+  width:calc(100% - 6px)!important;
+  max-width:calc(100% - 6px)!important;
+  height:125px!important;
+  min-height:125px!important;
+  max-height:125px!important;
+  flex:0 0 125px!important;
+  margin:5px 0 0!important;
+  padding:0 8px 7px!important;
+  display:grid!important;
+  grid-template-rows:31px minmax(0,1fr)!important;
+  overflow:hidden!important;
+  border:1px solid var(--border)!important;
+  border-radius:11px!important;
+  background:#fff!important;
+  box-shadow:none!important;
+}
+#arenaContent.hasMomentumBelow>.momentumPanel .momentumTitle{
+  height:31px!important;
+  padding:0 3px!important;
+}
+#arenaContent.hasMomentumBelow>.momentumPanel .momentumCanvasWrap{
+  min-height:0!important;
+  width:100%!important;
+  height:100%!important;
+  border:1px solid #dbe2e8!important;
+  border-radius:7px!important;
+  background:#fff!important;
+  overflow:hidden!important;
+}
+#arenaContent.hasMomentumBelow>.momentumPanel canvas{width:100%!important;height:100%!important}
+
+/* O painel direito dá prioridade ao Centro de Análise. */
+.analytics{
+  grid-template-rows:minmax(122px,.78fr) minmax(92px,.52fr) minmax(225px,1.48fr)!important;
+}
+.analytics>#analysisCenter{
+  position:relative!important;
+  width:100%!important;
+  max-width:none!important;
+  height:100%!important;
+  min-height:0!important;
+  max-height:none!important;
+  margin:0!important;
+  display:grid!important;
+  grid-template-rows:36px 31px minmax(0,1fr)!important;
+  overflow:hidden!important;
+  border:1px solid var(--border)!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  box-shadow:0 8px 22px rgba(20,31,43,.08)!important;
+}
+.analytics>#analysisCenter .analysisCenterHead{
+  min-height:0!important;
+  padding:0 39px 0 10px!important;
+}
+.analytics>#analysisCenter .analysisCenterHead strong{font-size:9px!important}
+.analytics>#analysisCenter .analysisLive{font-size:6.5px!important}
+.analytics>#analysisCenter .analysisCenterZoomBtn{top:6px!important;right:6px!important;width:23px!important;height:23px!important}
+.analytics>#analysisCenter .analysisTabs{
+  min-width:0!important;
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  align-items:stretch!important;
+  gap:0!important;
+  padding:0 3px!important;
+  overflow:hidden!important;
+}
+.analytics>#analysisCenter .analysisTabs button{
+  width:100%!important;
+  min-width:0!important;
+  height:30px!important;
+  padding:0 2px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  font-size:5px!important;
+  letter-spacing:.02em!important;
+}
+.analytics>#analysisCenter>.analysisCenterBody{height:100%!important;min-height:0!important}
+
+/* O resumo adapta-se à coluna direita: três faixas horizontais empilhadas. */
+.analytics>#analysisCenter>.analysisCenterBody>.svInsightBoard{
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:repeat(3,minmax(0,1fr))!important;
+  gap:1px!important;
+}
+.analytics>#analysisCenter .svInsightLane{
+  height:auto!important;
+  border-top:0!important;
+  border-left:4px solid #111827!important;
+}
+.analytics>#analysisCenter .svInsightPositive{border-left-color:var(--sv-cyan)!important}
+.analytics>#analysisCenter .svInsightImprove{border-left-color:#9c3030!important}
+.analytics>#analysisCenter .svInsightHead{
+  grid-template-columns:20px minmax(0,1fr) auto!important;
+  gap:6px!important;
+  padding:5px 8px 4px!important;
+}
+.analytics>#analysisCenter .svInsightSymbol{width:20px!important;height:20px!important;border-radius:6px!important;font-size:6px!important}
+.analytics>#analysisCenter .svInsightHead small{font-size:4.5px!important}
+.analytics>#analysisCenter .svInsightHead b,.analytics>#analysisCenter .svInsightHead time{font-size:6px!important}
+.analytics>#analysisCenter .svInsightContent{padding:5px 8px!important;gap:4px!important;align-content:start!important}
+.analytics>#analysisCenter .svInsightContent p,.analytics>#analysisCenter .svInsightList span{font-size:5.2px!important;line-height:1.35!important}
+.analytics>#analysisCenter .svInsightList{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.analytics>#analysisCenter .svInsightList span{padding:4px 5px 4px 15px!important}
+.analytics>#analysisCenter .svInsightList span:before{left:6px!important;width:4px!important;height:4px!important}
+.analytics>#analysisCenter .svInsightImprove footer{margin:0 8px 5px!important;padding:4px 6px!important;font-size:4.8px!important}
+
+/* Leitura confortável das restantes abas na coluna estreita. */
+.analytics>#analysisCenter .analysisOverviewGrid{grid-template-columns:1fr!important;grid-template-rows:auto auto!important}
+.analytics>#analysisCenter .analysisZonePane,.analytics>#analysisCenter .alertPane{grid-template-columns:1fr!important;grid-auto-rows:auto!important}
+.analytics>#analysisCenter .patternCards{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-auto-rows:auto!important}
+.analytics>#analysisCenter .zoneCompact{grid-template-columns:72px minmax(0,1fr)!important}
+
+@media(max-width:1100px) and (orientation:landscape){
+  #arenaContent.hasMomentumBelow>.pitch{max-height:calc(100% - 154px)!important}
+  @supports (width:1cqw){
+    #arenaContent.hasMomentumBelow>.pitch{width:min(calc(100cqw - 4px),calc((100cqh - 154px) * 105 / 68))!important}
+  }
+  #arenaContent.hasMomentumBelow>.momentumPanel{
+    height:101px!important;
+    min-height:101px!important;
+    max-height:101px!important;
+    flex-basis:101px!important;
+    padding:0 5px 5px!important;
+    grid-template-rows:26px minmax(0,1fr)!important;
+  }
+  #arenaContent.hasMomentumBelow>.momentumPanel .momentumTitle{height:26px!important}
+  .analytics{grid-template-rows:minmax(105px,.72fr) minmax(80px,.46fr) minmax(190px,1.5fr)!important}
+  .analytics>#analysisCenter{grid-template-rows:31px 27px minmax(0,1fr)!important}
+  .analytics>#analysisCenter .analysisTabs button{height:26px!important;font-size:4.4px!important}
 }
 </style>
 </body></html>
