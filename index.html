@@ -226,9 +226,15 @@ button:hover,button:focus-visible{transform:none!important;filter:none!important
   <div class="symbolsGrid">
     <article class="symbolCard">
       <h3>Símbolo do sistema</h3>
-      <p>Usado na abertura, no topo e na barra lateral da aplicação.</p>
+      <p>Usado na abertura e na identidade da plataforma StatS Vision.</p>
       <div class="symbolPreview"><img id="systemLogoPreview" alt="Pré-visualização do símbolo do sistema"></div>
       <label class="symbolUpload">Escolher símbolo<input id="setSystemLogo" type="file" accept="image/*"></label>
+    </article>
+    <article class="symbolCard">
+      <h3>Clube contratante</h3>
+      <p>É o símbolo apresentado no topo e no cartão lateral da aplicação.</p>
+      <div class="symbolPreview"><div class="symbolEmpty" id="contractorLogoEmpty">Sem símbolo selecionado</div><img id="contractorLogoPreview" alt="Pré-visualização do Clube contratante" hidden></div>
+      <label class="symbolUpload">Escolher símbolo<input id="setContractorLogo" type="file" accept="image/*"></label>
     </article>
     <article class="symbolCard">
       <h3>Símbolo do Clube A</h3>
@@ -243,7 +249,7 @@ button:hover,button:focus-visible{transform:none!important;filter:none!important
       <label class="symbolUpload">Escolher símbolo<input id="setAwayLogo" type="file" accept="image/*"></label>
     </article>
   </div>
-  <div class="symbolActions"><button id="restoreSystemLogo">Restaurar símbolo StatS Vision</button><button id="clearTeamLogos">Limpar símbolos dos clubes</button></div>
+  <div class="symbolActions"><button id="restoreSystemLogo">Restaurar símbolo StatS Vision</button><button id="clearContractorLogo">Remover Clube contratante</button><button id="clearTeamLogos">Limpar símbolos A e B</button></div>
 </section>
 <section class="settingsPane" data-settings-pane="jogo"><div class="form">
 <label>Duração do período (min.)<input id="setPeriodMinutes" type="number" min="1" max="120" value="45"></label>
@@ -479,7 +485,7 @@ load();$('#setPeriodMinutes').value=state.periodMinutes;$('#setMaxPlayers').valu
 @keyframes settingsBlueSweep{0%{transform:translateX(-135%) skewX(-16deg)}100%{transform:translateX(135%) skewX(-16deg)}}
 
 /* Aba independente para os símbolos */
-.symbolsGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.symbolsGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .symbolCard{border:1px solid var(--border);border-radius:14px;background:#f8fafb;padding:13px;display:grid;gap:10px;align-content:start}
 .symbolCard h3{margin:0;font-size:11px;color:#101418}.symbolCard p{margin:0;color:#66717c;font-size:9px;line-height:1.45;min-height:28px}
 .symbolPreview{height:116px;border:1px dashed #b8c4ce;border-radius:12px;background:#fff;display:grid;place-items:center;overflow:hidden}
@@ -494,17 +500,19 @@ load();$('#setPeriodMinutes').value=state.periodMinutes;$('#setMaxPlayers').valu
 (()=>{
 const brandSvg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160"><rect width="160" height="160" rx="30" fill="#061827"/><path d="M38 34h88l-22 28H65l22 22-20 22-43-42z" fill="#fff"/><path d="M122 126H34l22-28h39L73 76l20-22 43 42z" fill="#10c7df"/></svg>`;
 const brandData='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(brandSvg);
-state.brandLogo=brandData;state.teamLogos=state.teamLogos||{home:'',away:''};state.possession=state.possession||{home:0,contest:0,away:0,log:[]};
-try{const x=JSON.parse(localStorage.getItem('statsvision_extra')||'{}');if(x.brandLogo)state.brandLogo=x.brandLogo;if(x.teamLogos)state.teamLogos=x.teamLogos;if(x.possession)state.possession=x.possession}catch(e){}
-function saveExtra(){localStorage.setItem('statsvision_extra',JSON.stringify({brandLogo:state.brandLogo,teamLogos:state.teamLogos,possession:state.possession}))}
+state.brandLogo=brandData;state.contractorLogo='';state.teamLogos=state.teamLogos||{home:'',away:''};state.possession=state.possession||{home:0,contest:0,away:0,log:[]};
+try{const x=JSON.parse(localStorage.getItem('statsvision_extra')||'{}');if(x.brandLogo)state.brandLogo=x.brandLogo;if(x.contractorLogo)state.contractorLogo=x.contractorLogo;if(x.teamLogos)state.teamLogos=x.teamLogos;if(x.possession)state.possession=x.possession}catch(e){}
+function saveExtra(){localStorage.setItem('statsvision_extra',JSON.stringify({brandLogo:state.brandLogo,contractorLogo:state.contractorLogo,teamLogos:state.teamLogos,possession:state.possession}))}
 function setImg(id,src){const el=document.getElementById(id);if(el){if(src){el.src=src;el.style.visibility='visible';el.hidden=false}else{el.removeAttribute('src');el.style.visibility='hidden'}}}
-function updateLogoPreviews(){setImg('systemLogoPreview',state.brandLogo||brandData);[['home','homeLogoPreview','homeLogoEmpty'],['away','awayLogoPreview','awayLogoEmpty']].forEach(([key,imgId,emptyId])=>{const img=$('#'+imgId),empty=$('#'+emptyId),src=state.teamLogos[key];if(img){if(src){img.src=src;img.hidden=false;img.style.visibility='visible';if(empty)empty.hidden=true}else{img.removeAttribute('src');img.hidden=true;if(empty)empty.hidden=false}}})}
-function applyBrand(){const currentBrand=state.brandLogo||brandData;['brandLogo','clubLogoSide','welcomeLogo'].forEach(id=>setImg(id,currentBrand));const fb=$('#welcomeFallback');if(fb)fb.style.display='none';const title=$('#welcomeClubName');if(title)title.textContent='StatS Vision';const badge=$('.welcomeBadge');if(badge)badge.textContent='FOOTBALL INTELLIGENCE PLATFORM';const para=$('.welcomeCard p');if(para)para.innerHTML='Regista, interpreta e transforma cada momento do jogo em decisões mais informadas.<div class="svSlogan">See More. Decide Better.</div>';const mark=$('.analysisBrandMark');if(mark)mark.innerHTML='Stat<span>S</span> Vision';const small=$('.analysisBrand small');if(small)small.textContent='SEE MORE. DECIDE BETTER.';setImg('homeLogo',state.teamLogos.home);setImg('awayLogo',state.teamLogos.away);updateLogoPreviews()}
+function updateLogoPreviews(){setImg('systemLogoPreview',state.brandLogo||brandData);[['contractorLogo','contractorLogoPreview','contractorLogoEmpty'],['home','homeLogoPreview','homeLogoEmpty'],['away','awayLogoPreview','awayLogoEmpty']].forEach(([key,imgId,emptyId])=>{const img=$('#'+imgId),empty=$('#'+emptyId),src=key==='contractorLogo'?state.contractorLogo:state.teamLogos[key];if(img){if(src){img.src=src;img.hidden=false;img.style.visibility='visible';if(empty)empty.hidden=true}else{img.removeAttribute('src');img.hidden=true;if(empty)empty.hidden=false}}})}
+function applyBrand(){const currentBrand=state.brandLogo||brandData,contractor=state.contractorLogo||currentBrand;setImg('welcomeLogo',currentBrand);['brandLogo','clubLogoSide'].forEach(id=>setImg(id,contractor));const fb=$('#welcomeFallback');if(fb)fb.style.display='none';const title=$('#welcomeClubName');if(title)title.textContent='StatS Vision';const badge=$('.welcomeBadge');if(badge)badge.textContent='FOOTBALL INTELLIGENCE PLATFORM';const para=$('.welcomeCard p');if(para)para.innerHTML='Regista, interpreta e transforma cada momento do jogo em decisões mais informadas.<div class="svSlogan">See More. Decide Better.</div>';const mark=$('.analysisBrandMark');if(mark)mark.innerHTML='Stat<span>S</span> Vision';const small=$('.analysisBrand small');if(small)small.textContent='SEE MORE. DECIDE BETTER.';setImg('homeLogo',state.teamLogos.home);setImg('awayLogo',state.teamLogos.away);updateLogoPreviews()}
 function readLogoFile(input,onLoad){input?.addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader;r.onload=()=>onLoad(r.result);r.readAsDataURL(f)})}
 readLogoFile($('#setSystemLogo'),data=>{state.brandLogo=data;saveExtra();applyBrand();toast('Símbolo do sistema guardado')});
+readLogoFile($('#setContractorLogo'),data=>{state.contractorLogo=data;saveExtra();applyBrand();toast('Símbolo do Clube contratante guardado')});
 readLogoFile($('#setHomeLogo'),data=>{state.teamLogos.home=data;saveExtra();applyBrand();toast('Símbolo do Clube A guardado')});
 readLogoFile($('#setAwayLogo'),data=>{state.teamLogos.away=data;saveExtra();applyBrand();toast('Símbolo do Clube B guardado')});
 $('#restoreSystemLogo')?.addEventListener('click',()=>{state.brandLogo=brandData;saveExtra();applyBrand();toast('Símbolo StatS Vision restaurado')});
+$('#clearContractorLogo')?.addEventListener('click',()=>{state.contractorLogo='';saveExtra();applyBrand();toast('Símbolo do Clube contratante removido')});
 $('#clearTeamLogos')?.addEventListener('click',()=>{state.teamLogos={home:'',away:''};saveExtra();applyBrand();toast('Símbolos dos clubes removidos')});
 applyBrand();
 // personalização deixa de alterar os símbolos das equipas
