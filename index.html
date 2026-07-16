@@ -4,7 +4,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>StatS V4 — Futebol</title>
+<meta name="theme-color" content="#071b2b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="StatS Vision">
+<meta name="application-name" content="StatS Vision">
+<meta name="description" content="Plataforma de análise de jogo e inteligência de futebol em tempo real.">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
+<title>StatS Vision</title>
 <style>
 :root{--primary:#63e22b;--primary2:#2e9f18;--secondary:#0a84ff;--bg:#020912;--panel:#071725;--panel2:#0b1d2d;--line:rgba(168,198,221,.16);--text:#f5f8fb;--muted:#8fa4b7}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input,select{font:inherit}.app{height:100dvh;display:grid;grid-template-columns:188px 1fr;background:radial-gradient(circle at 55% -20%,color-mix(in srgb,var(--primary) 12%,transparent),transparent 35%),linear-gradient(145deg,#010711,#061522 60%,#020912)}
@@ -3529,5 +3539,12 @@ button:hover,button:focus-visible{transform:none!important;filter:none!important
   document.addEventListener('keydown',event=>{if(event.key==='Escape')q('#svReportOverlay')?.classList.remove('show')});
   window.openProfessionalReport=renderReport;
 })();
+</script>
+<script id="statsvision-pwa-registration">
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./service-worker.js',{scope:'./'}).catch(error=>console.warn('StatS Vision offline indisponível:',error));
+  });
+}
 </script>
 </body></html>

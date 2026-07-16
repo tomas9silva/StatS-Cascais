@@ -1,0 +1,35 @@
+{
+  "id": "./",
+  "name": "StatS Vision",
+  "short_name": "StatS",
+  "description": "Plataforma de análise de jogo e inteligência de futebol em tempo real.",
+  "lang": "pt-PT",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "landscape",
+  "background_color": "#eef1f4",
+  "theme_color": "#071b2b",
+  "categories": ["sports", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
