@@ -1,4 +1,4 @@
-const CACHE_NAME='stats-vision-pwa-2026-07-16-v1';
+const CACHE_NAME='stats-vision-pwa-2026-07-16-v2';
 const BASE_URL=new URL('./',self.location.href);
 const INDEX_URL=new URL('index.html',BASE_URL).href;
 const APP_SHELL=[
