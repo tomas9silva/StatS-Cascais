@@ -4694,4 +4694,66 @@ body .panelZoomStage:has(>.momentumPanel.panel.panelExpanded){background:var(--a
   window.openProfessionalReport=open;window.downloadProfessionalReportPdf=downloadPdf;
 })();
 </script>
+<style id="statsvision-phone-portrait-v55">
+@media(orientation:portrait){
+  html,body{width:100%;height:100%;overflow:hidden!important;background:var(--app-background,#03111b)!important}
+  .rotate{display:none!important}
+  #mainApp.app{display:block!important;width:100%;height:100dvh!important;min-height:0;overflow:hidden;background:var(--app-background,#03111b)!important}
+  #mainApp .sidebar{position:fixed!important;left:0;right:0;bottom:0;top:auto;z-index:900;width:100%;height:68px;display:block!important;padding:5px 6px max(5px,env(safe-area-inset-bottom));overflow:hidden;border:1px solid rgba(151,202,215,.18)!important;border-width:1px 0 0!important;background:rgba(4,20,31,.97)!important;box-shadow:0 -8px 28px rgba(0,0,0,.32);backdrop-filter:blur(16px)}
+  #mainApp .sidebar :is(.brand,.clubCard){display:none!important}
+  #mainApp .nav{width:100%;height:58px;display:flex!important;flex-direction:row!important;align-items:center;gap:4px;overflow-x:auto!important;overflow-y:hidden!important;padding:0 1px 3px;scrollbar-width:none;scroll-snap-type:x proximity}
+  #mainApp .nav::-webkit-scrollbar{display:none}
+  #mainApp .nav button{flex:0 0 70px;width:70px;height:54px;min-height:54px;display:grid!important;grid-template-columns:1fr!important;grid-template-rows:29px 13px!important;place-items:center;gap:1px;padding:4px 3px!important;border-radius:10px!important;text-align:center!important;scroll-snap-align:center}
+  #mainApp .nav .svNavIcon{width:27px;height:27px;border-radius:8px;font-size:11px}
+  #mainApp .nav .svNavLabel{width:100%;display:block!important;overflow:hidden;text-overflow:ellipsis;font-size:5.8px!important;text-align:center;letter-spacing:.01em}
+  #mainApp .nav #sideSettings{margin:0}
+  #mainApp .main{position:relative;width:100%;height:calc(100dvh - 68px);min-height:0;display:flex!important;flex-direction:column;gap:8px;overflow-x:hidden;overflow-y:auto;padding:8px 8px 18px!important;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+  #mainApp .scoreboard{flex:0 0 auto;min-height:158px;display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;grid-template-areas:"score score" "home away";align-items:center;gap:6px 8px;padding:9px!important;border-radius:13px}
+  #mainApp .scoreCenter{grid-area:score}.homeTeamStack{grid-area:home}.awayTeamStack{grid-area:away}
+  #mainApp .scoreRow{gap:5px}#mainApp .score{min-width:86px;font-size:31px!important}#mainApp .scoreControls{grid-template-columns:repeat(2,27px);gap:3px}#mainApp .scoreBtn{width:27px;height:27px;font-size:15px}
+  #mainApp .timerClockRow{gap:5px}#mainApp .timerClockRow .timer{font-size:13px!important}#mainApp #clockPhaseLabel{font-size:5px!important}
+  #mainApp .teamStack{min-width:0;display:grid;gap:5px}#mainApp .team{gap:5px}#mainApp .team img{width:28px;height:28px}#mainApp .team input{height:30px;min-width:0;padding:0 7px;font-size:7px;text-align:center}
+  #mainApp .timerActions{justify-content:flex-start;gap:4px}#mainApp .timerActions .playBtn{height:25px;margin:0;padding:0 8px;font-size:6px}#mainApp .timerActions .resetBtn{height:25px;width:25px}
+  #mainApp .periodControls{width:100%;height:25px;justify-content:flex-end}#mainApp .periodControls .periodSelect{width:100%;min-width:0;max-width:none;height:25px;padding:2px 5px;font-size:5.8px!important}#mainApp .compensationControl{height:25px}
+  #mainApp .workspace{flex:0 0 auto;min-height:0;display:flex!important;flex-direction:column;gap:8px;grid-template-columns:none!important}
+  #mainApp .arenaPanel{order:1;width:100%;min-height:500px;display:grid!important;grid-template-rows:38px auto minmax(400px,auto) auto!important;overflow:visible;border-radius:13px}
+  #mainApp .tabs{width:100%;height:38px;align-items:end;gap:1px;padding:0 5px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}#mainApp .tabs::-webkit-scrollbar{display:none}#mainApp .tabs button{flex:0 0 auto;height:34px;padding:0 10px;font-size:6.5px}
+  #mainApp .fieldActions{min-height:38px;padding:5px 7px;gap:5px;overflow-x:auto}#mainApp .arenaHint{min-width:205px;font-size:5.6px;line-height:1.35}#mainApp .arenaTools{flex:0 0 auto}#mainApp .fieldActions button{height:27px!important;padding:0 7px!important;font-size:5.8px!important}
+  #mainApp #arenaContent{min-height:400px;height:auto!important;padding:7px 5px 5px!important;overflow:visible!important;align-content:start}
+  #mainApp #arenaContent>.pitch{width:100%!important;height:auto!important;min-height:0;max-height:none!important;aspect-ratio:105/68;margin:0 auto}
+  #mainApp :is(.svArenaTopLane,.svArenaBottomLane){min-height:38px}#mainApp .svArenaDirection{right:5px!important}#mainApp .svArenaDirection strong{font-size:6px}#mainApp .svSidelineBench{transform:scale(.82);transform-origin:left center}
+  #mainApp #arenaContent>.possessionBar{width:100%;grid-template-columns:minmax(0,1fr) 58px minmax(0,1fr);gap:4px;padding:6px 0 0}#mainApp .possessionBtn{min-height:46px!important}#mainApp .possessionBtn strong{font-size:7px}#mainApp .possessionBtn b{font-size:13px!important}
+  #mainApp #arenaContent.hasMomentumBelow>.momentumPanel{height:155px!important;min-height:155px!important;max-height:155px!important;flex-basis:155px!important}
+  #mainApp .players{order:2;width:100%;max-height:360px;padding:8px!important}#mainApp .players .panelTitle{height:30px}#mainApp .playerList{max-height:250px;overflow:auto}#mainApp .player{height:38px!important}#mainApp .addPlayer{height:34px}
+  #mainApp .analytics{order:3;width:100%;display:flex!important;flex-direction:column;gap:8px;grid-template-rows:none!important}
+  #mainApp .mapsPair{width:100%;height:205px;min-height:205px;display:grid;grid-template-columns:1fr 1fr;gap:8px}#mainApp .mapMini{min-height:0}#mainApp .mapMini canvas{height:160px!important}
+  #mainApp .quick{min-height:180px}#mainApp .quickGrid{grid-template-columns:repeat(3,1fr);height:130px}#mainApp .momentumPanel{min-height:205px}
+  #mainApp .bottom{flex:0 0 auto;width:100%;display:block!important;grid-template-columns:none!important}.timeline{min-height:150px}.timelineTrack{min-width:620px}.timeline{overflow-x:auto}
+  #mainApp :is(.contentView,.statsHub,.completeStats,.eventsFeedView,.proEventsView,.v20EventsView){height:auto;min-height:430px;padding:9px}
+  #mainApp :is(.detailBoards,.playerDetail,.teamDetail){grid-template-columns:1fr!important}.completeStatsFilters{grid-template-columns:1fr!important}.playerStatRow{grid-template-columns:30px minmax(90px,1fr) repeat(2,auto)!important;overflow-x:auto}.playerStatMetric:nth-last-child(-n+4){display:none}
+  .modal{align-items:end!important;padding:0!important}.modal .modalCard{width:100%!important;max-width:none!important;max-height:82dvh;margin:0;border-radius:20px 20px 0 0!important;padding:15px!important;overflow:auto}.quickPlayers,.quickActions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #mainApp :is(.svTacticalWorkspace,.svHalftimeWorkspace){position:fixed!important;inset:7px 7px 72px!important;z-index:1100!important;grid-template-rows:auto minmax(0,1fr)!important;border-radius:14px!important}
+  #mainApp .svTacticalHead,#mainApp .svHalftimeHead{min-height:66px;align-items:flex-start;gap:8px;padding:10px!important}#mainApp :is(.svTacticalHead h2,.svHalftimeHead h2){font-size:13px!important}#mainApp :is(.svTacticalHead p,.svHalftimeHead p){font-size:5.5px;line-height:1.35}
+  #mainApp .svTacticalHeadActions,#mainApp .svHalftimeActions{flex-wrap:wrap;justify-content:flex-end;gap:4px}#mainApp .svHalftimeUpdated,#mainApp .svTacticalSaveState{display:none}
+  #mainApp .svHalftimeActions button{height:27px;padding:0 7px;font-size:5.4px}#mainApp .svTacticalClose{width:29px;height:29px}
+  #mainApp .svTacticalBody{display:block!important;padding:8px!important;overflow:auto}#mainApp .svTacticalAside{margin-bottom:8px}#mainApp .svTacticalFields{grid-template-columns:1fr!important}
+  #mainApp .svHalftimeContent{display:block!important;padding:8px!important;overflow:auto}#mainApp .svHalftimeContent>*{margin-bottom:8px}#mainApp .svHalftimeHero,#mainApp .svHalftimeGrid,#mainApp .svHalftimeBottom{grid-template-columns:1fr!important}#mainApp .svHalftimeKpis{grid-template-columns:repeat(4,1fr)!important}#mainApp .svHalftimePlan{grid-template-columns:1fr!important}#mainApp .svHalftimeMomentum{height:170px}
+  #svReportOverlay .svReportToolbar,#svHalftimeReportOverlay .svHalfReportToolbar{height:auto;min-height:58px;padding:8px;gap:7px;align-items:flex-start}#svReportOverlay .svReportToolbarActions{max-width:64%;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px}#svReportOverlay .svReportToolbar button,#svHalftimeReportOverlay .svHalfReportToolbar button{height:29px;padding:0 8px;font-size:6px}.svReportDownloadProgress{min-width:100px}
+  .svReportPages,.svHalfReportStage{padding:10px!important;justify-content:start!important;overflow:auto}.svReportPage,.svHalfReportPage{transform:scale(.46);transform-origin:top left;margin-right:-113mm;margin-bottom:-158mm}
+}
+@media(max-width:390px) and (orientation:portrait){
+  #mainApp .scoreboard{padding:7px!important}#mainApp .score{font-size:27px!important;min-width:76px}#mainApp .scoreControls{grid-template-columns:repeat(2,24px)}#mainApp .scoreBtn{width:24px;height:24px}
+  #mainApp .nav button{flex-basis:66px;width:66px}#mainApp .arenaPanel{min-height:470px;grid-template-rows:36px auto minmax(365px,auto) auto!important}#mainApp #arenaContent{min-height:365px}
+}
+</style>
+<script id="statsvision-phone-portrait-v55-script">
+(()=>{
+  let timer=null;
+  function sync(){
+    document.documentElement.classList.toggle('svPhonePortrait',window.matchMedia('(orientation:portrait)').matches);
+    clearTimeout(timer);timer=setTimeout(()=>{try{if(typeof drawHeat==='function')drawHeat();if(typeof drawAttack==='function')drawAttack();if(typeof drawMoment==='function')drawMoment();if(typeof renderArenaExperience==='function')renderArenaExperience()}catch(error){}},180);
+  }
+  window.addEventListener('resize',sync,{passive:true});window.addEventListener('orientationchange',sync,{passive:true});sync();
+})();
+</script>
 </body></html>
