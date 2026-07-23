@@ -455,9 +455,59 @@ $('#openMinutes').onclick=()=>{state.playerTab='minutos';$$('[data-player-tab]')
 $('#clearPlayers').onclick=()=>{if(confirm('Limpar o plantel?')){state.players=[];renderPlayers();saveState()}};
 $('#restorePlayers').onclick=()=>{state.players=basePlayers.map(p=>({...p}));renderPlayers();saveState();toast('Plantel restaurado')};
 $('#saveMatch').onclick=()=>{saveState();toast('Jogo guardado neste dispositivo')};
-$('#exportBackup').onclick=()=>downloadText('stats-backup.json',JSON.stringify({match:JSON.parse(localStorage.getItem('statsv3_match')||'{}'),settings:JSON.parse(localStorage.getItem('statsv3')||'{}'),tactical:JSON.parse(localStorage.getItem('statsv3_tactical')||'{}')},null,2),'application/json');
+function backupRead(key,fallback={}){
+ try{const value=JSON.parse(localStorage.getItem(key)||'null');return value??fallback}catch(error){return fallback}
+}
+function backupMatchScore(match){
+ if(typeof match==='string')try{match=JSON.parse(match)}catch(error){return 0}
+ if(!match||typeof match!=='object')return 0;
+ return (Array.isArray(match.fieldEvents)?match.fieldEvents.length:0)+(Array.isArray(match.events)?match.events.length:0)+(Number(match.seconds)>0?1:0);
+}
+function currentMatchForBackup(){
+ const stored=backupRead('statsv3_match',{});
+ if(typeof state==='undefined')return stored;
+ return {...stored,home:Number(state.home)||0,away:Number(state.away)||0,seconds:Math.max(0,Number(state.seconds)||0),clockMode:'up',currentPart:Number(state.currentPart)||Number($('#periodSelect')?.value)||1,compensationByPart:state.compensationByPart||stored.compensationByPart||{},players:Array.isArray(state.players)?state.players:stored.players||[],events:Array.isArray(state.events)?state.events:stored.events||[],homeName:$('#homeName')?.value||stored.homeName||'',awayName:$('#awayName')?.value||stored.awayName||'',period:$('#periodSelect')?.value||stored.period||'1',fieldEvents:Array.isArray(state.fieldEvents)?state.fieldEvents:stored.fieldEvents||[],heatPoints:Array.isArray(state.heatPoints)?state.heatPoints:stored.heatPoints||[],periodMinutes:Number(state.periodMinutes)||stored.periodMinutes||45,maxPlayers:Number(state.maxPlayers)||stored.maxPlayers||11,attackSide:state.attackSide||stored.attackSide||'right',plays:Array.isArray(state.plays)?state.plays:stored.plays||[],observations:Array.isArray(state.observations)?state.observations:stored.observations||[],statsSection:state.statsSection||stored.statsSection||'overview',eventFilters:state.eventFilters||stored.eventFilters||{},videoWorkspace:window.statsVisionVideoState||stored.videoWorkspace||null};
+}
+function sessionMatchForBackup(sessions,activeId){
+ const ordered=[sessions.find(item=>item?.id===activeId),...sessions.slice().sort((a,b)=>new Date(b?.savedAt||0)-new Date(a?.savedAt||0))].filter(Boolean);
+ for(const session of ordered){const raw=session?.snapshot?.match;if(backupMatchScore(raw)>0)try{return typeof raw==='string'?JSON.parse(raw):raw}catch(error){}}
+ return {};
+}
+function collectStatsVisionStorage(){
+ const storage={};
+ for(let index=0;index<localStorage.length;index++){const key=localStorage.key(index);if(key&&/^(statsv3|statsvision)/.test(key))storage[key]=localStorage.getItem(key)}
+ return storage;
+}
+$('#exportBackup').onclick=()=>{
+ if(typeof saveState==='function')saveState(true);
+ const sessions=backupRead('statsvision_saved_sessions_v56',[]),activeId=localStorage.getItem('statsvision_active_session_v56')||'',current=currentMatchForBackup(),match=backupMatchScore(current)>0?current:sessionMatchForBackup(Array.isArray(sessions)?sessions:[],activeId),storage=collectStatsVisionStorage();
+ storage.statsv3_match=JSON.stringify(match||{});
+ const backup={format:'statsvision-complete-backup',version:2,exportedAt:new Date().toISOString(),match,settings:backupRead('statsv3',{}),tactical:backupRead('statsv3_tactical',{}),savedSessions:Array.isArray(sessions)?sessions:[],activeSessionId:activeId,storage};
+ downloadText('statsvision-backup-completo.json',JSON.stringify(backup,null,2),'application/json');
+ const actions=Math.max(Array.isArray(match?.fieldEvents)?match.fieldEvents.length:0,Array.isArray(match?.events)?match.events.length:0);
+ toast(`Backup completo exportado · ${actions} ações · ${backup.savedSessions.length} jogos guardados`);
+};
 $('#importBackup').onclick=()=>$('#backupFile').click();
-$('#backupFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader;r.onload=()=>{try{const d=JSON.parse(r.result);localStorage.setItem('statsv3_match',JSON.stringify(d.match||{}));localStorage.setItem('statsv3',JSON.stringify(d.settings||{}));localStorage.setItem('statsv3_tactical',JSON.stringify(d.tactical||{}));location.reload()}catch{alert('Backup inválido')}};r.readAsText(f)};
+$('#backupFile').onchange=e=>{
+ const f=e.target.files[0];if(!f)return;const r=new FileReader;
+ r.onload=()=>{
+  try{
+   const d=JSON.parse(r.result),storage=d.storage&&typeof d.storage==='object'?d.storage:{};
+   Object.entries(storage).forEach(([key,value])=>{if(/^(statsv3|statsvision)/.test(key)&&typeof value==='string')localStorage.setItem(key,value)});
+   const sessions=Array.isArray(d.savedSessions)?d.savedSessions:backupRead('statsvision_saved_sessions_v56',[]),activeId=String(d.activeSessionId||storage.statsvision_active_session_v56||''),direct=d.match&&typeof d.match==='object'?d.match:backupRead('statsv3_match',{}),match=backupMatchScore(direct)>0?direct:sessionMatchForBackup(Array.isArray(sessions)?sessions:[],activeId);
+   localStorage.setItem('statsv3_match',JSON.stringify(match||{}));
+   if(d.settings&&typeof d.settings==='object')localStorage.setItem('statsv3',JSON.stringify(d.settings));
+   if(d.tactical&&typeof d.tactical==='object')localStorage.setItem('statsv3_tactical',JSON.stringify(d.tactical));
+   if(Array.isArray(d.savedSessions))localStorage.setItem('statsvision_saved_sessions_v56',JSON.stringify(d.savedSessions));
+   if(activeId&&Array.isArray(sessions)&&sessions.some(item=>String(item?.id)===activeId))localStorage.setItem('statsvision_active_session_v56',activeId);
+   const actions=Math.max(Array.isArray(match?.fieldEvents)?match.fieldEvents.length:0,Array.isArray(match?.events)?match.events.length:0);
+   if(!actions&&!Array.isArray(d.savedSessions))throw new Error('Este ficheiro não contém dados de jogo');
+   localStorage.setItem('statsvision_backup_import_notice',`Backup importado · ${actions} ações`);
+   location.reload();
+  }catch(error){alert(error?.message||'Backup inválido')}
+ };
+ r.readAsText(f);
+};
 $('#exportCsv').onclick=()=>{const rows=[['minuto','parte','acao','jogador','comentario','x','y'],...state.fieldEvents.map(e=>[e.time,e.period,e.label,e.player,e.comment||'',e.x,e.y])];downloadText('stats-acoes.csv',rows.map(r=>r.map(csvEscape).join(';')).join('\n'),'text/csv')};
 $('#exportReport').onclick=()=>{const txt=`STATs — RELATÓRIO DO JOGO\n${$('#homeName').value} ${state.home}-${state.away} ${$('#awayName').value}\nParte: ${state.currentPart||1}\nAções registadas: ${state.fieldEvents.length}\nJogadores: ${state.players.length}\n\n${state.fieldEvents.map(e=>`${e.time}' ${e.label} — ${e.player} (${e.x}%, ${e.y}%)`).join('\n')}`;downloadText('relatorio-jogo.txt',txt)};
 $('#exportDashboard').onclick=()=>toast('Exportação PNG será ligada ao dashboard na próxima versão');
