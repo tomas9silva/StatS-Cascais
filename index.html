@@ -2287,7 +2287,7 @@ body{min-width:900px}
   normaliseIds();
 
   let saveStateTimer=0,pendingStatePayload=null;
-  function buildStatePayload(){return {home:state.home,away:state.away,seconds:state.seconds,clockMode:'up',currentPart:state.currentPart,compensationByPart:state.compensationByPart,players:state.players,events:state.events,homeName:q('#homeName')?.value||'',awayName:q('#awayName')?.value||'',period:q('#periodSelect')?.value||'1',fieldEvents:state.fieldEvents,heatPoints:state.heatPoints,periodMinutes:state.periodMinutes,maxPlayers:state.maxPlayers,attackSide:state.attackSide,plays:state.plays,observations:state.observations,currentPlay:state.currentPlay,playMode:state.playMode,statsSection:state.statsSection,eventFilters:state.eventFilters}}
+  function buildStatePayload(){return {home:state.home,away:state.away,seconds:state.seconds,clockMode:'up',currentPart:state.currentPart,compensationByPart:state.compensationByPart,players:state.players,events:state.events,homeName:q('#homeName')?.value||'',awayName:q('#awayName')?.value||'',period:q('#periodSelect')?.value||'1',fieldEvents:state.fieldEvents,heatPoints:state.heatPoints,periodMinutes:state.periodMinutes,maxPlayers:state.maxPlayers,attackSide:state.attackSide,plays:state.plays,observations:state.observations,currentPlay:state.currentPlay,playMode:state.playMode,statsSection:state.statsSection,eventFilters:state.eventFilters,videoWorkspace:window.statsVisionVideoState||null}}
   function flushStateSave(){if(!pendingStatePayload)return;const payload=pendingStatePayload;pendingStatePayload=null;clearTimeout(saveStateTimer);saveStateTimer=0;try{localStorage.setItem('statsv3_match',JSON.stringify(payload))}catch(error){}}
   window.saveState=saveState=function(immediate=false){pendingStatePayload=buildStatePayload();if(immediate){flushStateSave();return}clearTimeout(saveStateTimer);saveStateTimer=setTimeout(flushStateSave,90)};
   if(migratedFailedPass)saveState(true);
@@ -5232,6 +5232,524 @@ body .panelZoomStage:has(>.momentumPanel.panel.panelExpanded){background:var(--a
   const base=window.statsVisionTacticalReportMarkup;if(typeof base!=='function')return;
   const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   window.statsVisionTacticalReportMarkup=(raw,data)=>{const html=base(raw,data),idea=String(raw?.gameIdea||'').trim();if(!idea)return html;const reading=String(data?.ideaReading||'A intenção definida deve ser comparada com os comportamentos registados.');const block=`<article class="svrGameIdea"><small>IDEIA DE JOGO / MENTALIDADE</small><h3>${esc(idea)}</h3><p>${esc(reading)}</p></article>`;return html.replace('</header>',`</header>${block}`)};
+})();
+</script>
+<style id="statsvision-video-workspace-v1">
+#svVideoWorkspace[hidden]{display:none!important}
+#svVideoWorkspace{grid-column:2;grid-row:1;position:relative;z-index:85;min-width:0;min-height:0;height:100vh;overflow:hidden;background:#f2f5f7;color:#101418}
+.svVideoShell{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr)}
+.svVideoHeader{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:15px 18px;border-bottom:1px solid #d6e0e5;background:linear-gradient(135deg,#061b2a,#0d3447);color:#fff;box-shadow:0 6px 18px rgba(6,27,42,.13)}
+.svVideoTitle{display:flex;align-items:center;gap:12px;min-width:0}.svVideoTitleIcon{width:42px;height:42px;border:1px solid rgba(103,229,239,.32);border-radius:12px;display:grid;place-items:center;background:rgba(19,191,209,.12);color:#6ce7ee;font-size:18px}.svVideoTitle h1{margin:0;font-size:20px;letter-spacing:-.025em}.svVideoTitle p{margin:4px 0 0;color:#abc0ca;font-size:9px;font-weight:750}
+.svVideoHeaderActions{display:flex;align-items:center;gap:8px}.svVideoHeaderActions button{height:36px;padding:0 13px;border:1px solid #315366;border-radius:9px;background:#0a2a3c;color:#e8f4f6;font-size:8px;font-weight:900}.svVideoHeaderActions button:hover{border-color:#61dfe8;color:#71edf3}
+.svVideoLayout{min-height:0;display:grid;grid-template-columns:minmax(470px,1.2fr) minmax(350px,.8fr);gap:12px;padding:12px}
+.svVideoStage,.svVideoPanel{min-height:0;border:1px solid #d7e0e5;border-radius:15px;background:#fff;box-shadow:0 7px 20px rgba(24,39,52,.055)}
+.svVideoStage{display:grid;grid-template-rows:auto minmax(260px,1fr) auto;overflow:hidden}.svVideoToolbar{display:grid;grid-template-columns:132px 166px minmax(0,1fr);align-items:end;gap:9px;padding:11px 12px;border-bottom:1px solid #e0e6ea;background:#f8fafb}.svVideoToolbar label,.svVideoClipSettings label{display:grid;gap:5px;color:#657681;font-size:7px;font-weight:950;letter-spacing:.07em;text-transform:uppercase}.svVideoToolbar select,.svVideoToolbar input,.svVideoClipSettings input,.svVideoFilters select{height:35px;border:1px solid #ccd8de;border-radius:9px;background:#fff;color:#101418;padding:0 10px;font-size:9px;font-weight:850}
+.svVideoSourceMode{display:grid;grid-template-columns:1fr 1fr;height:35px;padding:3px;border:1px solid #cbd8de;border-radius:9px;background:#eaf0f3}.svVideoSourceMode button{border:0;border-radius:6px;background:transparent;color:#687984;font-size:7px;font-weight:950}.svVideoSourceMode button.active{background:#fff;color:#087c8a;box-shadow:0 2px 7px rgba(24,39,52,.11)}
+.svVideoSourcePanel[hidden]{display:none!important}.svVideoYoutubeSource{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px}.svVideoYoutubeSource button,.svVideoFileButton{height:35px;display:flex!important;align-items:center;justify-content:center!important;padding:0 11px;border:1px solid #13bfd1!important;border-radius:9px;background:#13bfd1!important;color:#04232c!important;cursor:pointer;font-size:7px!important;font-weight:950!important;letter-spacing:0!important;text-transform:none!important;white-space:nowrap}.svVideoYoutubeSource button.secondary{border-color:#c8d5dc!important;background:#fff!important;color:#43545e!important}.svVideoLocalSource{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:7px}.svVideoFileButton input{display:none}.svVideoFileStatus{min-width:0;color:#647580;font-size:7.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.svVideoPlayerWrap{position:relative;min-height:0;display:grid;place-items:center;padding:12px;background:#061622}.svVideoPlayerWrap video,.svYouTubeHost{width:100%;height:100%;max-height:100%;border-radius:10px;background:#02080c;overflow:hidden}.svVideoPlayerWrap video{object-fit:contain}.svYouTubeHost iframe{display:block;width:100%;height:100%;min-height:260px;border:0}.svVideoSourceNotice{position:absolute;left:22px;right:22px;bottom:20px;z-index:4;display:flex;align-items:flex-start;gap:7px;padding:8px 10px;border:1px solid rgba(255,196,94,.38);border-radius:9px;background:rgba(33,27,12,.88);color:#f4dbac;font-size:7px;font-weight:800;line-height:1.4;pointer-events:none}.svVideoSourceNotice[hidden]{display:none!important}.svVideoEmpty{position:absolute;inset:12px;display:grid;place-items:center;text-align:center;padding:30px;border:1px dashed #38505d;border-radius:10px;color:#94aab5;font-size:10px;font-weight:800;line-height:1.55;pointer-events:none}.svVideoEmpty strong{display:block;margin-bottom:5px;color:#e6f0f3;font-size:13px}
+.svVideoSync{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr);gap:10px;padding:11px 12px;border-top:1px solid #e0e6ea;background:#fff}.svVideoSyncCard{min-width:0;padding:10px;border:1px solid #d9e3e8;border-radius:11px;background:#f7f9fa}.svVideoSyncCard h3{margin:0 0 4px;font-size:10px}.svVideoSyncCard p{margin:0;color:#697a84;font-size:7.5px;line-height:1.45}.svVideoSyncActions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.svVideoSyncActions button{min-height:31px;padding:0 9px;border:1px solid #cbd7dd;border-radius:8px;background:#fff;color:#31414b;font-size:7px;font-weight:900}.svVideoSyncActions button.primary{border-color:#13bfd1;background:#13bfd1;color:#05242c}.svVideoSyncActions button:disabled{opacity:.45;cursor:not-allowed}.svVideoReference{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;margin-top:8px}.svVideoReference select{min-width:0;height:32px;border:1px solid #cbd7dd;border-radius:8px;background:#fff;padding:0 8px;color:#26343c;font-size:7px;font-weight:800}.svVideoReference button{height:32px;padding:0 9px;border:1px solid #315366;border-radius:8px;background:#0c2e41;color:#fff;font-size:7px;font-weight:900}.svVideoSyncStatus{display:flex;align-items:flex-start;gap:7px;margin-top:7px;color:#5e707a;font-size:7.5px;font-weight:800;line-height:1.4}.svVideoSyncDot{width:8px;height:8px;flex:0 0 8px;margin-top:1px;border-radius:50%;background:#9aaab2}.svVideoSyncDot.ready{background:#16a060;box-shadow:0 0 0 3px rgba(22,160,96,.12)}.svVideoSyncDot.warn{background:#e59a24;box-shadow:0 0 0 3px rgba(229,154,36,.12)}
+.svVideoPanel{display:grid;grid-template-rows:auto auto minmax(0,1fr);overflow:hidden}.svVideoPanelHead{padding:12px;border-bottom:1px solid #e0e6ea}.svVideoPanelHeadTop{display:flex;align-items:center;justify-content:space-between;gap:10px}.svVideoPanelHead h2{margin:0;font-size:14px}.svVideoCount{padding:5px 8px;border-radius:99px;background:#e8f6f8;color:#087b89;font-size:7px;font-weight:950}.svVideoFilters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:10px}.svVideoFilters label{display:grid;gap:4px;color:#667781;font-size:6.5px;font-weight:950;letter-spacing:.06em;text-transform:uppercase}.svVideoFilters select{height:32px;font-size:7px}
+.svVideoClipBar{display:grid;grid-template-columns:58px 58px minmax(0,1fr);align-items:end;gap:7px;padding:9px 12px;border-bottom:1px solid #e0e6ea;background:#f8fafb}.svVideoClipSettings{display:contents}.svVideoClipSettings input{width:100%;height:32px;padding:0 7px;font-size:8px}.svVideoPlaylistActions{display:flex;justify-content:flex-end;gap:6px}.svVideoPlaylistActions button{height:32px;padding:0 9px;border:1px solid #c9d5dc;border-radius:8px;background:#fff;color:#33444e;font-size:7px;font-weight:900}.svVideoPlaylistActions button.primary{border-color:#13bfd1;background:#13bfd1;color:#04242c}
+.svVideoClips{min-height:0;overflow:auto;display:grid;align-content:start;gap:7px;padding:10px}.svVideoClip{--clip-color:#13bfd1;display:grid;grid-template-columns:52px minmax(100px,.8fr) minmax(120px,1.2fr) auto;align-items:center;gap:8px;padding:8px 9px;border:1px solid #d9e2e7;border-left:4px solid var(--clip-color);border-radius:10px;background:#fff;transition:.16s ease}.svVideoClip:hover{border-color:#becdd5;box-shadow:0 5px 13px rgba(24,39,52,.07)}.svVideoClip.active{border-color:#13bfd1;background:#f2fbfc;box-shadow:0 0 0 2px rgba(19,191,209,.09)}.svVideoClipTime strong{display:block;color:#101418;font-size:10px;font-variant-numeric:tabular-nums}.svVideoClipTime small{display:block;margin-top:2px;color:#74848e;font-size:5.8px;font-weight:850;text-transform:uppercase}.svVideoClipMain,.svVideoClipDetail{min-width:0;display:grid;gap:3px}.svVideoClipTag{width:max-content;max-width:100%;padding:3px 6px;border-radius:99px;background:color-mix(in srgb,var(--clip-color) 11%,#fff);color:color-mix(in srgb,var(--clip-color) 82%,#0d2732);font-size:6px;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.svVideoClipMain strong,.svVideoClipDetail strong{font-size:7.5px;color:#1b2931;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.svVideoClipMain small,.svVideoClipDetail small{color:#70808a;font-size:6px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.svVideoClipButtons{display:grid;grid-template-columns:repeat(3,28px);gap:4px}.svVideoClipButtons button{height:27px;padding:0;border:1px solid #ced9df;border-radius:7px;background:#fff;color:#40515b;font-size:7px;font-weight:950}.svVideoClipButtons button.play{grid-column:1/-1;width:auto;border-color:#183e50;background:#0d3042;color:#fff}.svVideoClipButtons button:disabled{opacity:.38}.svVideoNoClips{min-height:160px;display:grid;place-items:center;text-align:center;padding:20px;border:1px dashed #cad6dc;border-radius:11px;color:#70818b;font-size:8px;font-weight:800;line-height:1.5}
+@media(max-width:1180px) and (orientation:landscape){.svVideoLayout{grid-template-columns:minmax(430px,1.12fr) minmax(330px,.88fr);gap:8px;padding:8px}.svVideoHeader{padding:9px 11px}.svVideoTitleIcon{width:35px;height:35px}.svVideoTitle h1{font-size:15px}.svVideoStage{grid-template-rows:auto minmax(210px,1fr) auto}.svVideoToolbar{grid-template-columns:105px 145px minmax(0,1fr);padding:8px}.svVideoYoutubeSource button,.svVideoFileButton{padding:0 7px;font-size:6px!important}.svVideoSync{grid-template-columns:1fr 1fr;padding:8px}.svVideoClip{grid-template-columns:45px minmax(85px,.8fr) minmax(105px,1.2fr) auto;gap:5px;padding:6px}.svVideoClips{padding:7px}.svVideoPanelHead{padding:8px}.svVideoFilters{gap:5px;margin-top:7px}.svVideoClipBar{padding:7px}.svYouTubeHost iframe{min-height:210px}}
+@media(max-height:620px) and (orientation:landscape){.svVideoHeader{padding-top:7px;padding-bottom:7px}.svVideoTitle p{display:none}.svVideoToolbar{padding-top:6px;padding-bottom:6px}.svVideoSync{padding-top:6px;padding-bottom:6px}.svVideoSyncCard{padding:7px}.svVideoSyncActions{margin-top:5px}.svVideoPanelHead{padding-top:7px;padding-bottom:7px}.svVideoFilters{margin-top:6px}.svVideoClipBar{padding-top:5px;padding-bottom:5px}}
+</style>
+<script id="statsvision-video-workspace-v1-script">
+(()=>{
+  if(typeof state==='undefined'||!document.querySelector('#mainApp'))return;
+  const q=(selector,root=document)=>root.querySelector(selector);
+  const qa=(selector,root=document)=>Array.from(root.querySelectorAll(selector));
+  const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  const clamp=(value,min,max)=>Math.min(max,Math.max(min,Number(value)||0));
+  const partLabel=part=>({1:'1.ª PARTE',2:'2.ª PARTE',3:'1.ª PARTE · PROLONGAMENTO',4:'2.ª PARTE · PROLONGAMENTO'}[Number(part)]||`${part}.ª PARTE`);
+  const actionNames={golo:'Golo',remate:'Remate',defesa:'Defesa',recuperacao:'Recuperação de bola',perda:'Perda de bola',passe:'Passe-chave',cruzamento:'Cruzamento eficaz',falta:'Falta',fora_jogo:'Fora de jogo',canto:'Canto',advertencia:'Advertência',acao_defensiva:'Ação defensiva',observacao:'Observação',substituicao:'Substituição',cartao_amarelo:'Cartão amarelo',expulsao:'Cartão vermelho'};
+  const actionColor=action=>['defesa','recuperacao','acao_defensiva'].includes(action)?'#2276d2':['perda','falta','fora_jogo','advertencia','cartao_amarelo','expulsao'].includes(action)?'#d64c58':['observacao','substituicao'].includes(action)?'#778894':'#13bfd1';
+
+  function defaults(){
+    return {version:2,selectedPart:'1',preRoll:8,postRoll:5,liveAnchors:{},parts:{},eventOffsets:{},filters:{part:'all',player:'all',action:'all',zone:'all'}};
+  }
+  function normalise(raw){
+    const base=defaults(),source=raw&&typeof raw==='object'?raw:{};
+    return {...base,...source,liveAnchors:{...(source.liveAnchors||{})},parts:{...(source.parts||{})},eventOffsets:{...(source.eventOffsets||{})},filters:{...base.filters,...(source.filters||{})}};
+  }
+  function storedVideoState(){
+    try{return normalise(JSON.parse(localStorage.getItem('statsv3_match')||'{}')?.videoWorkspace)}catch(error){return defaults()}
+  }
+  const videoState=normalise(storedVideoState());
+  window.statsVisionVideoState=videoState;
+  const runtime={files:new Map(),urls:new Map(),currentPart:String(videoState.selectedPart||'1'),activeClip:null,queue:[],queueIndex:-1,youtubePlayer:null,youtubePart:null,youtubeVideoId:null,youtubeError:null,youtubeApiPromise:null};
+  const knownEventObjects=new WeakSet();
+  [...(state.events||[]),...(state.fieldEvents||[])].forEach(item=>{if(item&&typeof item==='object')knownEventObjects.add(item)});
+  let pendingArenaRecordedAt=0,renderTimer=0;
+
+  function ensurePart(part){
+    part=String(part||'1');
+    if(!videoState.parts[part])videoState.parts[part]={file:null,sync:null,source:'youtube',youtube:{url:'',videoId:'',duration:null}};
+    const data=videoState.parts[part];
+    if(!data.youtube||typeof data.youtube!=='object')data.youtube={url:'',videoId:'',duration:null};
+    if(!data.source)data.source=data.youtube.videoId?'youtube':data.file?'local':'youtube';
+    if(!['youtube','local'].includes(data.source))data.source='youtube';
+    return data;
+  }
+  function eventRecordedAt(event){return Number(event?.videoRecordedAtMs||event?.recordedAtMs)||null}
+  function eventKey(event,index){return String(event?.id||`legacy-${index}`)}
+  function eventEntries(){
+    return (state.events||[]).map((event,index)=>({event,index,key:eventKey(event,index)})).sort((a,b)=>(Number(a.event.period||1)-Number(b.event.period||1))||((Number(a.event.gameSecond)||0)-(Number(b.event.gameSecond)||0)));
+  }
+  function eventClock(event){
+    if(typeof window.statsVisionFormatEventClock==='function')return window.statsVisionFormatEventClock(event);
+    const seconds=Math.max(0,Number(event?.gameSecond)||((Number(event?.time)||0)*60));
+    return `${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(Math.floor(seconds%60)).padStart(2,'0')}`;
+  }
+  function eventAction(event){return event?.action||'evento'}
+  function eventActionLabel(event){return String(event?.label||event?.type||actionNames[eventAction(event)]||'Evento').replace(/^[•·\s]+/,'').trim()}
+  function eventZone(event){
+    if(!Number.isFinite(Number(event?.x))||!Number.isFinite(Number(event?.y)))return 'Sem localização';
+    const x=Number(event.x),y=Number(event.y),side=event.attackSide||state.attackSide||'right',progress=side==='left'?100-x:x;
+    const sector=progress<34?'Zona defensiva':progress<67?'Meio-campo':'Zona ofensiva';
+    const lane=y<34?'corredor esquerdo':y>66?'corredor direito':'corredor central';
+    return `${sector} · ${lane}`;
+  }
+  function zoneGroup(event){
+    if(!Number.isFinite(Number(event?.x)))return 'none';
+    const x=Number(event.x),side=event.attackSide||state.attackSide||'right',progress=side==='left'?100-x:x;
+    return progress<34?'defensive':progress<67?'middle':'offensive';
+  }
+
+  function stampNewEvents(){
+    const fresh=[...(state.fieldEvents||[]),...(state.events||[])].filter(item=>item&&typeof item==='object'&&!knownEventObjects.has(item));
+    if(!fresh.length)return;
+    const now=Date.now(),arenaStamp=pendingArenaRecordedAt&&now-pendingArenaRecordedAt<180000?pendingArenaRecordedAt:now,byId=new Map();
+    fresh.forEach(item=>{
+      const id=item.id?String(item.id):'';
+      const linked=id&&byId.has(id)?byId.get(id):arenaStamp;
+      if(!eventRecordedAt(item))item.videoRecordedAtMs=linked;
+      if(id&&!byId.has(id))byId.set(id,Number(item.videoRecordedAtMs)||linked);
+      knownEventObjects.add(item);
+    });
+    pendingArenaRecordedAt=0;
+  }
+  const previousSave=window.saveState;
+  if(typeof previousSave==='function'){
+    window.saveState=saveState=function(immediate=false){
+      stampNewEvents();
+      const result=previousSave.call(this,immediate);
+      if(!q('#svVideoWorkspace')?.hidden){clearTimeout(renderTimer);renderTimer=setTimeout(refreshVideoWorkspace,110)}
+      return result;
+    };
+  }
+  function persist(immediate=true){window.statsVisionVideoState=videoState;if(typeof window.saveState==='function')window.saveState(immediate)}
+
+  document.addEventListener('pointerdown',event=>{
+    const pitch=event.target.closest?.('#pitch');
+    if(pitch&&!event.target.closest('.fieldPoint')&&!state.arenaDeleteMode)pendingArenaRecordedAt=Date.now();
+  },true);
+  q('#playBtn')?.addEventListener('click',()=>{
+    if(state.running)return;
+    const part=String(state.currentPart||q('#periodSelect')?.value||'1');
+    if(!videoState.liveAnchors[part]){
+      videoState.liveAnchors[part]={recordedAtMs:Date.now(),gameSecond:Math.max(0,Number(state.seconds)||0)};
+      persist(true);
+    }
+  },true);
+  document.addEventListener('click',event=>{if(event.target.closest?.('#closeQuickArena,#cancelEvent,.quickArenaClose'))pendingArenaRecordedAt=0},true);
+
+  const nav=q('#mainApp .nav'),settings=q('#sideSettings');
+  const videoButton=document.createElement('button');
+  videoButton.type='button';videoButton.id='sideVideo';videoButton.title='Vídeo e clips';videoButton.setAttribute('aria-label','Vídeo e clips');
+  videoButton.innerHTML='<span class="svNavIcon" aria-hidden="true">▶</span><span class="svNavLabel">Vídeo</span>';
+  if(nav)settings?nav.insertBefore(videoButton,settings):nav.appendChild(videoButton);
+
+  const workspace=document.createElement('section');
+  workspace.id='svVideoWorkspace';workspace.hidden=true;workspace.setAttribute('aria-label','Vídeo e clips');
+  workspace.innerHTML=`
+    <div class="svVideoShell">
+      <header class="svVideoHeader">
+        <div class="svVideoTitle"><span class="svVideoTitleIcon">▶</span><div><h1>Vídeo e Clips</h1><p>Sincroniza a gravação com os eventos registados durante o jogo.</p></div></div>
+        <div class="svVideoHeaderActions"><button type="button" id="svVideoClose">VOLTAR AO JOGO</button></div>
+      </header>
+      <div class="svVideoLayout">
+        <section class="svVideoStage">
+          <div class="svVideoToolbar">
+            <label>Vídeo da parte<select id="svVideoPart">${[1,2,3,4].map(part=>`<option value="${part}">${partLabel(part)}</option>`).join('')}</select></label>
+            <label>Origem do vídeo<div class="svVideoSourceMode"><button type="button" data-video-source="youtube">YOUTUBE</button><button type="button" data-video-source="local">FICHEIRO</button></div></label>
+            <div>
+              <div class="svVideoSourcePanel svVideoYoutubeSource" id="svVideoYoutubeSource">
+                <input id="svVideoYoutubeUrl" type="url" inputmode="url" autocomplete="off" placeholder="Cola o link do YouTube ou o ID do vídeo">
+                <button type="button" id="svVideoLoadYoutube">CARREGAR LINK</button>
+                <button type="button" class="secondary" id="svVideoYoutubeAll">USAR NAS 4 PARTES</button>
+              </div>
+              <div class="svVideoSourcePanel svVideoLocalSource" id="svVideoLocalSource" hidden>
+                <div class="svVideoFileStatus" id="svVideoFileStatus">Nenhum vídeo selecionado nesta sessão.</div>
+                <label class="svVideoFileButton">SELECIONAR VÍDEO<input id="svVideoFile" type="file" accept="video/*"></label>
+              </div>
+            </div>
+          </div>
+          <div class="svVideoPlayerWrap">
+            <video id="svVideoPlayer" controls playsinline preload="metadata" hidden></video>
+            <div class="svYouTubeHost" id="svYouTubeHost" hidden><div id="svYouTubePlayer"></div></div>
+            <div class="svVideoEmpty" id="svVideoEmpty"><div><strong>Adiciona o vídeo desta parte</strong>Cola um link não listado do YouTube. Também podes mudar para “Ficheiro” e usar um vídeo guardado no dispositivo.</div></div>
+            <div class="svVideoSourceNotice" id="svVideoSourceNotice" hidden></div>
+          </div>
+          <div class="svVideoSync">
+            <article class="svVideoSyncCard">
+              <h3>Sincronização da parte</h3>
+              <p>Pausa o vídeo exatamente no início desta parte e marca esse ponto. Se o cronómetro tiver paragens, podes afinar com um evento visível.</p>
+              <div class="svVideoSyncActions">
+                <button type="button" class="primary" id="svVideoMarkStart">MARCAR INÍCIO NESTE PONTO</button>
+                <button type="button" data-sync-shift="-1">VÍDEO −1 s</button>
+                <button type="button" data-sync-shift="1">VÍDEO +1 s</button>
+              </div>
+              <div class="svVideoSyncStatus" id="svVideoSyncStatus"></div>
+            </article>
+            <article class="svVideoSyncCard">
+              <h3>Afinação através de um evento</h3>
+              <p>Pausa no momento exato de uma ação conhecida e escolhe esse evento para obteres maior precisão.</p>
+              <div class="svVideoReference"><select id="svVideoReferenceEvent"></select><button type="button" id="svVideoMarkEvent">SINCRONIZAR</button></div>
+              <div class="svVideoSyncStatus" id="svVideoLiveStatus"></div>
+            </article>
+          </div>
+        </section>
+        <aside class="svVideoPanel">
+          <div class="svVideoPanelHead">
+            <div class="svVideoPanelHeadTop"><div><h2>Clips virtuais</h2></div><span class="svVideoCount" id="svVideoCount">0 CLIPS</span></div>
+            <div class="svVideoFilters">
+              <label>Parte<select id="svVideoFilterPart"><option value="all">Todas as partes</option>${[1,2,3,4].map(part=>`<option value="${part}">${partLabel(part)}</option>`).join('')}</select></label>
+              <label>Jogador<select id="svVideoFilterPlayer"><option value="all">Todos os jogadores</option></select></label>
+              <label>Ação<select id="svVideoFilterAction"><option value="all">Todas as ações</option><option value="shooting">Todos os remates e golos</option></select></label>
+              <label>Zona<select id="svVideoFilterZone"><option value="all">Todas as zonas</option><option value="defensive">Zona defensiva</option><option value="middle">Meio-campo</option><option value="offensive">Zona ofensiva</option></select></label>
+            </div>
+          </div>
+          <div class="svVideoClipBar">
+            <div class="svVideoClipSettings">
+              <label>Antes<input id="svVideoPreRoll" type="number" min="0" max="60" step="1" value="8"></label>
+              <label>Depois<input id="svVideoPostRoll" type="number" min="0" max="60" step="1" value="5"></label>
+            </div>
+            <div class="svVideoPlaylistActions"><button type="button" id="svVideoStop">PARAR</button><button type="button" class="primary" id="svVideoPlayAll">REPRODUZIR SELEÇÃO</button></div>
+          </div>
+          <div class="svVideoClips" id="svVideoClips"></div>
+        </aside>
+      </div>
+    </div>`;
+  q('#mainApp').appendChild(workspace);
+
+  const player=q('#svVideoPlayer'),youtubeHost=q('#svYouTubeHost'),fileInput=q('#svVideoFile'),partSelect=q('#svVideoPart'),youtubeInput=q('#svVideoYoutubeUrl');
+  function fileMatches(saved,file){return Boolean(saved&&file&&saved.name===file.name&&Number(saved.size)===Number(file.size)&&Number(saved.lastModified)===Number(file.lastModified))}
+  function youtubeId(value){
+    const input=String(value||'').trim();if(/^[A-Za-z0-9_-]{11}$/.test(input))return input;
+    try{
+      const parsed=new URL(/^https?:\/\//i.test(input)?input:`https://${input}`),host=parsed.hostname.replace(/^www\./,'').replace(/^m\./,'');
+      let candidate='';
+      if(host==='youtu.be')candidate=parsed.pathname.split('/').filter(Boolean)[0]||'';
+      else if(['youtube.com','youtube-nocookie.com'].includes(host)){
+        candidate=parsed.searchParams.get('v')||'';
+        if(!candidate){const bits=parsed.pathname.split('/').filter(Boolean);if(['embed','shorts','live'].includes(bits[0]))candidate=bits[1]||''}
+      }
+      return /^[A-Za-z0-9_-]{11}$/.test(candidate)?candidate:'';
+    }catch(error){return ''}
+  }
+  function canonicalYoutubeUrl(id){return `https://www.youtube.com/watch?v=${id}`}
+  function sourceAvailable(part){
+    const data=ensurePart(part);
+    return data.source==='youtube'?Boolean(data.youtube.videoId):runtime.files.has(String(part));
+  }
+  function sourceConfigured(part){
+    const data=ensurePart(part);
+    return data.source==='youtube'?Boolean(data.youtube.videoId):Boolean(data.file);
+  }
+  function setSourceNotice(message=''){
+    const notice=q('#svVideoSourceNotice');notice.hidden=!message;notice.textContent=message;
+  }
+  function youtubeErrorMessage(code){
+    return ({2:'O link do YouTube não é válido.',5:'Este vídeo não pode ser reproduzido no leitor HTML5.',100:'O vídeo foi removido ou está privado.',101:'O proprietário não permite incorporar este vídeo.',150:'O proprietário não permite incorporar este vídeo.',153:'O YouTube exige que esta aplicação esteja publicada online para identificar a origem do leitor.'})[Number(code)]||'Não foi possível carregar este vídeo do YouTube.';
+  }
+  function loadYoutubeApi(){
+    if(window.YT?.Player)return Promise.resolve(window.YT);
+    if(runtime.youtubeApiPromise)return runtime.youtubeApiPromise;
+    runtime.youtubeApiPromise=new Promise((resolve,reject)=>{
+      const previous=window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady=()=>{if(typeof previous==='function')previous();window.YT?.Player?resolve(window.YT):reject(new Error('API YouTube indisponível'))};
+      let script=q('script[data-statsvision-youtube-api]');
+      if(!script){script=document.createElement('script');script.src='https://www.youtube.com/iframe_api';script.async=true;script.dataset.statsvisionYoutubeApi='1';document.head.appendChild(script)}
+      script.addEventListener('error',()=>reject(new Error('Falha ao carregar a API do YouTube')),{once:true});
+    });
+    return runtime.youtubeApiPromise;
+  }
+  function currentVideoTime(){
+    const data=ensurePart(runtime.currentPart);
+    if(data.source==='youtube'){
+      if(!runtime.youtubePlayer||runtime.youtubeVideoId!==data.youtube.videoId||runtime.youtubeError)return null;
+      try{const value=Number(runtime.youtubePlayer.getCurrentTime());return Number.isFinite(value)?value:null}catch(error){return null}
+    }
+    return runtime.files.has(runtime.currentPart)&&player.dataset.part===runtime.currentPart?Number(player.currentTime)||0:null;
+  }
+  function pauseActiveSource(){
+    try{player.pause()}catch(error){}
+    try{runtime.youtubePlayer?.pauseVideo?.()}catch(error){}
+  }
+  function renderSourceUI(){
+    const part=runtime.currentPart,data=ensurePart(part),isYoutube=data.source==='youtube',selected=runtime.files.get(part),status=q('#svVideoFileStatus'),empty=q('#svVideoEmpty');
+    qa('[data-video-source]',workspace).forEach(button=>button.classList.toggle('active',button.dataset.videoSource===data.source));
+    q('#svVideoYoutubeSource').hidden=!isYoutube;q('#svVideoLocalSource').hidden=isYoutube;
+    youtubeInput.value=data.youtube.url||data.youtube.videoId?data.youtube.url||canonicalYoutubeUrl(data.youtube.videoId):'';
+    if(selected){const recognized=fileMatches(data.file,selected);status.textContent=`${recognized?'Vídeo reconhecido':'Vídeo selecionado'} · ${selected.name}`}
+    else if(data.file)status.textContent=`Associado: ${data.file.name} · volta a selecionar`;
+    else status.textContent='Nenhum vídeo selecionado nesta sessão.';
+    player.hidden=isYoutube||!selected;
+    youtubeHost.hidden=!isYoutube||!data.youtube.videoId;
+    empty.hidden=isYoutube?Boolean(data.youtube.videoId):Boolean(selected);
+    empty.innerHTML=isYoutube?'<div><strong>Adiciona o vídeo desta parte</strong>Cola um link não listado do YouTube com a incorporação permitida.</div>':'<div><strong>O vídeo continua no teu dispositivo</strong>Seleciona o ficheiro correspondente a esta parte. A aplicação não cria uma cópia.</div>';
+    if(isYoutube&&location.protocol==='file:')setSourceNotice('O modo YouTube deve ser testado na versão publicada online. Ao abrir diretamente este ficheiro, o YouTube pode apresentar o erro 153.');
+    else if(!runtime.youtubeError||!isYoutube)setSourceNotice('');
+  }
+  function revokeRuntimeFiles(){
+    runtime.urls.forEach(url=>URL.revokeObjectURL(url));runtime.urls.clear();runtime.files.clear();runtime.activeClip=null;runtime.queue=[];runtime.queueIndex=-1;
+    pauseActiveSource();player.removeAttribute('src');player.removeAttribute('data-part');player.load();
+    try{runtime.youtubePlayer?.destroy?.()}catch(error){}
+    runtime.youtubePlayer=null;runtime.youtubePart=null;runtime.youtubeVideoId=null;runtime.youtubeError=null;youtubeHost.innerHTML='<div id="svYouTubePlayer"></div>';
+  }
+  async function loadYoutubePart(part){
+    const data=ensurePart(part),id=data.youtube.videoId;
+    player.pause();player.hidden=true;renderSourceUI();
+    if(!id)return false;
+    runtime.youtubeError=null;
+    try{
+      const YT=await loadYoutubeApi();
+      if(runtime.youtubePlayer){
+        if(runtime.youtubeVideoId!==id){runtime.youtubePlayer.cueVideoById?.({videoId:id,startSeconds:0});runtime.youtubeVideoId=id}
+        runtime.youtubePart=part;youtubeHost.hidden=false;setSourceNotice(location.protocol==='file:'?'O modo YouTube deve ser testado na versão publicada online. Ao abrir diretamente este ficheiro, o YouTube pode apresentar o erro 153.':'');return true;
+      }
+      const playerVars={playsinline:1,rel:0,controls:1};
+      if(location.protocol!=='file:'&&location.origin&&location.origin!=='null')playerVars.origin=location.origin;
+      return await new Promise(resolve=>{
+        let settled=false;
+        const finish=value=>{if(!settled){settled=true;resolve(value)}};
+        runtime.youtubePlayer=new YT.Player('svYouTubePlayer',{videoId:id,playerVars,events:{
+          onReady:event=>{
+            runtime.youtubeVideoId=id;runtime.youtubePart=part;runtime.youtubeError=null;
+            const duration=Number(event.target.getDuration?.());if(Number.isFinite(duration)&&duration>0)data.youtube.duration=duration;
+            youtubeHost.hidden=false;setSourceNotice(location.protocol==='file:'?'O modo YouTube deve ser testado na versão publicada online. Ao abrir diretamente este ficheiro, o YouTube pode apresentar o erro 153.':'');persist(true);renderClips();finish(true);
+          },
+          onStateChange:event=>{
+            if(event.data===YT.PlayerState?.ENDED&&runtime.activeClip){runtime.activeClip=null;renderClips();if(runtime.queue.length)setTimeout(playNext,80)}
+          },
+          onError:event=>{runtime.youtubeError=Number(event.data)||true;const message=youtubeErrorMessage(event.data);setSourceNotice(message);if(typeof toast==='function')toast(message);finish(false)}
+        }});
+        runtime.youtubeVideoId=id;runtime.youtubePart=part;
+      });
+    }catch(error){
+      runtime.youtubeError=true;setSourceNotice('Não foi possível carregar o leitor do YouTube. Confirma a ligação à internet e volta a tentar.');if(typeof toast==='function')toast('Não foi possível carregar o leitor do YouTube');return false;
+    }
+  }
+  function loadLocalPart(part){
+    pauseActiveSource();const file=runtime.files.get(part),url=runtime.urls.get(part);renderSourceUI();
+    if(!file||!url){player.removeAttribute('src');player.removeAttribute('data-part');player.load();renderSourceUI();return Promise.resolve(false)}
+    if(player.dataset.part===part&&player.src){player.hidden=false;renderSourceUI();return Promise.resolve(true)}
+    player.src=url;player.dataset.part=part;player.load();player.hidden=false;renderSourceUI();
+    return new Promise(resolve=>{
+      const done=()=>{player.removeEventListener('loadedmetadata',done);const meta=ensurePart(part).file||{};meta.duration=Number.isFinite(player.duration)?player.duration:meta.duration;ensurePart(part).file=meta;persist(true);renderSourceUI();renderClips();resolve(true)};
+      if(player.readyState>=1)done();else player.addEventListener('loadedmetadata',done,{once:true});
+    });
+  }
+  function loadPart(part){
+    part=String(part||runtime.currentPart||'1');runtime.currentPart=part;videoState.selectedPart=part;partSelect.value=part;
+    const data=ensurePart(part);renderSourceUI();
+    return data.source==='youtube'?loadYoutubePart(part):loadLocalPart(part);
+  }
+  qa('[data-video-source]',workspace).forEach(button=>button.onclick=async()=>{
+    const data=ensurePart(runtime.currentPart);data.source=button.dataset.videoSource;runtime.activeClip=null;pauseActiveSource();persist(true);await loadPart(runtime.currentPart);renderReferenceEvents();renderSyncStatus();renderClips();
+  });
+  q('#svVideoLoadYoutube').onclick=async()=>{
+    const id=youtubeId(youtubeInput.value);if(!id)return typeof toast==='function'&&toast('Cola um link válido do YouTube');
+    const data=ensurePart(runtime.currentPart);data.source='youtube';data.youtube={...data.youtube,url:canonicalYoutubeUrl(id),videoId:id};runtime.youtubeError=null;persist(true);
+    await loadPart(runtime.currentPart);renderReferenceEvents();renderSyncStatus();renderClips();if(typeof toast==='function')toast('Vídeo YouTube associado — '+partLabel(runtime.currentPart));
+  };
+  q('#svVideoYoutubeAll').onclick=async()=>{
+    const id=youtubeId(youtubeInput.value);if(!id)return typeof toast==='function'&&toast('Cola primeiro um link válido do YouTube');
+    [1,2,3,4].forEach(part=>{const data=ensurePart(String(part));data.source='youtube';data.youtube={...data.youtube,url:canonicalYoutubeUrl(id),videoId:id}});
+    runtime.youtubeError=null;persist(true);await loadPart(runtime.currentPart);renderClips();if(typeof toast==='function')toast('Vídeo associado às 4 partes · sincroniza cada parte no ponto correto');
+  };
+  youtubeInput.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();q('#svVideoLoadYoutube').click()}});
+  fileInput.addEventListener('change',async()=>{
+    const file=fileInput.files?.[0];if(!file)return;
+    const part=runtime.currentPart,data=ensurePart(part),different=data.file&&!fileMatches(data.file,file);
+    if(different&&!confirm(`Este ficheiro é diferente do vídeo anteriormente associado à ${partLabel(part)}. Queres continuar e verificar novamente a sincronização?`)){fileInput.value='';return}
+    if(runtime.urls.has(part))URL.revokeObjectURL(runtime.urls.get(part));
+    runtime.files.set(part,file);runtime.urls.set(part,URL.createObjectURL(file));data.source='local';
+    data.file={name:file.name,size:file.size,lastModified:file.lastModified,type:file.type||'video',duration:data.file?.duration||null};
+    persist(true);await loadPart(part);renderReferenceEvents();renderSyncStatus();renderClips();if(typeof toast==='function')toast('Vídeo selecionado — '+partLabel(part));
+  });
+  partSelect.value=runtime.currentPart;
+  partSelect.addEventListener('change',()=>{fileInput.value='';loadPart(partSelect.value);renderReferenceEvents();renderSyncStatus();renderClips();persist(true)});
+
+  function syncFor(part){return ensurePart(part).sync||null}
+  function eventVideoSecond(entry){
+    const event=entry.event,part=String(event.period||1),sync=syncFor(part);if(!sync)return null;
+    const eventReal=eventRecordedAt(event),anchorReal=Number(sync.anchorRecordedAtMs)||null,gameSecond=Number(event.gameSecond)||0,anchorGame=Number(sync.anchorGameSecond)||0;
+    const base=eventReal&&anchorReal?Number(sync.anchorVideoSeconds)+(eventReal-anchorReal)/1000:Number(sync.anchorVideoSeconds)+(gameSecond-anchorGame);
+    const adjusted=base+(Number(videoState.eventOffsets[entry.key])||0);
+    return Number.isFinite(adjusted)?Math.max(0,adjusted):null;
+  }
+  function markStart(){
+    const videoSecond=currentVideoTime();if(videoSecond===null)return typeof toast==='function'&&toast('Carrega primeiro o vídeo desta parte');
+    const part=runtime.currentPart,live=videoState.liveAnchors[part]||null;
+    ensurePart(part).sync={anchorVideoSeconds:videoSecond,anchorRecordedAtMs:Number(live?.recordedAtMs)||null,anchorGameSecond:Number(live?.gameSecond)||0,mode:live?.recordedAtMs?'realtime':'clock',label:'Início da parte'};
+    persist(true);renderSyncStatus();renderClips();if(typeof toast==='function')toast(live?.recordedAtMs?'Início sincronizado com a análise':'Início sincronizado pelo cronómetro');
+  }
+  function markReferenceEvent(){
+    const videoSecond=currentVideoTime();if(videoSecond===null)return typeof toast==='function'&&toast('Carrega primeiro o vídeo desta parte');
+    const key=q('#svVideoReferenceEvent').value,entry=eventEntries().find(item=>item.key===key&&String(item.event.period||1)===runtime.currentPart);
+    if(!entry)return typeof toast==='function'&&toast('Escolhe um evento desta parte');
+    const real=eventRecordedAt(entry.event);
+    ensurePart(runtime.currentPart).sync={anchorVideoSeconds:videoSecond,anchorRecordedAtMs:real,anchorGameSecond:Number(entry.event.gameSecond)||0,mode:real?'realtime':'clock',label:`${eventClock(entry.event)} · ${eventActionLabel(entry.event)}`,eventKey:entry.key};
+    persist(true);renderSyncStatus();renderClips();if(typeof toast==='function')toast(real?'Evento sincronizado com precisão':'Evento sincronizado pelo minuto do jogo');
+  }
+  function shiftSync(delta){
+    const sync=syncFor(runtime.currentPart);if(!sync)return typeof toast==='function'&&toast('Sincroniza primeiro este vídeo');
+    sync.anchorVideoSeconds=Math.max(0,Number(sync.anchorVideoSeconds||0)+Number(delta||0));persist(true);renderSyncStatus();renderClips();
+  }
+  function formatVideoTime(seconds){
+    if(!Number.isFinite(Number(seconds)))return '—';
+    seconds=Math.max(0,Number(seconds));const hours=Math.floor(seconds/3600),minutes=Math.floor((seconds%3600)/60),secs=Math.floor(seconds%60);
+    return hours?`${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(secs).padStart(2,'0')}`:`${String(minutes).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+  }
+  function renderSyncStatus(){
+    const part=runtime.currentPart,sync=syncFor(part),live=videoState.liveAnchors[part],status=q('#svVideoSyncStatus'),liveStatus=q('#svVideoLiveStatus');
+    if(!sync)status.innerHTML='<span class="svVideoSyncDot"></span><span>Este vídeo ainda não está sincronizado.</span>';
+    else status.innerHTML=`<span class="svVideoSyncDot ${sync.mode==='realtime'?'ready':'warn'}"></span><span>${esc(sync.label||'Ponto sincronizado')} no vídeo ${formatVideoTime(sync.anchorVideoSeconds)} · ${sync.mode==='realtime'?'usa o tempo real da análise':'usa o cronómetro do jogo'}</span>`;
+    liveStatus.innerHTML=live?'<span class="svVideoSyncDot ready"></span><span>O início real desta parte foi guardado durante a análise.</span>':'<span class="svVideoSyncDot warn"></span><span>Não existe início real guardado. Em jogos com relógio parado, sincroniza através de um evento.</span>';
+    qa('[data-sync-shift]',workspace).forEach(button=>button.disabled=!sync);
+  }
+  q('#svVideoMarkStart').onclick=markStart;q('#svVideoMarkEvent').onclick=markReferenceEvent;
+  qa('[data-sync-shift]',workspace).forEach(button=>button.onclick=()=>shiftSync(button.dataset.syncShift));
+
+  function rebuildFilterOptions(){
+    const entries=eventEntries(),playerSelect=q('#svVideoFilterPlayer'),actionSelect=q('#svVideoFilterAction'),saved=videoState.filters;
+    const players=[...new Set(entries.map(item=>String(item.event.player||'Equipa')).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt'));
+    playerSelect.innerHTML='<option value="all">Todos os jogadores</option>'+players.map(playerName=>`<option value="${esc(playerName)}">${esc(playerName)}</option>`).join('');
+    const actions=[...new Set(entries.map(item=>eventAction(item.event)))].sort((a,b)=>(actionNames[a]||a).localeCompare(actionNames[b]||b,'pt'));
+    actionSelect.innerHTML='<option value="all">Todas as ações</option><option value="shooting">Todos os remates e golos</option>'+actions.map(action=>`<option value="${esc(action)}">${esc(actionNames[action]||action)}</option>`).join('');
+    q('#svVideoFilterPart').value=saved.part||'all';playerSelect.value=players.includes(saved.player)?saved.player:'all';actionSelect.value=['all','shooting',...actions].includes(saved.action)?saved.action:'all';q('#svVideoFilterZone').value=saved.zone||'all';
+  }
+  function selectedFilters(){
+    return {part:q('#svVideoFilterPart').value,player:q('#svVideoFilterPlayer').value,action:q('#svVideoFilterAction').value,zone:q('#svVideoFilterZone').value};
+  }
+  function filteredEntries(){
+    const filters=selectedFilters();
+    return eventEntries().filter(entry=>{
+      const event=entry.event,action=eventAction(event);
+      if(filters.part!=='all'&&String(event.period||1)!==filters.part)return false;
+      if(filters.player!=='all'&&String(event.player||'Equipa')!==filters.player)return false;
+      if(filters.action==='shooting'&&!['remate','golo'].includes(action))return false;
+      if(!['all','shooting'].includes(filters.action)&&action!==filters.action)return false;
+      if(filters.zone!=='all'&&zoneGroup(event)!==filters.zone)return false;
+      return true;
+    });
+  }
+  function renderReferenceEvents(){
+    const select=q('#svVideoReferenceEvent'),current=select.value,entries=eventEntries().filter(entry=>String(entry.event.period||1)===runtime.currentPart);
+    select.innerHTML=entries.length?entries.map(entry=>`<option value="${esc(entry.key)}">${eventClock(entry.event)} · ${esc(eventActionLabel(entry.event))} · ${esc(entry.event.player||'Equipa')}</option>`).join(''):'<option value="">Sem eventos nesta parte</option>';
+    if(entries.some(entry=>entry.key===current))select.value=current;
+    q('#svVideoMarkEvent').disabled=!entries.length;
+  }
+  function clipRange(entry){
+    const center=eventVideoSecond(entry);if(center===null)return null;
+    const before=clamp(videoState.preRoll,0,60),after=clamp(videoState.postRoll,0,60),data=ensurePart(String(entry.event.period||1)),duration=Number(data.source==='youtube'?data.youtube?.duration:data.file?.duration)||Infinity;
+    return {center,start:Math.max(0,center-before),end:Math.min(duration,center+after)};
+  }
+  function renderClips(){
+    const entries=filteredEntries(),list=q('#svVideoClips'),count=q('#svVideoCount');
+    count.textContent=`${entries.length} ${entries.length===1?'CLIP':'CLIPS'}`;
+    q('#svVideoPlayAll').textContent=entries.length?`REPRODUZIR ${entries.length} ${entries.length===1?'CLIP':'CLIPS'}`:'REPRODUZIR SELEÇÃO';
+    if(!entries.length){list.innerHTML='<div class="svVideoNoClips">Não existem eventos para estes filtros.<br>Altera a seleção ou regista novas ações durante o jogo.</div>';return}
+    list.innerHTML=entries.map(entry=>{
+      const event=entry.event,range=clipRange(entry),part=String(event.period||1),sync=syncFor(part),data=ensurePart(part),ready=sourceAvailable(part),configured=sourceConfigured(part),offset=Number(videoState.eventOffsets[entry.key])||0,playable=Boolean(range&&ready);
+      const detail=event.comment||event.note||event.assistPlayer&&`Assistência: ${event.assistPlayer}`||eventZone(event);
+      const videoMeta=range?`${formatVideoTime(range.start)}–${formatVideoTime(range.end)}${offset?` · ajuste ${offset>0?'+':''}${offset}s`:''}`:sync?'Evento sem tempo compatível':'Parte por sincronizar';
+      const sourceHint=data.source==='youtube'?!configured?' · adiciona o link do YouTube':'':!ready&&configured?' · volta a selecionar o vídeo':'';
+      const buttonLabel=!range?'SINCRONIZAR':ready?'ABRIR LANCE':data.source==='youtube'?'ADICIONAR LINK':'SELECIONAR VÍDEO';
+      return `<article class="svVideoClip ${runtime.activeClip?.key===entry.key?'active':''}" style="--clip-color:${actionColor(eventAction(event))}" data-video-card="${esc(entry.key)}">
+        <div class="svVideoClipTime"><strong>${eventClock(event)}</strong><small>${esc(partLabel(part))}</small></div>
+        <div class="svVideoClipMain"><span class="svVideoClipTag">${esc(eventActionLabel(event))}</span><strong>${esc(event.player||'Equipa')}</strong><small>${esc(event.team==='away'?(q('#awayName')?.value||'Equipa B'):(q('#homeName')?.value||'Equipa A'))}</small></div>
+        <div class="svVideoClipDetail"><strong>${esc(detail)}</strong><small>${esc(videoMeta+sourceHint)}</small></div>
+        <div class="svVideoClipButtons"><button type="button" data-video-shift="${esc(entry.key)}" data-delta="-1" title="Mover o lance um segundo para trás">−1</button><button type="button" data-video-shift="${esc(entry.key)}" data-delta="0" title="Retirar ajuste">0</button><button type="button" data-video-shift="${esc(entry.key)}" data-delta="1" title="Mover o lance um segundo para a frente">+1</button><button type="button" class="play" data-video-play="${esc(entry.key)}" ${playable?'':'disabled'}>${buttonLabel}</button></div>
+      </article>`;
+    }).join('');
+  }
+  function refreshVideoWorkspace(){
+    rebuildFilterOptions();q('#svVideoPreRoll').value=videoState.preRoll;q('#svVideoPostRoll').value=videoState.postRoll;renderSourceUI();renderReferenceEvents();renderSyncStatus();renderClips();
+  }
+  qa('#svVideoFilterPart,#svVideoFilterPlayer,#svVideoFilterAction,#svVideoFilterZone',workspace).forEach(select=>select.onchange=()=>{videoState.filters=selectedFilters();persist(true);renderClips()});
+  q('#svVideoPreRoll').onchange=event=>{videoState.preRoll=clamp(event.target.value,0,60);event.target.value=videoState.preRoll;persist(true);renderClips()};
+  q('#svVideoPostRoll').onchange=event=>{videoState.postRoll=clamp(event.target.value,0,60);event.target.value=videoState.postRoll;persist(true);renderClips()};
+
+  async function prepareClip(entry){
+    const part=String(entry.event.period||1),range=clipRange(entry);if(!range)return false;
+    const data=ensurePart(part);
+    if(!sourceAvailable(part)){if(typeof toast==='function')toast(data.source==='youtube'?'Adiciona o link do YouTube da '+partLabel(part):'Volta a selecionar o vídeo da '+partLabel(part));return false}
+    const loaded=await loadPart(part);if(!loaded)return false;
+    fileInput.value='';renderReferenceEvents();renderSyncStatus();runtime.activeClip={key:entry.key,end:range.end,part};renderClips();
+    if(data.source==='youtube'){
+      try{runtime.youtubePlayer.seekTo(range.start,true);runtime.youtubePlayer.playVideo()}catch(error){if(typeof toast==='function')toast('Toca em reproduzir no YouTube para iniciar o lance')}
+    }else{
+      player.currentTime=range.start;
+      try{await player.play()}catch(error){if(typeof toast==='function')toast('Toca em reproduzir no vídeo para iniciar o lance')}
+    }
+    return true;
+  }
+  async function playNext(){
+    runtime.queueIndex++;
+    if(runtime.queueIndex>=runtime.queue.length){runtime.queue=[];runtime.queueIndex=-1;runtime.activeClip=null;renderClips();if(typeof toast==='function')toast('Seleção concluída');return}
+    const played=await prepareClip(runtime.queue[runtime.queueIndex]);if(!played)playNext();
+  }
+  function stopPlayback(){runtime.queue=[];runtime.queueIndex=-1;runtime.activeClip=null;pauseActiveSource();renderClips()}
+  q('#svVideoPlayAll').onclick=()=>{
+    const available=filteredEntries().filter(entry=>clipRange(entry)&&sourceAvailable(String(entry.event.period||1)));
+    if(!available.length)return typeof toast==='function'&&toast('Adiciona e sincroniza os vídeos das partes pretendidas');
+    runtime.queue=available;runtime.queueIndex=-1;playNext();
+  };
+  q('#svVideoStop').onclick=stopPlayback;
+  q('#svVideoClips').addEventListener('click',event=>{
+    const play=event.target.closest('[data-video-play]'),shift=event.target.closest('[data-video-shift]');if(!play&&!shift)return;
+    if(play){runtime.queue=[];runtime.queueIndex=-1;const entry=eventEntries().find(item=>item.key===play.dataset.videoPlay);if(entry)prepareClip(entry);return}
+    const key=shift.dataset.videoShift,delta=Number(shift.dataset.delta)||0;
+    if(delta===0)videoState.eventOffsets[key]=0;else videoState.eventOffsets[key]=(Number(videoState.eventOffsets[key])||0)+delta;
+    persist(true);renderClips();
+  });
+  player.addEventListener('timeupdate',()=>{
+    if(!runtime.activeClip||player.currentTime<runtime.activeClip.end)return;
+    player.pause();runtime.activeClip=null;renderClips();if(runtime.queue.length)setTimeout(playNext,80);
+  });
+  player.addEventListener('ended',()=>{if(runtime.queue.length)playNext()});
+  const youtubeClipWatcher=setInterval(()=>{
+    if(!runtime.activeClip||ensurePart(runtime.activeClip.part).source!=='youtube'||!runtime.youtubePlayer)return;
+    let current=0;try{current=Number(runtime.youtubePlayer.getCurrentTime?.())||0}catch(error){return}
+    if(current<runtime.activeClip.end)return;
+    try{runtime.youtubePlayer.pauseVideo?.()}catch(error){}
+    runtime.activeClip=null;renderClips();if(runtime.queue.length)setTimeout(playNext,80);
+  },250);
+
+  function openWorkspace(){
+    q('#settingsModal')?.classList.remove('show');const half=q('#svHalftimeWorkspace');if(half)half.hidden=true;
+    workspace.hidden=false;qa('#mainApp .nav button').forEach(button=>button.classList.toggle('active',button===videoButton));
+    refreshVideoWorkspace();loadPart(runtime.currentPart);
+  }
+  function closeWorkspace(){
+    stopPlayback();workspace.hidden=true;videoButton.classList.remove('active');q('#mainApp .nav [data-view="jogo"]')?.classList.add('active');
+  }
+  videoButton.onclick=openWorkspace;q('#svVideoClose').onclick=closeWorkspace;
+  qa('#mainApp .nav button').filter(button=>button!==videoButton).forEach(button=>button.addEventListener('click',()=>{if(!workspace.hidden){workspace.hidden=true;stopPlayback()}}));
+
+  function replaceVideoState(next){
+    Object.keys(videoState).forEach(key=>delete videoState[key]);Object.assign(videoState,normalise(next));window.statsVisionVideoState=videoState;runtime.currentPart=String(videoState.selectedPart||'1');revokeRuntimeFiles();refreshVideoWorkspace();
+    [...(state.events||[]),...(state.fieldEvents||[])].forEach(item=>{if(item&&typeof item==='object')knownEventObjects.add(item)});
+  }
+  document.addEventListener('click',event=>{
+    if(!event.target.closest?.('[data-open-game],[data-sv60="new-game"]'))return;
+    setTimeout(()=>{let match={};try{match=JSON.parse(localStorage.getItem('statsv3_match')||'{}')}catch(error){}replaceVideoState(match.videoWorkspace)},180);
+  });
+  window.addEventListener('beforeunload',()=>{clearInterval(youtubeClipWatcher);revokeRuntimeFiles()});
+  refreshVideoWorkspace();
 })();
 </script>
 </body></html>
