@@ -276,7 +276,7 @@ const state={home:0,away:0,seconds:0,running:false,timerInt:null,clockMode:'up',
 const basePlayers=Array.from({length:12},(_,i)=>({name:`Jogador ${i+1}`,number:i+1,on:i<5,minutes:0,secondsPlayed:0}));
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._x);t._x=setTimeout(()=>t.classList.remove('show'),1800)}
 function updateWelcomeScreen(name,logo){const title=$('#welcomeClubName'),img=$('#welcomeLogo'),fallback=$('#welcomeFallback');if(title)title.textContent=name||'StatS';if(img&&fallback){if(logo){img.src=logo;img.style.display='block';fallback.style.display='none'}else{img.removeAttribute('src');img.style.display='none';fallback.style.display='block'}}}
-function saveState(){localStorage.setItem('statsv3_match',JSON.stringify({home:state.home,away:state.away,seconds:state.seconds,clockMode:'up',currentPart:state.currentPart,compensationByPart:state.compensationByPart,players:state.players,events:state.events,homeName:$('#homeName').value,awayName:$('#awayName').value,period:$('#periodSelect').value,fieldEvents:state.fieldEvents,heatPoints:state.heatPoints,periodMinutes:state.periodMinutes,maxPlayers:state.maxPlayers,attackSide:state.attackSide}))}
+function saveState(){if(sessionStorage.getItem('statsvision_backup_importing')==='1')return;localStorage.setItem('statsv3_match',JSON.stringify({home:state.home,away:state.away,seconds:state.seconds,clockMode:'up',currentPart:state.currentPart,compensationByPart:state.compensationByPart,players:state.players,events:state.events,homeName:$('#homeName').value,awayName:$('#awayName').value,period:$('#periodSelect').value,fieldEvents:state.fieldEvents,heatPoints:state.heatPoints,periodMinutes:state.periodMinutes,maxPlayers:state.maxPlayers,attackSide:state.attackSide}))}
 function renderScore(){ $('#homeScore').textContent=state.home; $('#awayScore').textContent=state.away; const m=String(Math.floor(state.seconds/60)).padStart(2,'0'),s=String(state.seconds%60).padStart(2,'0'); $('#timer').textContent=`${m}:${s}`; }
 function updateFieldCount(){const n=state.players.filter(p=>p.on).length;$('#fieldCount').textContent=`${n}/11`}
 function renderPlayers(){const list=$('#playerList');list.innerHTML=state.players.map((p,i)=>`<div class="player ${p.on?'':'is-off'} ${state.selectedPlayer===i?'selected':''}" data-player="${i}"><span class="num">${p.number}</span><span>${p.name}</span><b>${state.playerTab==='minutos'?p.minutes+'′':(p.on?'EM CAMPO':'BANCO')}</b><button data-toggle-player="${i}">${p.on?'Ⅱ':'▶'}</button></div>`).join('');updateFieldCount()}
@@ -493,6 +493,7 @@ $('#backupFile').onchange=e=>{
  r.onload=()=>{
   try{
    const d=JSON.parse(r.result),storage=d.storage&&typeof d.storage==='object'?d.storage:{};
+   sessionStorage.setItem('statsvision_backup_importing','1');
    Object.entries(storage).forEach(([key,value])=>{if(/^(statsv3|statsvision)/.test(key)&&typeof value==='string')localStorage.setItem(key,value)});
    const sessions=Array.isArray(d.savedSessions)?d.savedSessions:backupRead('statsvision_saved_sessions_v56',[]),activeId=String(d.activeSessionId||storage.statsvision_active_session_v56||''),direct=d.match&&typeof d.match==='object'?d.match:backupRead('statsv3_match',{}),match=backupMatchScore(direct)>0?direct:sessionMatchForBackup(Array.isArray(sessions)?sessions:[],activeId);
    localStorage.setItem('statsv3_match',JSON.stringify(match||{}));
@@ -504,7 +505,7 @@ $('#backupFile').onchange=e=>{
    if(!actions&&!Array.isArray(d.savedSessions))throw new Error('Este ficheiro não contém dados de jogo');
    localStorage.setItem('statsvision_backup_import_notice',`Backup importado · ${actions} ações`);
    location.reload();
-  }catch(error){alert(error?.message||'Backup inválido')}
+  }catch(error){sessionStorage.removeItem('statsvision_backup_importing');alert(error?.message||'Backup inválido')}
  };
  r.readAsText(f);
 };
@@ -563,7 +564,7 @@ const brandSvg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160"><r
 const brandData='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(brandSvg);
 state.brandLogo=brandData;state.contractorLogo='';state.teamLogos=state.teamLogos||{home:'',away:''};state.possession=state.possession||{home:0,contest:0,away:0,log:[]};
 try{const x=JSON.parse(localStorage.getItem('statsvision_extra')||'{}');if(x.brandLogo)state.brandLogo=x.brandLogo;if(x.contractorLogo)state.contractorLogo=x.contractorLogo;if(x.teamLogos)state.teamLogos=x.teamLogos;if(x.possession)state.possession=x.possession}catch(e){}
-function saveExtra(){localStorage.setItem('statsvision_extra',JSON.stringify({brandLogo:state.brandLogo,contractorLogo:state.contractorLogo,teamLogos:state.teamLogos,possession:state.possession}))}
+function saveExtra(){if(sessionStorage.getItem('statsvision_backup_importing')==='1')return;localStorage.setItem('statsvision_extra',JSON.stringify({brandLogo:state.brandLogo,contractorLogo:state.contractorLogo,teamLogos:state.teamLogos,possession:state.possession}))}
 function setImg(id,src){const el=document.getElementById(id);if(el){if(src){el.src=src;el.style.visibility='visible';el.hidden=false}else{el.removeAttribute('src');el.style.visibility='hidden'}}}
 function updateLogoPreviews(){setImg('systemLogoPreview',state.brandLogo||brandData);[['contractorLogo','contractorLogoPreview','contractorLogoEmpty'],['home','homeLogoPreview','homeLogoEmpty'],['away','awayLogoPreview','awayLogoEmpty']].forEach(([key,imgId,emptyId])=>{const img=$('#'+imgId),empty=$('#'+emptyId),src=key==='contractorLogo'?state.contractorLogo:state.teamLogos[key];if(img){if(src){img.src=src;img.hidden=false;img.style.visibility='visible';if(empty)empty.hidden=true}else{img.removeAttribute('src');img.hidden=true;if(empty)empty.hidden=false}}})}
 function applyBrand(){const currentBrand=state.brandLogo||brandData;['brandLogo','clubLogoSide','welcomeLogo'].forEach(id=>setImg(id,currentBrand));const fb=$('#welcomeFallback');if(fb)fb.style.display='none';const title=$('#welcomeClubName');if(title)title.textContent='StatS Vision';const badge=$('.welcomeBadge');if(badge)badge.textContent='FOOTBALL INTELLIGENCE PLATFORM';const para=$('.welcomeCard p');if(para)para.innerHTML='Regista, interpreta e transforma cada momento do jogo em decisões mais informadas.<div class="svSlogan">See More. Decide Better.</div>';const mark=$('.analysisBrandMark');if(mark)mark.innerHTML='Stat<span>S</span> Vision';const small=$('.analysisBrand small');if(small)small.textContent='SEE MORE. DECIDE BETTER.';setImg('homeLogo',state.teamLogos.home);setImg('awayLogo',state.teamLogos.away);updateLogoPreviews()}
@@ -797,6 +798,7 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
   }
 
   function savePossession(){
+    if(sessionStorage.getItem('statsvision_backup_importing')==='1')return;
     normalizePossession();
     try{
       let extra={};
@@ -2339,9 +2341,15 @@ body{min-width:900px}
   let saveStateTimer=0,pendingStatePayload=null;
   function buildStatePayload(){return {home:state.home,away:state.away,seconds:state.seconds,clockMode:'up',currentPart:state.currentPart,compensationByPart:state.compensationByPart,players:state.players,events:state.events,homeName:q('#homeName')?.value||'',awayName:q('#awayName')?.value||'',period:q('#periodSelect')?.value||'1',fieldEvents:state.fieldEvents,heatPoints:state.heatPoints,periodMinutes:state.periodMinutes,maxPlayers:state.maxPlayers,attackSide:state.attackSide,plays:state.plays,observations:state.observations,currentPlay:state.currentPlay,playMode:state.playMode,statsSection:state.statsSection,eventFilters:state.eventFilters,videoWorkspace:window.statsVisionVideoState||null}}
   function flushStateSave(){if(!pendingStatePayload)return;const payload=pendingStatePayload;pendingStatePayload=null;clearTimeout(saveStateTimer);saveStateTimer=0;try{localStorage.setItem('statsv3_match',JSON.stringify(payload))}catch(error){}}
-  window.saveState=saveState=function(immediate=false){pendingStatePayload=buildStatePayload();if(immediate){flushStateSave();return}clearTimeout(saveStateTimer);saveStateTimer=setTimeout(flushStateSave,90)};
+  window.saveState=saveState=function(immediate=false){if(sessionStorage.getItem('statsvision_backup_importing')==='1')return;pendingStatePayload=buildStatePayload();if(immediate){flushStateSave();return}clearTimeout(saveStateTimer);saveStateTimer=setTimeout(flushStateSave,90)};
   if(migratedFailedPass)saveState(true);
   window.addEventListener('pagehide',()=>saveState(true),{capture:true});
+  if(sessionStorage.getItem('statsvision_backup_importing')==='1')setTimeout(()=>{
+    sessionStorage.removeItem('statsvision_backup_importing');
+    const notice=localStorage.getItem('statsvision_backup_import_notice')||'Backup importado com sucesso';
+    localStorage.removeItem('statsvision_backup_import_notice');
+    saveState(true);if(typeof toast==='function')toast(notice);
+  },450);
 
   /* Catálogo final de ações. */
   const catalog=window.arenaActions||arenaActions;
@@ -4887,7 +4895,7 @@ body .panelZoomStage:has(>.momentumPanel.panel.panelExpanded){background:var(--a
   q('#svSaveForm',saveDialog).onsubmit=event=>{event.preventDefault();if(typeof saveState==='function')saveState();const now=new Date().toISOString(),latest=meta(),list=readSessions(),existing=list.find(item=>item.id===localStorage.getItem(ACTIVE)),id=existing?.id||`sv_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,item={...existing,id,name:q('#svSaveName',saveDialog).value.trim(),type:q('#svSaveType',saveDialog).value,microcycle:q('#svSaveMicrocycle',saveDialog).value.trim()||'Sem microciclo',sessionNumber:Math.max(1,Number(q('#svSaveSessionNumber',saveDialog).value)||1),sessionDate:q('#svSaveSessionDate',saveDialog).value||today,createdAt:existing?.createdAt||now,savedAt:now,...latest,snapshot:capture()};writeSessions([item,...list.filter(entry=>entry.id!==id)]);localStorage.setItem(ACTIVE,id);saveDialog.hidden=true;if(typeof toast==='function')toast(existing?'Jogo atualizado e guardado':'Jogo guardado no microciclo')};
  }
  if(saveButton)saveButton.onclick=openSave;
- function autosave(){const id=localStorage.getItem(ACTIVE);if(!id)return;const list=readSessions(),index=list.findIndex(item=>item.id===id);if(index<0)return;if(typeof saveState==='function')saveState();list[index]={...list[index],...meta(),savedAt:new Date().toISOString(),snapshot:capture()};writeSessions(list)}
+ function autosave(){if(sessionStorage.getItem('statsvision_backup_importing')==='1')return;const id=localStorage.getItem(ACTIVE);if(!id)return;const list=readSessions(),index=list.findIndex(item=>item.id===id);if(index<0)return;if(typeof saveState==='function')saveState();list[index]={...list[index],...meta(),savedAt:new Date().toISOString(),snapshot:capture()};writeSessions(list)}
  setInterval(autosave,15000);window.addEventListener('pagehide',autosave);
  const openFlag=localStorage.getItem(OPEN);if(openFlag){localStorage.removeItem(OPEN);setTimeout(enterMain,80)}
 })();
