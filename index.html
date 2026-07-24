@@ -463,10 +463,29 @@ function backupMatchScore(match){
  if(!match||typeof match!=='object')return 0;
  return (Array.isArray(match.fieldEvents)?match.fieldEvents.length:0)+(Array.isArray(match.events)?match.events.length:0)+(Number(match.seconds)>0?1:0);
 }
+function normaliseBackupPossession(value){
+ const source=value&&typeof value==='object'?value:{},home=Math.max(0,Number(source.homeSeconds??source.home)||0),away=Math.max(0,Number(source.awaySeconds??source.away)||0);
+ return {...source,home,away,homeSeconds:home,awaySeconds:away,contest:Math.max(0,Number(source.contest)||0),active:null,activeSince:null,log:Array.isArray(source.log)?source.log:[]};
+}
+function possessionForBackup(){
+ if(typeof window.statsVisionPossessionSnapshot==='function')return normaliseBackupPossession(window.statsVisionPossessionSnapshot());
+ const extra=backupRead('statsvision_extra',{}),source=(typeof state!=='undefined'&&state.possession)||extra.possession||{},snapshot=normaliseBackupPossession(source);
+ if(typeof state!=='undefined'&&state.running&&source.active&&source.activeSince){
+  const elapsed=Math.max(0,(Date.now()-Number(source.activeSince))/1000);
+  if(source.active==='home')snapshot.home=snapshot.homeSeconds+=elapsed;
+  if(source.active==='away')snapshot.away=snapshot.awaySeconds+=elapsed;
+ }
+ return snapshot;
+}
+function currentExtraForBackup(){
+ const stored=backupRead('statsvision_extra',{}),possession=possessionForBackup();
+ if(typeof state==='undefined')return {...stored,possession};
+ return {...stored,brandLogo:state.brandLogo||stored.brandLogo||'',contractorLogo:state.contractorLogo||stored.contractorLogo||'',teamLogos:state.teamLogos||stored.teamLogos||{home:'',away:''},possession};
+}
 function currentMatchForBackup(){
  const stored=backupRead('statsv3_match',{});
  if(typeof state==='undefined')return stored;
- return {...stored,home:Number(state.home)||0,away:Number(state.away)||0,seconds:Math.max(0,Number(state.seconds)||0),clockMode:'up',currentPart:Number(state.currentPart)||Number($('#periodSelect')?.value)||1,compensationByPart:state.compensationByPart||stored.compensationByPart||{},players:Array.isArray(state.players)?state.players:stored.players||[],events:Array.isArray(state.events)?state.events:stored.events||[],homeName:$('#homeName')?.value||stored.homeName||'',awayName:$('#awayName')?.value||stored.awayName||'',period:$('#periodSelect')?.value||stored.period||'1',fieldEvents:Array.isArray(state.fieldEvents)?state.fieldEvents:stored.fieldEvents||[],heatPoints:Array.isArray(state.heatPoints)?state.heatPoints:stored.heatPoints||[],periodMinutes:Number(state.periodMinutes)||stored.periodMinutes||45,maxPlayers:Number(state.maxPlayers)||stored.maxPlayers||11,attackSide:state.attackSide||stored.attackSide||'right',plays:Array.isArray(state.plays)?state.plays:stored.plays||[],observations:Array.isArray(state.observations)?state.observations:stored.observations||[],statsSection:state.statsSection||stored.statsSection||'overview',eventFilters:state.eventFilters||stored.eventFilters||{},videoWorkspace:window.statsVisionVideoState||stored.videoWorkspace||null};
+ return {...stored,home:Number(state.home)||0,away:Number(state.away)||0,seconds:Math.max(0,Number(state.seconds)||0),clockMode:'up',currentPart:Number(state.currentPart)||Number($('#periodSelect')?.value)||1,compensationByPart:state.compensationByPart||stored.compensationByPart||{},players:Array.isArray(state.players)?state.players:stored.players||[],events:Array.isArray(state.events)?state.events:stored.events||[],homeName:$('#homeName')?.value||stored.homeName||'',awayName:$('#awayName')?.value||stored.awayName||'',period:$('#periodSelect')?.value||stored.period||'1',fieldEvents:Array.isArray(state.fieldEvents)?state.fieldEvents:stored.fieldEvents||[],heatPoints:Array.isArray(state.heatPoints)?state.heatPoints:stored.heatPoints||[],periodMinutes:Number(state.periodMinutes)||stored.periodMinutes||45,maxPlayers:Number(state.maxPlayers)||stored.maxPlayers||11,attackSide:state.attackSide||stored.attackSide||'right',plays:Array.isArray(state.plays)?state.plays:stored.plays||[],observations:Array.isArray(state.observations)?state.observations:stored.observations||[],currentPlay:state.currentPlay??stored.currentPlay??null,playMode:state.playMode||stored.playMode||'list',statsSection:state.statsSection||stored.statsSection||'overview',eventFilters:state.eventFilters||stored.eventFilters||{},statsFilters:state.statsFilters||stored.statsFilters||{},opponentPeriod:state.opponentPeriod||stored.opponentPeriod||'all',pendingSubOut:state.pendingSubOut??stored.pendingSubOut??null,selectedPlayer:state.selectedPlayer??stored.selectedPlayer??null,playerTab:state.playerTab||stored.playerTab||'lista',arenaTab:state.arenaTab||stored.arenaTab||'arena',timelineMode:state.timelineMode||stored.timelineMode||'live',fieldAction:state.fieldAction||stored.fieldAction||null,arenaFlow:state.arenaFlow||stored.arenaFlow||{},possession:possessionForBackup(),videoWorkspace:window.statsVisionVideoState||stored.videoWorkspace||null};
 }
 function sessionMatchForBackup(sessions,activeId){
  const ordered=[sessions.find(item=>item?.id===activeId),...sessions.slice().sort((a,b)=>new Date(b?.savedAt||0)-new Date(a?.savedAt||0))].filter(Boolean);
@@ -479,6 +498,7 @@ function normaliseBackupMatch(match){
  if(!events.length&&fieldEvents.length)match.events=fieldEvents.map(event=>({...event}));
  if(!fieldEvents.length&&events.length)match.fieldEvents=events.map(event=>({...event}));
  if((!Array.isArray(match.heatPoints)||!match.heatPoints.length)&&(match.fieldEvents||[]).length)match.heatPoints=match.fieldEvents.filter(event=>Number.isFinite(Number(event.x))&&Number.isFinite(Number(event.y))).map(event=>({...event}));
+ if(match.possession)match.possession=normaliseBackupPossession(match.possession);
  return match;
 }
 function collectStatsVisionStorage(){
@@ -488,12 +508,17 @@ function collectStatsVisionStorage(){
 }
 $('#exportBackup').onclick=()=>{
  if(typeof saveState==='function')saveState(true);
- const sessions=backupRead('statsvision_saved_sessions_v56',[]),activeId=localStorage.getItem('statsvision_active_session_v56')||'',current=currentMatchForBackup(),match=backupMatchScore(current)>0?current:sessionMatchForBackup(Array.isArray(sessions)?sessions:[],activeId),storage=collectStatsVisionStorage();
+ let sessions=backupRead('statsvision_saved_sessions_v56',[]);
+ const activeId=localStorage.getItem('statsvision_active_session_v56')||'',current=currentMatchForBackup(),match=normaliseBackupMatch(backupMatchScore(current)>0?current:sessionMatchForBackup(Array.isArray(sessions)?sessions:[],activeId)),extra=currentExtraForBackup(),storage=collectStatsVisionStorage(),tactical=backupRead('statsv3_tactical',{}),halftime=localStorage.getItem('statsvision_halftime_snapshot_v51')||'';
+ if(!Array.isArray(sessions))sessions=[];
+ if(activeId)sessions=sessions.map(session=>String(session?.id)===String(activeId)?{...session,savedAt:new Date().toISOString(),home:match.homeName||session.home,away:match.awayName||session.away,homeScore:Number(match.home)||0,awayScore:Number(match.away)||0,part:String(match.currentPart||match.period||1),minute:Math.floor((Number(match.seconds)||0)/60),actions:Math.max(Array.isArray(match.fieldEvents)?match.fieldEvents.length:0,Array.isArray(match.events)?match.events.length:0),snapshot:{...(session.snapshot||{}),match:JSON.stringify(match||{}),tactical:JSON.stringify(tactical||{}),halftime,extra:JSON.stringify(extra)}}:session);
  storage.statsv3_match=JSON.stringify(match||{});
- const backup={format:'statsvision-complete-backup',version:2,exportedAt:new Date().toISOString(),match,settings:backupRead('statsv3',{}),tactical:backupRead('statsv3_tactical',{}),savedSessions:Array.isArray(sessions)?sessions:[],activeSessionId:activeId,storage};
+ storage.statsvision_extra=JSON.stringify(extra);
+ storage.statsvision_saved_sessions_v56=JSON.stringify(sessions);
+ const backup={format:'statsvision-complete-backup',version:3,exportedAt:new Date().toISOString(),match,extra,possession:extra.possession,settings:backupRead('statsv3',{}),tactical,halftime,savedSessions:sessions,activeSessionId:activeId,storage};
  downloadText('statsvision-backup-completo.json',JSON.stringify(backup,null,2),'application/json');
  const actions=Math.max(Array.isArray(match?.fieldEvents)?match.fieldEvents.length:0,Array.isArray(match?.events)?match.events.length:0);
- toast(`Backup completo exportado · ${actions} ações · ${backup.savedSessions.length} jogos guardados`);
+ toast(`Backup completo exportado · posse e ${actions} ações · ${backup.savedSessions.length} jogos guardados`);
 };
 $('#importBackup').onclick=()=>$('#backupFile').click();
 $('#backupFile').onchange=e=>{
@@ -506,15 +531,22 @@ $('#backupFile').onchange=e=>{
    const importedSessions=Array.isArray(d.savedSessions)?d.savedSessions:[],existingSessions=backupRead('statsvision_saved_sessions_v56',[]);
    let sessions=importedSessions.length?importedSessions:(Array.isArray(existingSessions)?existingSessions:[]),activeId=String(d.activeSessionId||storage.statsvision_active_session_v56||'');
    const direct=d.match&&typeof d.match==='object'?d.match:backupRead('statsv3_match',{}),match=normaliseBackupMatch(backupMatchScore(direct)>0?direct:sessionMatchForBackup(sessions,activeId));
+   let storedExtra={};try{storedExtra=JSON.parse(storage.statsvision_extra||localStorage.getItem('statsvision_extra')||'{}')}catch(error){}
+   const topExtra=d.extra&&typeof d.extra==='object'?d.extra:{},importedPossession=d.possession||topExtra.possession||match.possession||storedExtra.possession,extra={...storedExtra,...topExtra};
+   if(importedPossession)extra.possession=normaliseBackupPossession(importedPossession);
+   match.possession=extra.possession||normaliseBackupPossession({});
    localStorage.setItem('statsv3_match',JSON.stringify(match||{}));
+   localStorage.setItem('statsvision_extra',JSON.stringify(extra));
    if(d.settings&&typeof d.settings==='object')localStorage.setItem('statsv3',JSON.stringify(d.settings));
    if(d.tactical&&typeof d.tactical==='object')localStorage.setItem('statsv3_tactical',JSON.stringify(d.tactical));
+   if(typeof d.halftime==='string')localStorage.setItem('statsvision_halftime_snapshot_v51',d.halftime);
    const actions=Math.max(Array.isArray(match?.fieldEvents)?match.fieldEvents.length:0,Array.isArray(match?.events)?match.events.length:0);
    if(!actions&&!Array.isArray(d.savedSessions))throw new Error('Este ficheiro não contém dados de jogo');
    if(!importedSessions.length){
     const now=new Date(),stamp=now.toISOString(),id=`sv_import_${Date.now()}`,home=String(match?.homeName||'Equipa A'),away=String(match?.awayName||'Equipa B'),session={id,name:`${home} vs ${away} · Importado`,type:'Jogo',microcycle:'Importado',sessionNumber:1,sessionDate:stamp.slice(0,10),createdAt:stamp,savedAt:stamp,home,away,homeScore:Number(match?.home)||0,awayScore:Number(match?.away)||0,part:String(match?.currentPart||match?.period||1),minute:Math.floor((Number(match?.seconds)||0)/60),actions,snapshot:{match:JSON.stringify(match||{}),tactical:localStorage.getItem('statsv3_tactical')||'{}',halftime:localStorage.getItem('statsvision_halftime_snapshot_v51')||'',extra:localStorage.getItem('statsvision_extra')||'{}'}};
     sessions=[session,...sessions.filter(item=>String(item?.id)!==id)];activeId=id;
    }else if(!activeId||!sessions.some(item=>String(item?.id)===activeId))activeId=String(sessions[0]?.id||'');
+   if(activeId)sessions=sessions.map(session=>String(session?.id)===String(activeId)?{...session,snapshot:{...(session.snapshot||{}),match:JSON.stringify(match||{}),tactical:localStorage.getItem('statsv3_tactical')||'{}',halftime:localStorage.getItem('statsvision_halftime_snapshot_v51')||'',extra:JSON.stringify(extra)}}:session);
    if(sessions.length)localStorage.setItem('statsvision_saved_sessions_v56',JSON.stringify(sessions));
    if(activeId){localStorage.setItem('statsvision_active_session_v56',activeId);localStorage.setItem('statsvision_open_session_v56',activeId)}
    localStorage.setItem('statsvision_backup_import_notice',`Backup importado · ${actions} ações`);
@@ -834,6 +866,11 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
     return {home,away,total:home+away};
   }
 
+  window.statsVisionPossessionSnapshot=function(){
+    const p=normalizePossession(),totals=currentPossessionTotals();
+    return {...p,home:totals.home,away:totals.away,homeSeconds:totals.home,awaySeconds:totals.away,active:null,activeSince:null,log:Array.isArray(p.log)?p.log.map(item=>({...item})):[]};
+  };
+
   function possessionPercentages(){
     const totals=currentPossessionTotals();
     if(totals.total<=0)return {...totals,homePct:50,awayPct:50};
@@ -1086,6 +1123,30 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
     const radius=Math.max(0,Math.min(r,w/2,h/2));
     ctx.beginPath();ctx.moveTo(x+radius,y);ctx.arcTo(x+w,y,x+w,y+h,radius);ctx.arcTo(x+w,y+h,x,y+h,radius);ctx.arcTo(x,y+h,x,y,radius);ctx.arcTo(x,y,x+w,y,radius);ctx.closePath();
   }
+  function sideForPeriod(period){
+    const sides=(state.fieldEvents||[]).filter(event=>String(event.period||1)===String(period)&&['left','right'].includes(event.attackSide)).map(event=>event.attackSide);
+    if(sides.length){
+      const right=sides.filter(side=>side==='right').length,left=sides.length-right;
+      return right>=left?'right':'left';
+    }
+    return String(state.currentPart||$('#periodSelect')?.value||1)===String(period)?(state.attackSide||'right'):null;
+  }
+  function directionForFilter(filter='all'){
+    if(filter==='1'||filter==='2'){
+      const side=sideForPeriod(filter)||state.attackSide||'right';
+      return {side,label:side==='right'?'ATACAMOS →':'← ATACAMOS'};
+    }
+    const first=sideForPeriod('1'),second=sideForPeriod('2');
+    if(first&&second&&first!==second)return {side:state.attackSide||first,label:`1.ª ${first==='right'?'→':'←'} · 2.ª ${second==='right'?'→':'←'}`};
+    const side=second||first||state.attackSide||'right';
+    return {side,label:side==='right'?'ATACAMOS →':'← ATACAMOS'};
+  }
+  function drawMapDirection(ctx,width,height,direction){
+    const label=direction?.label||'ATACAMOS →',fontSize=Math.max(7,Math.min(10,width*.04));
+    ctx.save();ctx.font=`950 ${fontSize}px system-ui`;const pillW=Math.min(width-16,Math.max(72,ctx.measureText(label).width+18)),pillH=Math.max(19,fontSize+10),x=(width-pillW)/2,y=height-pillH-10;
+    ctx.fillStyle='rgba(5,26,40,.9)';roundRect(ctx,x,y,pillW,pillH,pillH/2);ctx.fill();ctx.strokeStyle='rgba(99,231,240,.68)';ctx.lineWidth=1;ctx.stroke();
+    ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,width/2,y+pillH/2+.2);ctx.restore();
+  }
   function drawPitch(ctx,width,height){
     const pad=6,fw=width-pad*2,fh=height-pad*2;
     roundRect(ctx,pad,pad,fw,fh,7);ctx.fillStyle='#4ba64a';ctx.fill();ctx.save();roundRect(ctx,pad,pad,fw,fh,7);ctx.clip();
@@ -1140,6 +1201,7 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
     }else{
       ctx.fillStyle='rgba(255,255,255,.94)';roundRect(ctx,width/2-Math.min(62,width*.38),height/2-12,Math.min(124,width*.76),24,7);ctx.fill();ctx.fillStyle='#52616d';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`850 ${Math.max(6,Math.min(9,width*.055))}px system-ui`;ctx.fillText('Sem ações',width/2,height/2);
     }
+    drawMapDirection(ctx,width,height,directionForFilter($('#heatFilter')?.value||'all'));
   }
   function laneForDual(event){
     const y=Math.max(0,Math.min(100,Number(event.y)||0));
@@ -1156,7 +1218,7 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
     const events=(state.fieldEvents||[]).filter(event=>OFFENSIVE_ACTIONS_DUAL.has(event.action)&&(filter==='all'||String(event.period)===filter));
     const counts={left:0,center:0,right:0};events.forEach(event=>counts[laneForDual(event)]++);
     const max=Math.max(1,counts.left,counts.center,counts.right),lanes=[['left','E'],['center','M'],['right','D']];
-    const attackRight=(state.attackSide||'right')==='right',barMax=field.fw*.48,barHeight=Math.max(7,Math.min(13,field.fh*.10));
+    const direction=directionForFilter(filter),attackRight=direction.side==='right',barMax=field.fw*.48,barHeight=Math.max(7,Math.min(13,field.fh*.10));
     lanes.forEach(([key,label],index)=>{
       const cy=field.pad+field.fh*((index+.5)/3),amount=counts[key],barWidth=barMax*(amount/max),start=attackRight?field.pad+field.fw*.24:field.pad+field.fw*.76;
       ctx.fillStyle='rgba(7,27,43,.24)';roundRect(ctx,attackRight?start:start-barMax,cy-barHeight/2,barMax,barHeight,barHeight/2);ctx.fill();
@@ -1164,6 +1226,7 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
       const size=Math.max(15,Math.min(23,width*.18)),px=attackRight?field.pad+3:field.pad+field.fw-size-3;
       ctx.fillStyle='rgba(255,255,255,.93)';roundRect(ctx,px,cy-size/2,size,size,6);ctx.fill();ctx.fillStyle='#101418';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`950 ${Math.max(7,Math.min(11,width*.065))}px system-ui`;ctx.fillText(label+amount,px+size/2,cy);
     });
+    drawMapDirection(ctx,width,height,direction);
   }
   function configureDualMaps(){
     const heatTitle=$('.heat .panelTitle span:first-child'),attackTitle=$('.attackMap .panelTitle span:first-child');
@@ -1326,7 +1389,7 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
   const NEGATIVE_WEIGHTS={perda:2,passe_falhado:1.25,falta:.65,cartao_amarelo:1.1,expulsao:2.5};
   const OFFENSIVE=new Set(['golo','remate','assistencia','passe','canto','recuperacao']);
   const NEGATIVE=new Set(['perda','passe_falhado','falta','cartao_amarelo','expulsao']);
-  let activeAnalysisView='summary';
+  let activeAnalysisView='quick';
   let lastSignature='';
 
   const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
@@ -1498,6 +1561,21 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
     </div>`;
   }
 
+  function quickStatsHtml(stats){
+    const shots=stats.shots||[],goals=count('golo'),onTarget=shots.filter(event=>event.action==='golo'||/enquadr|defendid|baliza|defesa/i.test(String(event.label||event.type||event.subtype||''))).length,keyPasses=count('passe'),crosses=count('cruzamento');
+    const items=[
+      ['Posse equipa A',stats.possession.total?`${stats.possession.homePct.toFixed(1)}%`:'0%','possession'],
+      ['Remates',shots.length,'shots'],
+      ['À baliza',onTarget,'target'],
+      ['Golos',goals,'goals'],
+      ['Passes-chave',keyPasses,'passes'],
+      ['Cruzamentos eficazes',crosses,'crosses'],
+      ['Recuperações',stats.recoveries.length,'recoveries'],
+      ['Perdas',stats.losses.length,'losses']
+    ];
+    return `<div class="analysisQuickStatsGrid">${items.map(([label,value,tone])=>`<article class="analysisQuickStat ${tone}"><small>${label}</small><b>${value}</b></article>`).join('')}</div>`;
+  }
+
   function coachingTip(stats,patterns,allAlerts){
     if(!stats.all.length&&!stats.possession.total)return 'Regista posse e ações no campo para receber uma recomendação imediata.';
     if(stats.dangerousLosses.length>=2)return 'Dar mais apoios na primeira fase de construção e evitar passes verticais forçados nas zonas de maior risco.';
@@ -1537,7 +1615,7 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
 
   function zonesHtml(zones){
     const active=zones.mostActive&&zones.mostActive.events?`Zona ${zones.mostActive.index+1} (${zones.mostActive.events} ações)`:'Sem zona dominante';
-    return `<div class="analysisPane analysisZonePane"><div class="zoneLargeCard"><div class="zoneLarge">${zoneCellsHtml(zones.zones,true)}</div></div><div class="analysisListCard"><div class="analysisPaneTitle">Controlo territorial estimado</div><div class="zoneMetrics"><div class="zoneMetric"><b class="zoneHome">${zones.summary.home}</b><small>A DOMINA</small></div><div class="zoneMetric"><b class="zoneAway">${zones.summary.away}</b><small>B DOMINA</small></div><div class="zoneMetric"><b class="zoneEqual">${zones.summary.equal}</b><small>EQUILÍBRIO</small></div></div><div class="patternList"><div class="patternItem"><i></i><span>Zona mais ativa: ${active}</span></div><div class="patternItem"><i></i><span>As recuperações, passes, remates e golos reforçam o controlo da Equipa A.</span></div><div class="patternItem"><i></i><span>As perdas, passes falhados e ações negativas reforçam a influência da Equipa B.</span></div></div><div class="analysisNote">Estimativa construída apenas com as ações registadas na aplicação; não substitui dados de tracking.</div></div></div>`;
+    return `<div class="analysisPane analysisZonePane"><div class="zoneLargeCard"><div class="zonePitch"><div class="zoneLarge">${zoneCellsHtml(zones.zones,true)}</div><i class="zonePitchHalf"></i><i class="zonePitchCircle"></i><i class="zonePitchBox left"></i><i class="zonePitchBox right"></i><span class="svMapDirection" data-map-part="all"></span></div></div><div class="analysisListCard"><div class="analysisPaneTitle">Controlo territorial estimado</div><div class="zoneMetrics"><div class="zoneMetric"><b class="zoneHome">${zones.summary.home}</b><small>A DOMINA</small></div><div class="zoneMetric"><b class="zoneAway">${zones.summary.away}</b><small>B DOMINA</small></div><div class="zoneMetric"><b class="zoneEqual">${zones.summary.equal}</b><small>EQUILÍBRIO</small></div></div><div class="patternList"><div class="patternItem"><i></i><span>Zona mais ativa: ${active}</span></div><div class="patternItem"><i></i><span>As recuperações, passes, remates e golos reforçam o controlo da Equipa A.</span></div><div class="patternItem"><i></i><span>As perdas, passes falhados e ações negativas reforçam a influência da Equipa B.</span></div></div><div class="analysisNote">Estimativa construída apenas com as ações registadas na aplicação; não substitui dados de tracking.</div></div></div>`;
   }
 
   function patternsPaneHtml(patterns,stats){
@@ -1552,7 +1630,7 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
   }
 
   function panelMarkup(){
-    return `<section class="analysisCenter" id="analysisCenter" aria-label="Centro de Análise"><div class="analysisCenterHead"><strong>CENTRO DE ANÁLISE</strong><span class="analysisLive">AO VIVO</span></div><div class="analysisTabs" role="tablist"><button type="button" class="active" data-analysis-tab="summary">RESUMO AO VIVO</button><button type="button" data-analysis-tab="overview">VISÃO GERAL</button><button type="button" data-analysis-tab="zones">ZONAS</button><button type="button" data-analysis-tab="patterns">PADRÕES</button><button type="button" data-analysis-tab="alerts">ALERTAS</button></div><div class="analysisCenterBody" id="analysisCenterBody"></div></section>`;
+    return `<section class="analysisCenter" id="analysisCenter" aria-label="Centro de Análise"><div class="analysisCenterHead"><strong>CENTRO DE ANÁLISE</strong><span class="analysisLive">AO VIVO</span></div><div class="analysisTabs" role="tablist"><button type="button" class="active" data-analysis-tab="quick">ESTATÍSTICAS RÁPIDAS</button><button type="button" data-analysis-tab="summary">RESUMO AO VIVO</button><button type="button" data-analysis-tab="overview">VISÃO GERAL</button><button type="button" data-analysis-tab="zones">ZONAS</button><button type="button" data-analysis-tab="patterns">PADRÕES</button><button type="button" data-analysis-tab="alerts">ALERTAS</button></div><div class="analysisCenterBody" id="analysisCenterBody"></div></section>`;
   }
 
   function mountAnalysisCenter(){
@@ -1590,7 +1668,8 @@ setTimeout(()=>{applyBrand();ensurePossession();updateAllLive();renderArenaTab('
     if(!force&&signature===lastSignature)return;lastSignature=signature;
     center.querySelectorAll('[data-analysis-tab]').forEach(button=>button.classList.toggle('active',button.dataset.analysisTab===activeAnalysisView));
     const body=center.querySelector('#analysisCenterBody');
-    if(activeAnalysisView==='summary')body.innerHTML=summaryPaneHtml(stats,patterns,zones,allAlerts);
+    if(activeAnalysisView==='quick')body.innerHTML=quickStatsHtml(stats);
+    else if(activeAnalysisView==='summary')body.innerHTML=summaryPaneHtml(stats,patterns,zones,allAlerts);
     else if(activeAnalysisView==='zones')body.innerHTML=zonesHtml(zones);
     else if(activeAnalysisView==='patterns')body.innerHTML=patternsPaneHtml(patterns,stats);
     else if(activeAnalysisView==='alerts')body.innerHTML=alertsPaneHtml(stats,allAlerts);
@@ -2353,7 +2432,7 @@ body{min-width:900px}
   normaliseIds();
 
   let saveStateTimer=0,pendingStatePayload=null;
-  function buildStatePayload(){return {home:state.home,away:state.away,seconds:state.seconds,clockMode:'up',currentPart:state.currentPart,compensationByPart:state.compensationByPart,players:state.players,events:state.events,homeName:q('#homeName')?.value||'',awayName:q('#awayName')?.value||'',period:q('#periodSelect')?.value||'1',fieldEvents:state.fieldEvents,heatPoints:state.heatPoints,periodMinutes:state.periodMinutes,maxPlayers:state.maxPlayers,attackSide:state.attackSide,plays:state.plays,observations:state.observations,currentPlay:state.currentPlay,playMode:state.playMode,statsSection:state.statsSection,eventFilters:state.eventFilters,videoWorkspace:window.statsVisionVideoState||null}}
+  function buildStatePayload(){return {home:state.home,away:state.away,seconds:state.seconds,clockMode:'up',currentPart:state.currentPart,compensationByPart:state.compensationByPart,players:state.players,events:state.events,homeName:q('#homeName')?.value||'',awayName:q('#awayName')?.value||'',period:q('#periodSelect')?.value||'1',fieldEvents:state.fieldEvents,heatPoints:state.heatPoints,periodMinutes:state.periodMinutes,maxPlayers:state.maxPlayers,attackSide:state.attackSide,plays:state.plays,observations:state.observations,currentPlay:state.currentPlay,playMode:state.playMode,statsSection:state.statsSection,eventFilters:state.eventFilters,statsFilters:state.statsFilters,opponentPeriod:state.opponentPeriod,pendingSubOut:state.pendingSubOut,selectedPlayer:state.selectedPlayer,playerTab:state.playerTab,arenaTab:state.arenaTab,timelineMode:state.timelineMode,fieldAction:state.fieldAction,arenaFlow:state.arenaFlow,possession:typeof window.statsVisionPossessionSnapshot==='function'?window.statsVisionPossessionSnapshot():state.possession,videoWorkspace:window.statsVisionVideoState||null}}
   function flushStateSave(){if(!pendingStatePayload)return;const payload=pendingStatePayload;pendingStatePayload=null;clearTimeout(saveStateTimer);saveStateTimer=0;try{localStorage.setItem('statsv3_match',JSON.stringify(payload))}catch(error){}}
   window.saveState=saveState=function(immediate=false){if(sessionStorage.getItem('statsvision_backup_importing')==='1')return;pendingStatePayload=buildStatePayload();if(immediate){flushStateSave();return}clearTimeout(saveStateTimer);saveStateTimer=setTimeout(flushStateSave,90)};
   if(migratedFailedPass)saveState(true);
@@ -2520,7 +2599,7 @@ body{min-width:900px}
   function optionActions(includeSpecial=false){const base=[['all','Todas as estatísticas'],...mainActions().filter(action=>action.key!=='observacao').map(action=>[action.key,action.label]),['advertencia','Advertência']];if(includeSpecial)base.push(['observacao','Observações'],['substituicao','Substituições']);return base}
   function filterMatchesAction(event,filter){if(filter==='all')return true;if(filter==='advertencia')return ['advertencia','cartao_amarelo','expulsao'].includes(event.action)||(Boolean(event.warningType)&&event.warningType!=='Sem advertência');return event.action===filter}
   function filteredFields(filters={}){return (state.fieldEvents||[]).filter(event=>(filters.period==='all'||!filters.period||String(event.period)===String(filters.period))&&(filters.team==='all'||!filters.team||event.team===filters.team)&&(filters.player==='all'||!filters.player||String(event.playerNumber)===String(filters.player))&&filterMatchesAction(event,filters.action||'all'))}
-  function mapMarkup(events,id='statsPitchV20'){return `<div class="statsPitchV20" id="${id}">${events.map(event=>`<span class="statsDotV20 action-${event.action} ${event.team==='away'?'team-away':''}" style="left:${event.x}%;top:${event.y}%" title="${esc(event.label)} — ${esc(event.player)}${event.comment?` — ${esc(event.comment)}`:''}">${iconHtml(event.action,event.label,event.attackSide,event.team)}</span>`).join('')}${events.length?'':'<div class="statsEmptyV20">Sem ações para os filtros selecionados.</div>'}</div>`}
+  function mapMarkup(events,id='statsPitchV20',part='all'){return `<div class="statsPitchV20" id="${id}" data-map-part="${esc(part||'all')}">${events.map(event=>`<span class="statsDotV20 action-${event.action} ${event.team==='away'?'team-away':''}" style="left:${event.x}%;top:${event.y}%" title="${esc(event.label)} — ${esc(event.player)}${event.comment?` — ${esc(event.comment)}`:''}">${iconHtml(event.action,event.label,event.attackSide,event.team)}</span>`).join('')}${events.length?'':'<div class="statsEmptyV20">Sem ações para os filtros selecionados.</div>'}</div>`}
   function playerRows(events){return state.players.map(player=>{const own=events.filter(event=>event.team!=='away'&&(event.playerNumber===player.number||event.player===player.name)),count=key=>own.filter(event=>filterMatchesAction(event,key)).length,assists=(state.fieldEvents||[]).filter(event=>event.action==='golo'&&(event.assistPlayerNumber===player.number||event.assistPlayer===player.name)).length,keyPasses=own.filter(event=>event.creationType==='Passe-chave'||event.label==='Passe-chave').length;return `<div class="statsPlayerRow"><span class="shirt">${esc(player.number)}</span><strong>${esc(player.name)}</strong><span class="statsMetric"><b>${own.length}</b>Total</span><span class="statsMetric"><b>${count('golo')}</b>Golos</span><span class="statsMetric"><b>${assists}</b>Assist.</span><span class="statsMetric"><b>${keyPasses}</b>P.-chave</span><span class="statsMetric"><b>${count('remate')}</b>Remates</span><span class="statsMetric"><b>${count('recuperacao')}</b>Recup.</span><span class="statsMetric"><b>${count('acao_defensiva')}</b>Defens.</span><span class="statsMetric"><b>${count('advertencia')}</b>Advert.</span></div>`}).join('')}
   function overviewHtml(){
     const filters=state.statsFilters||{period:'all',team:'home',player:'all',action:'all'},events=filteredFields(filters);
@@ -2528,12 +2607,12 @@ body{min-width:900px}
     const progress=event=>(event.attackSide||state.attackSide||'right')==='left'?100-Number(event.x):Number(event.x);
     const boxEntries=territorial.filter(event=>progress(event)>=83&&Number(event.y)>=22&&Number(event.y)<=78).length;
     const finalThird=territorial.filter(event=>progress(event)>=67).length;
-    return `<div class="statsFiltersV20"><label>Parte<select id="v20StatsPeriod"><option value="all">Todos</option><option value="1">1.ª parte</option><option value="2">2.ª parte</option><option value="3">3.ª parte</option><option value="4">2.ª parte · prolongamento</option></select></label><label>Equipa<select id="v20StatsTeam"><option value="home">${esc(ownTeamName())}</option><option value="away">${esc(awayTeamName())}</option><option value="all">Ambas</option></select></label><label>Jogador<select id="v20StatsPlayer"><option value="all">Todos</option>${state.players.map(player=>`<option value="${esc(player.number)}">${esc(player.number)} — ${esc(player.name)}</option>`).join('')}</select></label><label>Estatística<select id="v20StatsAction">${optionActions().map(([key,label])=>`<option value="${key}">${esc(label)}</option>`).join('')}</select></label></div><div class="statsAutoZones"><span><b>${boxEntries}</b> ENTRADAS NA ÁREA</span><span><b>${finalThird}</b> AÇÕES NO ÚLTIMO TERÇO</span><small>Calculadas automaticamente pela posição das ações.</small></div><section class="statsMapV20"><div class="statsMapV20Head"><span>Mapa filtrado</span><b>${events.length} registos</b></div>${mapMarkup(events)}</section><div class="statsPlayerRows">${playerRows(events.filter(event=>event.team!=='away'))}</div>`
+    return `<div class="statsFiltersV20"><label>Parte<select id="v20StatsPeriod"><option value="all">Todos</option><option value="1">1.ª parte</option><option value="2">2.ª parte</option><option value="3">3.ª parte</option><option value="4">2.ª parte · prolongamento</option></select></label><label>Equipa<select id="v20StatsTeam"><option value="home">${esc(ownTeamName())}</option><option value="away">${esc(awayTeamName())}</option><option value="all">Ambas</option></select></label><label>Jogador<select id="v20StatsPlayer"><option value="all">Todos</option>${state.players.map(player=>`<option value="${esc(player.number)}">${esc(player.number)} — ${esc(player.name)}</option>`).join('')}</select></label><label>Estatística<select id="v20StatsAction">${optionActions().map(([key,label])=>`<option value="${key}">${esc(label)}</option>`).join('')}</select></label></div><div class="statsAutoZones"><span><b>${boxEntries}</b> ENTRADAS NA ÁREA</span><span><b>${finalThird}</b> AÇÕES NO ÚLTIMO TERÇO</span><small>Calculadas automaticamente pela posição das ações.</small></div><section class="statsMapV20"><div class="statsMapV20Head"><span>Mapa filtrado</span><b>${events.length} registos</b></div>${mapMarkup(events,'statsPitchV20',filters.period)}</section><div class="statsPlayerRows">${playerRows(events.filter(event=>event.team!=='away'))}</div>`
   }
-  function playCardMarkup(play,index){const actions=play.actions||[];return `<article class="playCard"><div class="playCardHead"><div><strong>Jogada ${index+1} · ${esc(play.finalization||'Finalização')}</strong><small>${eventClock(play)} · ${esc(play.period||1)}.ª parte</small></div><button type="button" data-delete-play="${esc(play.id)}" title="Eliminar">×</button></div><div class="playActionsList">${actions.map(action=>`<span>${esc(action.player)} · ${esc(action.label||actionLabel(action.action))}</span>`).join('')}</div><div class="playMiniPitch">${actions.slice(1).map((action,i)=>playLinkHtml(actions[i],action,'playLinkMini')).join('')}${actions.map(action=>`<span class="playDotV20 action-${action.action} ${action.team==='away'?'team-away':''}" style="left:${action.x}%;top:${action.y}%">${iconHtml(action.action,action.label,action.attackSide,action.team)}</span>`).join('')}</div></article>`}
+  function playCardMarkup(play,index){const actions=play.actions||[];return `<article class="playCard"><div class="playCardHead"><div><strong>Jogada ${index+1} · ${esc(play.finalization||'Finalização')}</strong><small>${eventClock(play)} · ${esc(play.period||1)}.ª parte</small></div><button type="button" data-delete-play="${esc(play.id)}" title="Eliminar">×</button></div><div class="playActionsList">${actions.map(action=>`<span>${esc(action.player)} · ${esc(action.label||actionLabel(action.action))}</span>`).join('')}</div><div class="playMiniPitch" data-map-part="${esc(play.period||1)}">${actions.slice(1).map((action,i)=>playLinkHtml(actions[i],action,'playLinkMini')).join('')}${actions.map(action=>`<span class="playDotV20 action-${action.action} ${action.team==='away'?'team-away':''}" style="left:${action.x}%;top:${action.y}%">${iconHtml(action.action,action.label,action.attackSide,action.team)}</span>`).join('')}</div></article>`}
   function playsHtml(){return state.plays.length?`<div class="playsGrid">${state.plays.map(playCardMarkup).join('')}</div>`:'<div class="playEmpty">Ainda não existem jogadas gravadas. Ativa “Criar jogada” na arena e termina a sequência com golo, remate defendido ou bloqueado.</div>'}
   function observationsHtml(){return `<div class="observationLayout"><form class="observationForm" id="observationFormV20"><h3>Nova observação</h3><label>Jogador<select id="observationPlayerV20">${state.players.map((player,index)=>`<option value="${index}">${esc(player.number)} — ${esc(player.name)}</option>`).join('')}</select></label><label>Tipo de observação<select id="observationCategoryV20">${observationCategories.map(category=>`<option>${esc(category)}</option>`).join('')}</select></label><label>Nota<textarea id="observationTextV20" placeholder="Ex.: falta de interesse em defender"></textarea></label><button type="submit">Guardar observação</button></form><div class="observationList">${state.observations.slice().reverse().map(item=>`<article class="observationCard"><span class="observationNumber">${esc(item.playerNumber)}</span><div><strong>${esc(item.player)} · ${esc(item.category)}</strong><p>${esc(item.text)}</p><small>${eventClock(item)} · ${esc(item.period)}.ª parte</small></div><button type="button" data-delete-observation="${esc(item.id)}">×</button></article>`).join('')||'<div class="playEmpty">Sem observações registadas.</div>'}</div></div>`}
-  function opponentHtml(){const period=state.opponentPeriod||'all',events=filteredFields({period,team:'away',player:'all',action:'all'}).filter(event=>['golo','remate'].includes(event.action)),goals=events.filter(event=>event.action==='golo').length,shots=events.filter(event=>event.action==='remate').length;return `<div class="statsFiltersV20"><label>Parte<select id="opponentPeriodV20"><option value="all">Jogo completo</option><option value="1">1.ª parte</option><option value="2">2.ª parte</option><option value="3">3.ª parte</option><option value="4">2.ª parte · prolongamento</option></select></label></div><section class="opponentSummary"><h3>${esc(awayTeamName())}</h3><div class="opponentKpis"><div class="opponentKpi"><b>${goals}</b><small>GOLOS</small></div><div class="opponentKpi"><b>${shots}</b><small>REMATES</small></div><div class="opponentKpi"><b>${goals+shots}</b><small>FINALIZAÇÕES</small></div></div>${mapMarkup(events,'opponentPitchV20')}<div class="opponentEvents">${events.slice().reverse().map(event=>`<div class="opponentEvent"><b>${eventClock(event)}</b><span>${esc(event.label)}</span><small>${esc(eventZone(event))}</small></div>`).join('')||'<div class="playEmpty">Sem golos ou remates adversários registados.</div>'}</div></section>`}
+  function opponentHtml(){const period=state.opponentPeriod||'all',events=filteredFields({period,team:'away',player:'all',action:'all'}).filter(event=>['golo','remate'].includes(event.action)),goals=events.filter(event=>event.action==='golo').length,shots=events.filter(event=>event.action==='remate').length;return `<div class="statsFiltersV20"><label>Parte<select id="opponentPeriodV20"><option value="all">Jogo completo</option><option value="1">1.ª parte</option><option value="2">2.ª parte</option><option value="3">3.ª parte</option><option value="4">2.ª parte · prolongamento</option></select></label></div><section class="opponentSummary"><h3>${esc(awayTeamName())}</h3><div class="opponentKpis"><div class="opponentKpi"><b>${goals}</b><small>GOLOS</small></div><div class="opponentKpi"><b>${shots}</b><small>REMATES</small></div><div class="opponentKpi"><b>${goals+shots}</b><small>FINALIZAÇÕES</small></div></div>${mapMarkup(events,'opponentPitchV20',period)}<div class="opponentEvents">${events.slice().reverse().map(event=>`<div class="opponentEvent"><b>${eventClock(event)}</b><span>${esc(event.label)}</span><small>${esc(eventZone(event))}</small></div>`).join('')||'<div class="playEmpty">Sem golos ou remates adversários registados.</div>'}</div></section>`}
   function renderStatsSection(){const body=q('#statsHubBody');if(!body)return;if(state.statsSection==='plays')state.statsSection='overview';qa('[data-stats-section]').forEach(button=>button.classList.toggle('active',button.dataset.statsSection===state.statsSection));body.innerHTML=state.statsSection==='observations'?observationsHtml():state.statsSection==='opponent'?opponentHtml():overviewHtml();bindStatsSection()}
   function bindStatsSection(){
     const filters=state.statsFilters||{period:'all',team:'home',player:'all',action:'all'};[['#v20StatsPeriod','period'],['#v20StatsTeam','team'],['#v20StatsPlayer','player'],['#v20StatsAction','action']].forEach(([selector,key])=>{const node=q(selector);if(node){node.value=filters[key]||'all';node.onchange=()=>{state.statsFilters={...filters,[key]:node.value};saveState();renderStatsSection()}}});
@@ -2563,14 +2642,14 @@ body{min-width:900px}
   function renderEventEditor(){
     if(!editDraft)return;const content=q('#eventEditContent'),item=state.events[editDraft.index],actions=editActionChoices(),selectedAction=actions.find(action=>action.key===editDraft.action)||actions[0];if(!actions.some(action=>action.key===editDraft.action))editDraft.action=selectedAction.key;
     const players=state.players.map((player,index)=>({player,index}));
-    content.innerHTML=`<div class="eventEditGrid"><div class="eventEditPitchWrap"><div class="eventEditPitch" id="eventEditPitch"><span class="eventEditMarker action-${editDraft.action} ${editDraft.team==='away'?'team-away':''}" style="left:${editDraft.x}%;top:${editDraft.y}%">${iconHtml(editDraft.action,editDraft.subtype,editDraft.attackSide,editDraft.team)}</span></div><small>Clica no campo para alterar o local da ação.</small></div><div class="eventEditPanel"><section class="eventEditSection"><h3>Equipa</h3><div class="eventEditChoices"><button type="button" data-edit-team="home" class="${editDraft.team==='home'?'active':''}">${esc(ownTeamName())}</button><button type="button" data-edit-team="away" class="${editDraft.team==='away'?'active':''}">${esc(awayTeamName())}</button></div></section>${editDraft.team==='home'?`<section class="eventEditSection"><h3>Jogador</h3><div class="eventEditChoices">${players.map(({player,index})=>`<button type="button" data-edit-player="${index}" class="${Number(editDraft.playerIndex)===index?'active':''}">${esc(player.number)} ${esc(player.name)}</button>`).join('')}</div></section>`:''}<section class="eventEditSection"><h3>Estatística</h3><div class="eventEditChoices">${actions.map(action=>`<button type="button" data-edit-action="${action.key}" class="${editDraft.action===action.key?'active':''}">${iconHtml(action.key,action.label,state.attackSide,editDraft.team)} ${esc(action.label)}</button>`).join('')}</div></section>${selectedAction.sub?.length?`<section class="eventEditSection"><h3>Detalhe</h3><select id="eventEditSubtype">${selectedAction.sub.map(label=>`<option ${editDraft.subtype===label?'selected':''}>${esc(label)}</option>`).join('')}</select></section>`:''}${selectedAction.key==='falta'?`<section class="eventEditSection"><h3>Advertência após a falta</h3><select id="eventEditWarning"><option ${editDraft.warningType==='Sem advertência'?'selected':''}>Sem advertência</option><option ${editDraft.warningType==='Cartão amarelo'?'selected':''}>Cartão amarelo</option><option ${editDraft.warningType==='Cartão vermelho'?'selected':''}>Cartão vermelho</option><option ${editDraft.warningType==='Última advertência'?'selected':''}>Última advertência</option></select></section>`:''}${editDraft.action==='observacao'?`<section class="eventEditSection"><h3>Observação</h3><select id="eventEditObservationCategory">${observationCategories.map(category=>`<option ${editDraft.observationCategory===category?'selected':''}>${esc(category)}</option>`).join('')}</select><textarea id="eventEditObservationText">${esc(editDraft.note||'')}</textarea></section>`:`<section class="eventEditSection"><h3>Comentário opcional</h3><textarea id="eventEditComment" maxlength="300" placeholder="Acrescenta contexto à estatística...">${esc(editDraft.comment||'')}</textarea></section>`}</div></div><div class="eventEditFooter"><button type="button" id="cancelEventEdit">Cancelar</button><button type="button" class="save" id="saveEventEdit">Guardar alterações</button></div>`;
+    content.innerHTML=`<div class="eventEditGrid"><div class="eventEditPitchWrap"><div class="eventEditPitch" id="eventEditPitch" data-map-part="${esc(editDraft.period||'all')}"><span class="eventEditMarker action-${editDraft.action} ${editDraft.team==='away'?'team-away':''}" style="left:${editDraft.x}%;top:${editDraft.y}%">${iconHtml(editDraft.action,editDraft.subtype,editDraft.attackSide,editDraft.team)}</span></div><small>Clica no campo para alterar o local da ação.</small></div><div class="eventEditPanel"><section class="eventEditSection"><h3>Equipa</h3><div class="eventEditChoices"><button type="button" data-edit-team="home" class="${editDraft.team==='home'?'active':''}">${esc(ownTeamName())}</button><button type="button" data-edit-team="away" class="${editDraft.team==='away'?'active':''}">${esc(awayTeamName())}</button></div></section>${editDraft.team==='home'?`<section class="eventEditSection"><h3>Jogador</h3><div class="eventEditChoices">${players.map(({player,index})=>`<button type="button" data-edit-player="${index}" class="${Number(editDraft.playerIndex)===index?'active':''}">${esc(player.number)} ${esc(player.name)}</button>`).join('')}</div></section>`:''}<section class="eventEditSection"><h3>Estatística</h3><div class="eventEditChoices">${actions.map(action=>`<button type="button" data-edit-action="${action.key}" class="${editDraft.action===action.key?'active':''}">${iconHtml(action.key,action.label,state.attackSide,editDraft.team)} ${esc(action.label)}</button>`).join('')}</div></section>${selectedAction.sub?.length?`<section class="eventEditSection"><h3>Detalhe</h3><select id="eventEditSubtype">${selectedAction.sub.map(label=>`<option ${editDraft.subtype===label?'selected':''}>${esc(label)}</option>`).join('')}</select></section>`:''}${selectedAction.key==='falta'?`<section class="eventEditSection"><h3>Advertência após a falta</h3><select id="eventEditWarning"><option ${editDraft.warningType==='Sem advertência'?'selected':''}>Sem advertência</option><option ${editDraft.warningType==='Cartão amarelo'?'selected':''}>Cartão amarelo</option><option ${editDraft.warningType==='Cartão vermelho'?'selected':''}>Cartão vermelho</option><option ${editDraft.warningType==='Última advertência'?'selected':''}>Última advertência</option></select></section>`:''}${editDraft.action==='observacao'?`<section class="eventEditSection"><h3>Observação</h3><select id="eventEditObservationCategory">${observationCategories.map(category=>`<option ${editDraft.observationCategory===category?'selected':''}>${esc(category)}</option>`).join('')}</select><textarea id="eventEditObservationText">${esc(editDraft.note||'')}</textarea></section>`:`<section class="eventEditSection"><h3>Comentário opcional</h3><textarea id="eventEditComment" maxlength="300" placeholder="Acrescenta contexto à estatística...">${esc(editDraft.comment||'')}</textarea></section>`}</div></div><div class="eventEditFooter"><button type="button" id="cancelEventEdit">Cancelar</button><button type="button" class="save" id="saveEventEdit">Guardar alterações</button></div>`;
     q('#eventEditPitch').onclick=event=>{const rect=event.currentTarget.getBoundingClientRect();editDraft.x=Math.max(0,Math.min(100,(event.clientX-rect.left)/rect.width*100));editDraft.y=Math.max(0,Math.min(100,(event.clientY-rect.top)/rect.height*100));renderEventEditor()};
     qa('[data-edit-team]',content).forEach(button=>button.onclick=()=>{editDraft.team=button.dataset.editTeam;if(editDraft.team==='away'){editDraft.playerIndex=null;if(!['golo','remate'].includes(editDraft.action))editDraft.action='remate'}else if(editDraft.playerIndex==null)editDraft.playerIndex=0;renderEventEditor()});
     qa('[data-edit-player]',content).forEach(button=>button.onclick=()=>{editDraft.playerIndex=Number(button.dataset.editPlayer);renderEventEditor()});
     qa('[data-edit-action]',content).forEach(button=>button.onclick=()=>{editDraft.action=button.dataset.editAction;editDraft.subtype=actionByKey(editDraft.action)?.sub?.[0]||'';renderEventEditor()});
     q('#cancelEventEdit').onclick=closeEventEditor;q('#saveEventEdit').onclick=saveEventEditor;
   }
-  function openEventEditor(index){const item=state.events[index];if(!item)return;const playerIndex=state.players.findIndex(player=>player.number===item.playerNumber||player.name===item.player);editDraft={index,id:item.id,originalAction:item.action,team:item.team==='away'?'away':'home',playerIndex:playerIndex>=0?playerIndex:0,action:item.action||'remate',subtype:item.goalType||item.foulType||item.defensiveType||item.creationType||(item.action==='falta'?'Falta cometida':item.label)||'',warningType:item.warningType||'Sem advertência',x:Number.isFinite(Number(item.x))?Number(item.x):50,y:Number.isFinite(Number(item.y))?Number(item.y):50,observationCategory:item.observationCategory||item.label||observationCategories[0],note:item.note||'',comment:item.comment||''};editModal.classList.add('show');renderEventEditor()}
+  function openEventEditor(index){const item=state.events[index];if(!item)return;const playerIndex=state.players.findIndex(player=>player.number===item.playerNumber||player.name===item.player);editDraft={index,id:item.id,originalAction:item.action,period:item.period||1,attackSide:item.attackSide||state.attackSide||'right',team:item.team==='away'?'away':'home',playerIndex:playerIndex>=0?playerIndex:0,action:item.action||'remate',subtype:item.goalType||item.foulType||item.defensiveType||item.creationType||(item.action==='falta'?'Falta cometida':item.label)||'',warningType:item.warningType||'Sem advertência',x:Number.isFinite(Number(item.x))?Number(item.x):50,y:Number.isFinite(Number(item.y))?Number(item.y):50,observationCategory:item.observationCategory||item.label||observationCategories[0],note:item.note||'',comment:item.comment||''};editModal.classList.add('show');renderEventEditor()}
   function closeEventEditor(){editModal.classList.remove('show');editDraft=null}
   function saveEventEditor(){
     if(!editDraft)return;const item=state.events[editDraft.index];if(!item)return closeEventEditor();const selected=editDraft.action==='observacao'?{key:'observacao',label:'Observação'}:actionByKey(editDraft.action),subtype=q('#eventEditSubtype')?.value||editDraft.subtype||selected.label,finalAction=finalActionFor(selected.key,subtype),player=editDraft.team==='away'?null:state.players[Number(editDraft.playerIndex)],oldId=item.id||uid('event');
@@ -4880,14 +4959,14 @@ body .panelZoomStage:has(>.momentumPanel.panel.panelExpanded){background:var(--a
  const writeSessions=list=>localStorage.setItem(SESSIONS,JSON.stringify(list));
  const readJson=(key,fallback={})=>{try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch(error){return fallback}};
  const currentExtra=()=>readJson('statsvision_extra',{});
- function capture(){const extra=currentExtra();return{match:localStorage.getItem('statsv3_match')||'{}',tactical:localStorage.getItem('statsv3_tactical')||'{}',halftime:localStorage.getItem('statsvision_halftime_snapshot_v51')||'',extra:JSON.stringify({teamLogos:extra.teamLogos||{},possession:extra.possession||{home:0,contest:0,away:0,log:[]}})}}
+ function capture(){if(typeof window.saveState==='function')window.saveState(true);const extra=currentExtra(),possession=typeof window.statsVisionPossessionSnapshot==='function'?window.statsVisionPossessionSnapshot():(extra.possession||{home:0,contest:0,away:0,log:[]}),completeExtra={...extra,possession};localStorage.setItem('statsvision_extra',JSON.stringify(completeExtra));return{match:localStorage.getItem('statsv3_match')||'{}',tactical:localStorage.getItem('statsv3_tactical')||'{}',halftime:localStorage.getItem('statsvision_halftime_snapshot_v51')||'',extra:JSON.stringify(completeExtra)}}
  function meta(){const home=q('#homeName')?.value?.trim()||'Clube A',away=q('#awayName')?.value?.trim()||'Clube B',part=q('#periodSelect')?.value||String(typeof state!=='undefined'&&state.currentPart||1),seconds=Math.max(0,Number(typeof state!=='undefined'&&state.seconds)||0);return{home,away,homeScore:Number(typeof state!=='undefined'&&state.home)||0,awayScore:Number(typeof state!=='undefined'&&state.away)||0,part,minute:Math.floor(seconds/60),actions:Array.isArray(typeof state!=='undefined'&&state.fieldEvents)?state.fieldEvents.length:0}}
- function restore(session){if(!session?.snapshot)return;localStorage.setItem('statsv3_match',session.snapshot.match||'{}');localStorage.setItem('statsv3_tactical',session.snapshot.tactical||'{}');if(session.snapshot.halftime)localStorage.setItem('statsvision_halftime_snapshot_v51',session.snapshot.halftime);else localStorage.removeItem('statsvision_halftime_snapshot_v51');let extra=currentExtra(),sessionExtra={};try{sessionExtra=JSON.parse(session.snapshot.extra||'{}')}catch(error){};extra={...extra,teamLogos:sessionExtra.teamLogos||extra.teamLogos||{},possession:sessionExtra.possession||{home:0,contest:0,away:0,log:[]}};localStorage.setItem('statsvision_extra',JSON.stringify(extra));localStorage.setItem(ACTIVE,session.id);localStorage.setItem(OPEN,session.id)}
+ function restore(session){if(!session?.snapshot)return;localStorage.setItem('statsv3_match',session.snapshot.match||'{}');localStorage.setItem('statsv3_tactical',session.snapshot.tactical||'{}');if(session.snapshot.halftime)localStorage.setItem('statsvision_halftime_snapshot_v51',session.snapshot.halftime);else localStorage.removeItem('statsvision_halftime_snapshot_v51');let extra=currentExtra(),sessionExtra={};try{sessionExtra=JSON.parse(session.snapshot.extra||'{}')}catch(error){};extra={...extra,...sessionExtra,teamLogos:sessionExtra.teamLogos||extra.teamLogos||{},possession:sessionExtra.possession||{home:0,contest:0,away:0,log:[]}};localStorage.setItem('statsvision_extra',JSON.stringify(extra));localStorage.setItem(ACTIVE,session.id);localStorage.setItem(OPEN,session.id)}
  function cleanNew(){localStorage.removeItem('statsv3_match');localStorage.removeItem('statsv3_tactical');localStorage.removeItem('statsvision_halftime_snapshot_v51');localStorage.removeItem(ACTIVE);const extra=currentExtra();extra.possession={home:0,contest:0,away:0,log:[]};localStorage.setItem('statsvision_extra',JSON.stringify(extra));localStorage.setItem(OPEN,'new')}
  function dateLabel(iso){try{return new Intl.DateTimeFormat('pt-PT',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(iso))}catch(error){return iso||''}}
  const screen=q('#welcomeScreen'),main=q('#mainApp'),consoleStage=q('#svpConsole');if(!screen||!main||!consoleStage)return;
  const source=q('[data-svp-brand]')?.currentSrc||q('[data-svp-brand]')?.src||'';
- const shell=q('.svpConsoleShell',consoleStage);if(!shell)return;
+ const shell=q('.svpConsoleShell',consoleStage);if(!shell)return;shell.classList.add('svSessionShell');
  shell.innerHTML=`<div class="svSessionHub"><header class="svSessionHead"><div class="svSessionBrand"><img id="svSessionBrandImage" alt="StatS Vision"><div><b>StatS Vision</b><small>GESTÃO DE JOGOS E TREINOS</small></div></div><div class="svSessionHeadState"><i></i>GRAVAÇÃO LOCAL ATIVA</div></header><main class="svSessionView" id="svSessionView"></main></div>`;if(source)q('#svSessionBrandImage').src=source;
  const view=q('#svSessionView');
  function showHome(){const count=readSessions().length;view.innerHTML=`<div class="svSessionIntro"><small>CENTRO DE SESSÕES</small><h2>O que pretende fazer?</h2><p>Comece uma análise nova ou retome um jogo guardado exatamente onde ficou.</p></div><div class="svSessionChoiceGrid"><article class="svSessionChoice" data-session-new tabindex="0"><div class="svSessionIcon">＋</div><h3>Começar novo jogo</h3><p>Abre uma sessão limpa, pronta para configurar equipas, jogadores e informação do encontro.</p><div class="svSessionChoiceFoot"><span>NOVA ANÁLISE</span><b>→</b></div></article><article class="svSessionChoice" data-session-list tabindex="0"><div class="svSessionIcon">▤</div><h3>Jogos e treinos guardados</h3><p>Consulte as sessões gravadas neste dispositivo e continue a recolha ou abra o relatório.</p><div class="svSessionChoiceFoot"><span class="svSessionCount">${count} ${count===1?'SESSÃO':'SESSÕES'}</span><b>→</b></div></article></div>`}
@@ -5016,7 +5095,7 @@ body .panelZoomStage:has(>.momentumPanel.panel.panelExpanded){background:var(--a
  function showSessionHub(){if(typeof pauseTimer==='function')pauseTimer();if(typeof saveState==='function')saveState();stopTimer();q('#sv60Training')?.setAttribute('hidden','');showHub();const screen=q('#welcomeScreen'),main=q('#mainApp'),gate=q('#svpGate'),consoleStage=q('#svpConsole');if(gate)gate.hidden=true;if(consoleStage)consoleStage.hidden=false;screen?.classList.remove('hidden','svp-exit','is-transitioning','is-leaving');main?.classList.add('appWaiting')}
  function installSessionButton(){const nav=q('#mainApp .nav'),settings=q('#sideSettings');if(!nav||q('#sideSessions'))return;const button=document.createElement('button');button.type='button';button.id='sideSessions';button.title='Alternar entre jogo e treino';button.setAttribute('aria-label','Sessões — jogo e treino');button.innerHTML='<span class="svNavIcon" aria-hidden="true">↔</span><span class="svNavLabel">Sessões</span>';settings?nav.insertBefore(button,settings):nav.appendChild(button);button.addEventListener('click',showSessionHub)}
  function clearNewGame(){['statsv3_match','statsv3_tactical','statsvision_halftime_snapshot_v51'].forEach(k=>localStorage.removeItem(k));localStorage.removeItem(GAME_ACTIVE);localStorage.removeItem(GAME_OPEN);const extra=read('statsvision_extra',{});extra.possession={home:0,contest:0,away:0,log:[]};write('statsvision_extra',extra);refreshGameSurface()}
- function openGame(id){const s=games().find(x=>x.id===id);if(!s?.snapshot)return;localStorage.setItem('statsv3_match',s.snapshot.match||'{}');localStorage.setItem('statsv3_tactical',s.snapshot.tactical||'{}');s.snapshot.halftime?localStorage.setItem('statsvision_halftime_snapshot_v51',s.snapshot.halftime):localStorage.removeItem('statsvision_halftime_snapshot_v51');let extra=read('statsvision_extra',{}),sx={};try{sx=JSON.parse(s.snapshot.extra||'{}')}catch{};extra={...extra,teamLogos:sx.teamLogos||extra.teamLogos||{},possession:sx.possession||{home:0,contest:0,away:0,log:[]}};write('statsvision_extra',extra);localStorage.setItem(GAME_ACTIVE,s.id);localStorage.removeItem(GAME_OPEN);refreshGameSurface()}
+ function openGame(id){const s=games().find(x=>x.id===id);if(!s?.snapshot)return;localStorage.setItem('statsv3_match',s.snapshot.match||'{}');localStorage.setItem('statsv3_tactical',s.snapshot.tactical||'{}');s.snapshot.halftime?localStorage.setItem('statsvision_halftime_snapshot_v51',s.snapshot.halftime):localStorage.removeItem('statsvision_halftime_snapshot_v51');let extra=read('statsvision_extra',{}),sx={};try{sx=JSON.parse(s.snapshot.extra||'{}')}catch{};extra={...extra,...sx,teamLogos:sx.teamLogos||extra.teamLogos||{},possession:sx.possession||{home:0,contest:0,away:0,log:[]}};write('statsvision_extra',extra);localStorage.setItem(GAME_ACTIVE,s.id);localStorage.removeItem(GAME_OPEN);refreshGameSurface()}
  function saveTraining(){if(!training)return;ensureTraining();training.updatedAt=new Date().toISOString();const list=trainings();write(TRAIN_KEY,[training,...list.filter(x=>x.id!==training.id)]);localStorage.setItem(TRAIN_ACTIVE,training.id)}
  function trainingShell(){ensureTraining();let overlay=q('#sv60Training');if(!overlay){overlay=document.createElement('section');overlay.id='sv60Training';overlay.className='sv60Training';document.body.appendChild(overlay)}overlay.hidden=false;overlay.innerHTML=`<header class="sv60Topbar"><div class="sv60Brand"><img id="sv60Logo" alt="StatS Vision"><div><b>StatS Vision · Treino</b><small>PLANO · BIBLIOTECA · EQUIPAS POR EXERCÍCIO · CARGA</small></div></div><nav class="sv60Steps"><button data-training-tab="builder">1 · PLANO</button><button data-training-tab="roster">2 · PLANTEL & CLÍNICA</button><button data-training-tab="library">3 · BIBLIOTECA</button><button data-training-tab="live">4 · AO VIVO</button><button data-training-tab="load">5 · CARGA</button><button data-training-tab="report">6 · RELATÓRIO</button></nav><div class="sv60TopActions"><button class="sv60Ghost" data-training-save>GUARDAR</button><button class="sv60Back" data-training-close>FECHAR</button></div></header><main class="sv60Body" id="sv60Body"></main>`;if(logo())q('#sv60Logo').src=logo();overlay.onclick=trainingClick;overlay.oninput=trainingInput;renderBuilder()}
  function activeTab(name){qa('[data-training-tab]',q('#sv60Training')).forEach(b=>b.classList.toggle('active',b.dataset.trainingTab===name))}
@@ -5522,7 +5601,7 @@ html.svVideoOpen,html.svVideoOpen body{height:100%!important;min-height:0!import
         </section>
         <aside class="svVideoPanel">
           <div class="svVideoPanelHead">
-            <div class="svVideoPanelHeadTop"><div><h2>Clips virtuais</h2></div><span class="svVideoCount" id="svVideoCount">0 CLIPS</span></div>
+            <div class="svVideoPanelHeadTop"><div><h2>Clipes do jogo</h2></div><span class="svVideoCount" id="svVideoCount">0 CLIPES</span></div>
             <div class="svVideoFilters">
               <label>Parte<select id="svVideoFilterPart"><option value="all">Todas as partes</option>${[1,2,3,4].map(part=>`<option value="${part}">${partLabel(part)}</option>`).join('')}</select></label>
               <label>Jogador<select id="svVideoFilterPlayer"><option value="all">Todos os jogadores</option></select></label>
@@ -5833,8 +5912,8 @@ html.svVideoOpen,html.svVideoOpen body{height:100%!important;min-height:0!import
   }
   function renderClips(){
     const entries=filteredEntries(),list=q('#svVideoClips'),count=q('#svVideoCount');
-    count.textContent=`${entries.length} ${entries.length===1?'CLIP':'CLIPS'}`;
-    q('#svVideoPlayAll').textContent=entries.length?`REPRODUZIR ${entries.length} ${entries.length===1?'CLIP':'CLIPS'}`:'REPRODUZIR SELEÇÃO';
+    count.textContent=`${entries.length} ${entries.length===1?'CLIPE':'CLIPES'}`;
+    q('#svVideoPlayAll').textContent=entries.length?`REPRODUZIR ${entries.length} ${entries.length===1?'CLIPE':'CLIPES'}`:'REPRODUZIR SELEÇÃO';
     if(!entries.length){list.innerHTML='<div class="svVideoNoClips">Não existem eventos para estes filtros.<br>Altera a seleção ou regista novas ações durante o jogo.</div>';return}
     list.innerHTML=entries.map(entry=>{
       const event=entry.event,range=clipRange(entry),part=String(event.period||1),sync=syncFor(part),data=ensurePart(part),ready=sourceAvailable(part),configured=sourceConfigured(part),offset=Number(videoState.eventOffsets[entry.key])||0,playable=Boolean(range&&ready);
@@ -5929,8 +6008,821 @@ html.svVideoOpen,html.svVideoOpen body{height:100%!important;min-height:0!import
     if(!event.target.closest?.('[data-open-game],[data-sv60="new-game"]'))return;
     setTimeout(()=>{let match={};try{match=JSON.parse(localStorage.getItem('statsv3_match')||'{}')}catch(error){}replaceVideoState(match.videoWorkspace)},180);
   });
+  async function openVirtualRange(part,start,end,autoplay=true){
+    part=String(part||runtime.currentPart||'1');start=Math.max(0,Number(start)||0);end=Math.max(start+.1,Number(end)||start+.1);
+    const loaded=await loadPart(part);if(!loaded)return false;
+    runtime.activeClip={key:'library-cut',end,part};
+    const data=ensurePart(part);
+    if(data.source==='youtube'){
+      try{runtime.youtubePlayer.seekTo(start,true);autoplay?runtime.youtubePlayer.playVideo():runtime.youtubePlayer.pauseVideo()}catch(error){return false}
+    }else{
+      player.currentTime=start;
+      if(autoplay){try{await player.play()}catch(error){}}else player.pause();
+    }
+    return true;
+  }
+  function armVirtualRange(part,end){runtime.activeClip={key:'library-cut',end:Math.max(0,Number(end)||0),part:String(part||runtime.currentPart||'1')}}
+  function clearVirtualRange(){if(runtime.activeClip?.key==='library-cut')runtime.activeClip=null}
+  function setSourceRate(rate){
+    rate=[.5,1,1.5,2].includes(Number(rate))?Number(rate):1;
+    const data=ensurePart(runtime.currentPart);
+    try{if(data.source==='youtube')runtime.youtubePlayer?.setPlaybackRate?.(rate);else player.playbackRate=rate}catch(error){}
+  }
   window.addEventListener('beforeunload',()=>{clearInterval(youtubeClipWatcher);revokeRuntimeFiles()});
+  window.statsVisionVideoApi={
+    eventEntries,
+    getEntry:key=>eventEntries().find(item=>item.key===String(key))||null,
+    clipRange,
+    getLocalFile:part=>runtime.files.get(String(part))||null,
+    getLocalUrl:part=>runtime.urls.get(String(part))||null,
+    ensurePart,
+    sourceAvailable,
+    loadPart,
+    openVirtualRange,
+    armVirtualRange,
+    clearVirtualRange,
+    getCurrentTime:currentVideoTime,
+    setSourceRate,
+    formatVideoTime
+  };
   refreshVideoWorkspace();
 })();
 </script>
+
+<style id="statsvision-instant-analysis-v1">
+html.svInstantOpen,body.svInstantOpen{overflow:hidden!important}
+#mainApp.svInstantOpen>.main,#mainApp.svInstantOpen>.sidebar>.clubCard{visibility:hidden}
+#svInstantWorkspace[hidden]{display:none!important}
+#svInstantWorkspace{position:fixed;inset:0 0 0 188px;z-index:910;background:#eef2f5;color:#101418;overflow:auto;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.sviShell{min-height:100%;padding:18px;display:grid;grid-template-rows:auto auto 1fr;gap:14px}
+.sviHeader{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px;background:#fff;border:1px solid #d8dee4;border-radius:18px;box-shadow:0 8px 22px rgba(20,31,43,.07)}
+.sviTitle{display:flex;align-items:center;gap:13px}.sviTitleIcon{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,#dff9e9,#e8f0ff);border:1px solid #b8e8c9;font-size:21px}.sviTitle h1{margin:0;font-size:22px;letter-spacing:-.04em}.sviTitle p{margin:5px 0 0;color:#687985;font-size:10px;font-weight:700}.sviBeta{display:inline-flex;margin-left:8px;padding:4px 7px;border-radius:6px;background:#101418;color:#fff;font-size:7px;vertical-align:middle;letter-spacing:.08em}.sviHeaderActions{display:flex;gap:8px}.sviBtn{min-height:38px;padding:0 13px;border:1px solid #ced7de;border-radius:10px;background:#fff;color:#101418;font-size:9px;font-weight:900;cursor:pointer}.sviBtn:hover{border-color:#246bfd!important}.sviBtn.primary{background:#36c96f;border-color:#36c96f}.sviBtn.blue{background:#246bfd;border-color:#246bfd;color:#fff}.sviBtn.danger{color:#c92a2a}.sviBtn:disabled{opacity:.45;cursor:not-allowed}
+.sviTop{display:grid;grid-template-columns:minmax(440px,1.35fr) minmax(320px,.65fr);gap:14px}.sviCard{background:#fff;border:1px solid #d8dee4;border-radius:16px;box-shadow:0 6px 18px rgba(20,31,43,.055);overflow:hidden}.sviCardHead{min-height:50px;padding:0 15px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e2e7eb}.sviCardHead h2{margin:0;font-size:12px}.sviCardHead small{color:#71818c;font-size:8px;font-weight:800}.sviPlayerBody{padding:12px}.sviVideoWrap{position:relative;aspect-ratio:16/9;background:#07111a;border-radius:13px;overflow:hidden;display:grid;place-items:center}.sviVideoWrap video{width:100%;height:100%;object-fit:contain;background:#000}.sviClipNow[hidden]{display:none!important}.sviClipNow{position:absolute;left:10px;right:10px;bottom:10px;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid rgba(99,231,240,.32);border-radius:9px;background:rgba(3,20,31,.9);color:#dffbfc;font-size:8px;font-weight:850;pointer-events:none}.sviClipNow b{color:#63e7f0;font-size:9px}.sviEmpty{text-align:center;color:#d5dee5;padding:22px;font-size:10px;line-height:1.55}.sviEmpty strong{display:block;color:#fff;font-size:14px;margin-bottom:6px}.sviUploadRow{display:flex;gap:8px;margin-top:10px}.sviFile{flex:1;min-height:40px;border:1px dashed #aebbc4;border-radius:10px;background:#f7f9fa;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;cursor:pointer}.sviFile input{display:none}.sviMeta{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:9px}.sviMeta div{padding:9px;border-radius:9px;background:#f5f7f9;border:1px solid #e0e6ea}.sviMeta b{display:block;font-size:12px}.sviMeta small{font-size:7px;color:#70808b;font-weight:800;text-transform:uppercase}
+.sviProcess{padding:15px;display:grid;gap:11px}.sviEngine{padding:12px;border:1px solid #dfe5e9;border-radius:12px;background:#f8fafb}.sviEngine strong{font-size:11px}.sviEngine p{margin:5px 0 0;color:#667782;font-size:8px;line-height:1.45}.sviProgress{height:10px;background:#e9eef2;border-radius:999px;overflow:hidden}.sviProgress i{display:block;width:0;height:100%;background:linear-gradient(90deg,#36c96f,#246bfd);transition:width .25s ease}.sviProgressText{display:flex;justify-content:space-between;color:#657681;font-size:8px;font-weight:850}.sviStages{display:grid;gap:6px}.sviStage{display:flex;align-items:center;gap:8px;padding:8px;border-radius:9px;background:#f4f7f9;color:#70808b;font-size:8px;font-weight:850}.sviStage i{width:8px;height:8px;border-radius:50%;background:#c8d1d8}.sviStage.active{color:#101418;background:#eaf1ff}.sviStage.active i{background:#246bfd}.sviStage.done{color:#225e38;background:#e8f8ee}.sviStage.done i{background:#36c96f}
+.sviSummary{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.sviMetric{padding:13px 14px;background:#fff;border:1px solid #d8dee4;border-radius:13px}.sviMetric b{display:block;font-size:21px;letter-spacing:-.04em}.sviMetric small{font-size:7px;color:#71818c;font-weight:900;text-transform:uppercase}.sviMetric.green b{color:#249c52}.sviMetric.amber b{color:#c27a00}.sviMetric.red b{color:#d33b3b}.sviMetric.blue b{color:#246bfd}
+.sviMain{min-height:420px;display:grid;grid-template-columns:minmax(520px,1fr) 300px;gap:14px}.sviListCard{display:grid;grid-template-rows:auto auto 1fr}.sviTabs{display:flex;gap:4px;padding:9px 12px;border-bottom:1px solid #e1e7eb}.sviTabs button{height:31px;padding:0 11px;border:1px solid transparent;border-radius:8px;background:transparent;color:#667782;font-size:8px;font-weight:900}.sviTabs button.active{background:#eaf1ff;border-color:#c7d7ff;color:#164fbf}.sviFilters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:10px 12px;border-bottom:1px solid #e1e7eb}.sviFilters select{height:34px;border:1px solid #d5dde3;border-radius:9px;background:#fff;padding:0 9px;color:#101418;font-size:8px;font-weight:800}.sviList{padding:10px;display:grid;gap:8px;align-content:start;overflow:auto;max-height:620px}.sviSuggestion{--conf:#36c96f;display:grid;grid-template-columns:76px 42px minmax(120px,.85fr) minmax(160px,1.2fr) auto;align-items:center;gap:10px;padding:10px;border:1px solid #dce3e8;border-left:4px solid var(--conf);border-radius:12px;background:#fff}.sviSuggestion.is-previewing{border-color:#246bfd;box-shadow:0 0 0 3px rgba(36,107,253,.13);background:#f6f9ff}.sviTime button{border:0;background:transparent;padding:0;color:#101418;font-size:14px;font-weight:950;cursor:pointer}.sviTime small{display:block;color:#74848f;font-size:7px;font-weight:800}.sviConf{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--conf) 13%,#fff);border:2px solid color-mix(in srgb,var(--conf) 60%,#fff);font-size:9px;font-weight:950}.sviEvent strong{display:block;font-size:10px}.sviEvent small,.sviDetail small{display:block;margin-top:3px;color:#74848f;font-size:7px}.sviDetail{padding-left:10px;border-left:1px solid #e2e7eb}.sviDetail strong{font-size:8px}.sviPositionState{display:inline-block!important;width:max-content;margin-top:5px!important;padding:3px 6px;border-radius:99px;background:#fff2d7;color:#925b0b!important;font-size:6px!important;font-weight:950}.sviPositionState.confirmed{background:#ddf5e8;color:#147547!important}.sviActions{display:grid;grid-template-columns:repeat(3,29px);gap:4px}.sviActions button{width:29px;height:29px;border:1px solid #d4dde3;border-radius:8px;background:#fff;font-size:11px;font-weight:900;cursor:pointer}.sviActions .clip{grid-column:1/-1;width:auto;min-width:95px;padding:0 8px;border-color:#246bfd;background:#246bfd;color:#fff;font-size:8px;white-space:nowrap}.sviActions .accept{color:#228b49}.sviActions .reject{color:#c92a2a}.sviSuggestion.accepted{opacity:.78;background:#f0fbf4}.sviSuggestion.rejected{opacity:.5;background:#fff4f4}.sviSuggestion.editing{box-shadow:0 0 0 3px rgba(36,107,253,.12);border-color:#246bfd}.sviEditGrid{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr) auto;gap:7px;padding-top:9px;border-top:1px solid #e3e8ec}.sviEditGrid input,.sviEditGrid select{height:34px;border:1px solid #ced8df;border-radius:8px;background:#fff;padding:0 8px;font-size:8px;font-weight:800}.sviPositionEditor{grid-column:1/-1;display:grid;grid-template-columns:190px 1fr;align-items:center;gap:12px;padding:9px;border:1px solid #d8e2e8;border-radius:10px;background:#f7fafb}.sviMiniPitch{--x:50%;--y:50%;position:relative;aspect-ratio:105/68;border:2px solid #fff;border-radius:8px;overflow:hidden;background:repeating-linear-gradient(90deg,rgba(255,255,255,.055) 0 10%,rgba(0,0,0,.025) 10% 20%),#4ba64a;box-shadow:0 0 0 1px #c9d6dc;cursor:crosshair}.sviMiniPitch:before{content:"";position:absolute;left:50%;top:0;bottom:0;border-left:1px solid #fff}.sviMiniPitch:after{content:"";position:absolute;left:50%;top:50%;width:20%;aspect-ratio:1;border:1px solid #fff;border-radius:50%;transform:translate(-50%,-50%)}.sviMiniPitch i{position:absolute;left:var(--x);top:var(--y);z-index:2;width:15px;height:15px;border:2px solid #fff;border-radius:50%;background:#246bfd;box-shadow:0 2px 7px rgba(0,0,0,.25);transform:translate(-50%,-50%);pointer-events:none}.sviPositionCopy b{display:block;font-size:9px}.sviPositionCopy p{margin:4px 0 6px;color:#61737e;font-size:8px;line-height:1.4}.sviPositionCopy span{font-size:8px;font-weight:900;color:#174fbd}.sviEmptyList{min-height:220px;display:grid;place-items:center;text-align:center;color:#74848f;font-size:9px;border:1px dashed #cbd5dc;border-radius:13px;background:#f9fbfc}
+.sviSide{display:grid;gap:14px;align-content:start}.sviSideBody{padding:13px}.sviConfidence{display:grid;gap:8px}.sviLegendRow{display:grid;grid-template-columns:12px 1fr auto;gap:8px;align-items:center;font-size:8px}.sviLegendRow i{width:10px;height:10px;border-radius:50%}.sviLegendRow span{color:#667782}.sviLegendRow b{font-size:8px}.sviAutoActions{display:grid;gap:7px}.sviAutoActions .sviBtn{width:100%}.sviNotice{padding:11px;border-radius:10px;background:#fff8dc;border:1px solid #f0d67e;color:#6b5711;font-size:8px;line-height:1.45}.sviLog{display:grid;gap:6px;max-height:180px;overflow:auto}.sviLog div{padding:8px;border-radius:8px;background:#f5f7f9;font-size:7px;color:#657681}.sviLog b{color:#101418}
+@media(max-width:1100px) and (orientation:landscape){#svInstantWorkspace{left:150px}.sviShell{padding:9px;gap:8px}.sviHeader{padding:10px 12px}.sviTitleIcon{width:37px;height:37px}.sviTitle h1{font-size:16px}.sviTop{grid-template-columns:minmax(370px,1.3fr) minmax(270px,.7fr);gap:8px}.sviMain{grid-template-columns:minmax(450px,1fr) 250px;gap:8px}.sviSuggestion{grid-template-columns:58px 36px minmax(95px,.8fr) minmax(125px,1.1fr) auto;gap:7px;padding:7px}.sviConf{width:34px;height:34px}.sviList{max-height:430px}.sviMeta div{padding:6px}.sviMetric{padding:9px}.sviMetric b{font-size:17px}}
+@media(max-width:850px){#svInstantWorkspace{left:58px}.sviTop,.sviMain{grid-template-columns:1fr}.sviSide{grid-template-columns:1fr 1fr}.sviFilters{grid-template-columns:1fr 1fr}}
+</style>
+<script id="statsvision-instant-analysis-script-v1">
+(()=>{
+ 'use strict';
+ return;
+ const q=(s,r=document)=>r.querySelector(s),qa=(s,r=document)=>[...r.querySelectorAll(s)];
+ const nav=q('#mainApp .nav'),settings=q('#sideSettings');if(!nav||q('#sideInstantAnalysis'))return;
+ const button=document.createElement('button');button.type='button';button.id='sideInstantAnalysis';button.title='Análise instantânea';button.setAttribute('aria-label','Análise instantânea');button.innerHTML='<span class="svNavIcon" aria-hidden="true">◉</span><span class="svNavLabel">Análise IA</span>';settings?nav.insertBefore(button,settings):nav.appendChild(button);
+ const workspace=document.createElement('section');workspace.id='svInstantWorkspace';workspace.hidden=true;workspace.innerHTML=`
+ <div class="sviShell">
+  <header class="sviHeader"><div class="sviTitle"><span class="sviTitleIcon">◉</span><div><h1>Análise de Vídeo Instantânea <span class="sviBeta">BETA</span></h1><p>Testa o fluxo completo das 28 estatísticas e envia apenas o que validares para o jogo.</p></div></div><div class="sviHeaderActions"><button class="sviBtn" id="sviReset">LIMPAR TESTE</button><button class="sviBtn" id="sviClose">VOLTAR AO JOGO</button></div></header>
+  <section class="sviTop">
+   <article class="sviCard"><div class="sviCardHead"><h2>Vídeo para análise e validação</h2><small id="sviFileName">Nenhum vídeo carregado</small></div><div class="sviPlayerBody"><div class="sviVideoWrap"><video id="sviVideo" controls playsinline preload="metadata" hidden></video><div class="sviEmpty" id="sviVideoEmpty"><strong>Carrega um vídeo do jogo</strong>O processamento desta versão testa o fluxo de trabalho. A arquitetura fica preparada para ligar o modelo de visão computacional.</div><div class="sviClipNow" id="sviClipNow" hidden><span id="sviClipNowText">Clip de validação</span><b id="sviClipNowRange">—</b></div></div><div class="sviUploadRow"><label class="sviFile">SELECIONAR VÍDEO<input id="sviFile" type="file" accept="video/*"></label><button class="sviBtn blue" id="sviAnalyse" disabled>INICIAR ANÁLISE</button></div><div class="sviMeta"><div><b id="sviDuration">—</b><small>Duração</small></div><div><b id="sviResolution">—</b><small>Resolução</small></div><div><b id="sviSize">—</b><small>Tamanho</small></div><div><b id="sviEngineStatus">Pronto</b><small>Estado</small></div></div></div></article>
+   <article class="sviCard"><div class="sviCardHead"><h2>Processamento</h2><small>Motor experimental</small></div><div class="sviProcess"><div class="sviEngine"><strong>StatS Vision Detection Engine</strong><p>Nesta BETA, gera candidatos de teste para todas as 28 classificações e encaminha-os para validação humana.</p></div><div class="sviProgress"><i id="sviProgressBar"></i></div><div class="sviProgressText"><span id="sviProgressLabel">A aguardar vídeo</span><b id="sviProgressValue">0%</b></div><div class="sviStages" id="sviStages"><div class="sviStage" data-stage="0"><i></i>Preparação e leitura do vídeo</div><div class="sviStage" data-stage="1"><i></i>Deteção de sequências relevantes</div><div class="sviStage" data-stage="2"><i></i>Cobertura das 28 estatísticas</div><div class="sviStage" data-stage="3"><i></i>Atribuição de confiança</div><div class="sviStage" data-stage="4"><i></i>Criação das sugestões</div></div></div></article>
+  </section>
+  <section class="sviSummary"><div class="sviMetric blue"><b id="sviTotal">0</b><small>Sugestões</small></div><div class="sviMetric green"><b id="sviHigh">0</b><small>Confiança alta</small></div><div class="sviMetric amber"><b id="sviReview">0</b><small>Por rever</small></div><div class="sviMetric red"><b id="sviRejected">0</b><small>Rejeitadas</small></div></section>
+  <section class="sviMain">
+   <article class="sviCard sviListCard"><div class="sviTabs"><button class="active" data-svi-tab="pending">POR VALIDAR</button><button data-svi-tab="accepted">VALIDADAS</button><button data-svi-tab="all">TODAS</button></div><div class="sviFilters"><select id="sviFilterConfidence"><option value="all">Toda a confiança</option><option value="high">Alta · 85%+</option><option value="medium">Média · 60–84%</option><option value="low">Baixa · &lt;60%</option></select><select id="sviFilterAction"><option value="all">Todas as ações</option></select><select id="sviFilterPlayer"><option value="all">Todos os jogadores</option></select><select id="sviFilterStatus"><option value="all">Todos os estados</option><option value="pending">Pendente</option><option value="accepted">Validada</option><option value="rejected">Rejeitada</option></select></div><div class="sviList" id="sviList"></div></article>
+   <aside class="sviSide">
+    <article class="sviCard"><div class="sviCardHead"><h2>Níveis de confiança</h2></div><div class="sviSideBody sviConfidence"><div class="sviLegendRow"><i style="background:#36c96f"></i><span>Alta confiança</span><b>85–100%</b></div><div class="sviLegendRow"><i style="background:#f0a51a"></i><span>Revisão recomendada</span><b>60–84%</b></div><div class="sviLegendRow"><i style="background:#e34b4b"></i><span>Baixa confiança</span><b>0–59%</b></div></div></article>
+    <article class="sviCard"><div class="sviCardHead"><h2>Validação rápida</h2></div><div class="sviSideBody sviAutoActions"><button class="sviBtn primary" id="sviAcceptHigh">REVER PRÓXIMA CONFIANÇA ALTA</button><button class="sviBtn blue" id="sviSendGame">ENVIAR VALIDADAS PARA O JOGO</button><button class="sviBtn" id="sviExport">EXPORTAR SUGESTÕES</button><div class="sviNotice">As 28 classificações ficam abrangidas. Cada sugestão inclui um clip para validação. A posição no campo é estimada e só fica confirmada depois de tocares no local correto.</div></div></article>
+    <article class="sviCard"><div class="sviCardHead"><h2>Registo da sessão</h2></div><div class="sviSideBody"><div class="sviLog" id="sviLog"><div><b>Sistema:</b> pronto para iniciar.</div></div></div></article>
+   </aside>
+  </section>
+ </div>`;q('#mainApp').appendChild(workspace);
+ const video=q('#sviVideo'),file=q('#sviFile'),empty=q('#sviVideoEmpty');let objectUrl='',timer=0,tab='pending',previewEnd=0,previewId='';
+ const storeKey='statsvision_instant_beta_v1';let session={suggestions:[],fileName:'',duration:0};try{session={...session,...JSON.parse(localStorage.getItem(storeKey)||'{}')}}catch(e){}
+ const instantCatalog=[
+  {label:'Remate · Enquadrado',action:'remate',subtype:'Enquadrado'},
+  {label:'Remate · Bloqueado',action:'remate',subtype:'Bloqueado'},
+  {label:'Remate · Ao poste/barra',action:'remate',subtype:'Ao poste/barra'},
+  {label:'Remate · Para fora',action:'remate',subtype:'Para fora'},
+  {label:'Golo · Dentro da área',action:'golo',subtype:'Dentro da área'},
+  {label:'Golo · Fora da área',action:'golo',subtype:'Fora da área'},
+  {label:'Golo · Livre direto',action:'golo',subtype:'Livre direto'},
+  {label:'Golo · Penálti',action:'golo',subtype:'Penálti'},
+  {label:'Golo · Cabeceamento',action:'golo',subtype:'Cabeceamento'},
+  {label:'Golo · Após canto',action:'golo',subtype:'Após canto'},
+  {label:'Golo · Autogolo adversário',action:'golo',subtype:'Autogolo adversário'},
+  {label:'Recuperação de bola',action:'recuperacao'},
+  {label:'Perda de bola',action:'perda'},
+  {label:'Passe-chave',action:'passe',subtype:'Passe-chave'},
+  {label:'Cruzamento eficaz',action:'cruzamento'},
+  {label:'Canto',action:'canto'},
+  {label:'Fora de jogo',action:'fora_jogo'},
+  {label:'Ação defensiva · Corte importante',action:'acao_defensiva',subtype:'Corte importante'},
+  {label:'Ação defensiva · Alívio',action:'acao_defensiva',subtype:'Alívio'},
+  {label:'Defesa · Defesa simples',action:'defesa',subtype:'Defesa simples'},
+  {label:'Defesa · Defesa difícil',action:'defesa',subtype:'Defesa difícil'},
+  {label:'Defesa · Golo sofrido',action:'defesa',subtype:'Golo sofrido'},
+  {label:'Falta · Falta cometida',action:'falta',subtype:'Falta cometida'},
+  {label:'Falta · Falta sofrida',action:'falta',subtype:'Falta sofrida'},
+  {label:'Advertência · Cartão amarelo',action:'advertencia',subtype:'Cartão amarelo'},
+  {label:'Advertência · Cartão vermelho',action:'advertencia',subtype:'Cartão vermelho'},
+  {label:'Advertência · Última advertência',action:'advertencia',subtype:'Última advertência'},
+  {label:'Observação',action:'observacao'}
+ ];
+ const actions=instantCatalog.map(item=>item.label);
+ const instantAliases={'Golo':'Golo · Dentro da área','Remate enquadrado':'Remate · Enquadrado','Remate fora':'Remate · Para fora','Recuperação':'Recuperação de bola','Cruzamento':'Cruzamento eficaz','Falta':'Falta · Falta cometida','Defesa':'Defesa · Defesa simples','Ação defensiva':'Ação defensiva · Corte importante'};
+ const catalogueFor=label=>instantCatalog.find(item=>item.label===label)||instantCatalog.find(item=>item.label===instantAliases[label])||instantCatalog[0];
+ session.suggestions=(Array.isArray(session.suggestions)?session.suggestions:[]).map(item=>{const definition=catalogueFor(item.action);return{...item,action:definition.label,actionKey:definition.action,subtype:definition.subtype||'',positionConfirmed:Boolean(item.positionConfirmed),clipReviewed:Boolean(item.clipReviewed)}});
+ const players=()=>typeof state!=='undefined'&&Array.isArray(state.players)&&state.players.length?state.players.map(p=>`${p.number} ${p.name}`):['9 Avançado','10 Médio','7 Extremo','6 Médio defensivo','1 Guarda-redes'];
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+ const clock=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+ function persist(){localStorage.setItem(storeKey,JSON.stringify(session))}
+ function log(message){const box=q('#sviLog'),row=document.createElement('div');row.innerHTML=`<b>${new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'})}:</b> ${esc(message)}`;box.prepend(row);while(box.children.length>8)box.lastElementChild.remove()}
+ function confidenceGroup(c){return c>=85?'high':c>=60?'medium':'low'}
+ function colour(c){return c>=85?'#36c96f':c>=60?'#f0a51a':'#e34b4b'}
+ function seedSuggestions(duration){const count=Math.max(instantCatalog.length,Math.min(40,Math.round(duration/120)||instantCatalog.length)),pool=players();return Array.from({length:count},(_,i)=>{const confidence=Math.max(38,Math.min(98,Math.round(52+((i*37)%47)+((i%3)-1)*7))),second=Math.max(3,Math.round(((i+1)/(count+1))*Math.max(duration,600))),definition=instantCatalog[i%instantCatalog.length];return{id:`ai_${Date.now()}_${i}`,second,action:definition.label,actionKey:definition.action,subtype:definition.subtype||'',player:pool[i%pool.length],confidence,status:'pending',part:second<(duration||5400)/2?1:2,x:8+((i*29)%84),y:10+((i*43)%80),positionConfirmed:false,clipReviewed:false,note:confidence<60?'A ação apresenta oclusão ou baixa nitidez.':confidence<85?'Confirmar jogador e classificação.':'Sequência visual consistente.'}})}
+ function updateFilters(){const fa=q('#sviFilterAction'),fp=q('#sviFilterPlayer'),av=fa.value,pv=fp.value;fa.innerHTML='<option value="all">Todas as ações</option>'+[...new Set(session.suggestions.map(x=>x.action))].sort().map(x=>`<option>${esc(x)}</option>`).join('');fp.innerHTML='<option value="all">Todos os jogadores</option>'+[...new Set(session.suggestions.map(x=>x.player))].sort().map(x=>`<option>${esc(x)}</option>`).join('');fa.value=[...fa.options].some(o=>o.value===av)?av:'all';fp.value=[...fp.options].some(o=>o.value===pv)?pv:'all'}
+ function summary(){const s=session.suggestions;q('#sviTotal').textContent=s.length;q('#sviHigh').textContent=s.filter(x=>x.confidence>=85).length;q('#sviReview').textContent=s.filter(x=>x.status==='pending').length;q('#sviRejected').textContent=s.filter(x=>x.status==='rejected').length}
+ function filtered(){const conf=q('#sviFilterConfidence').value,act=q('#sviFilterAction').value,player=q('#sviFilterPlayer').value,status=q('#sviFilterStatus').value;return session.suggestions.filter(x=>(tab==='all'||x.status===tab)&&(status==='all'||x.status===status)&&(conf==='all'||confidenceGroup(x.confidence)===conf)&&(act==='all'||x.action===act)&&(player==='all'||x.player===player))}
+ function stopPreview(clearLabel=true){previewEnd=0;previewId='';try{video.pause()}catch(e){}qa('.sviSuggestion.is-previewing').forEach(card=>card.classList.remove('is-previewing'));if(clearLabel)q('#sviClipNow').hidden=true}
+ function playSuggestionClip(item){if(!objectUrl&&!video.getAttribute('src')){log('Seleciona novamente o vídeo para veres este clip.');if(typeof window.toast==='function')window.toast('Seleciona o vídeo para abrir o clip');return}const duration=Number(video.duration)||Number(session.duration)||Infinity,start=Math.max(0,Number(item.second)-5),end=Math.min(duration,Number(item.second)+5);stopPreview(false);previewId=item.id;previewEnd=end;item.clipReviewed=true;persist();const card=q(`.sviSuggestion[data-id="${CSS.escape(item.id)}"]`);card?.classList.add('is-previewing');q('#sviClipNow').hidden=false;q('#sviClipNowText').textContent=`${item.action} · ${item.player}`;q('#sviClipNowRange').textContent=`${clock(start)}–${clock(end)}`;try{video.currentTime=start;video.play().catch(()=>{})}catch(e){}q('.sviVideoWrap')?.scrollIntoView?.({behavior:'smooth',block:'center'});log(`Clip aberto: 5 s antes e 5 s depois de ${clock(item.second)}.`)}
+ video.addEventListener('timeupdate',()=>{if(previewEnd&&video.currentTime>=previewEnd){stopPreview(false);q('#sviClipNowText').textContent='Clip concluído — valida, corrige ou rejeita';q('#sviClipNowRange').textContent='PAUSADO'}});
+ function render(){updateFilters();summary();const list=q('#sviList'),items=filtered();list.innerHTML=items.map(x=>`<article class="sviSuggestion ${x.status}${previewId===x.id?' is-previewing':''}" style="--conf:${colour(x.confidence)}" data-id="${x.id}"><div class="sviTime"><button data-seek="${x.second}" title="Ver clip de validação">${clock(x.second)}</button><small>${x.part}.ª PARTE</small></div><div class="sviConf">${x.confidence}%</div><div class="sviEvent"><strong>${esc(x.action)}</strong><small>${esc(x.player)}</small></div><div class="sviDetail"><strong>${esc(x.note)}</strong><small>Zona: ${Math.round(x.x)}% × ${Math.round(x.y)}%</small><small class="sviPositionState ${x.positionConfirmed?'confirmed':''}">${x.positionConfirmed?'✓ POSIÇÃO CONFIRMADA':'POSIÇÃO ESTIMADA'}</small></div><div class="sviActions"><button class="clip" data-clip title="Reproduzir 5 segundos antes e depois">▶ VER CLIP</button><button class="accept" data-accept title="Validar">✓</button><button data-edit title="Corrigir ação e posição">✎</button><button class="reject" data-reject title="Rejeitar">×</button></div></article>`).join('')||'<div class="sviEmptyList"><div><b>Sem sugestões nesta vista.</b><br>Carrega e analisa um vídeo ou altera os filtros.</div></div>';persist()}
+ function editRow(card,item){if(card.classList.contains('editing'))return render();card.classList.add('editing');card.insertAdjacentHTML('beforeend',`<div class="sviEditGrid"><input data-edit-time type="number" min="0" value="${Math.round(item.second)}" title="Segundo"><select data-edit-action>${actions.map(a=>`<option ${a===item.action?'selected':''}>${a}</option>`).join('')}</select><select data-edit-player>${players().map(p=>`<option ${p===item.player?'selected':''}>${esc(p)}</option>`).join('')}</select><input data-edit-note value="${esc(item.note)}" placeholder="Observação"><button class="sviBtn primary" data-save-edit>GUARDAR E VALIDAR</button><div class="sviPositionEditor"><div class="sviMiniPitch" data-edit-pitch style="--x:${Math.max(0,Math.min(100,Number(item.x)||0))}%;--y:${Math.max(0,Math.min(100,Number(item.y)||0))}%"><i></i></div><div class="sviPositionCopy"><b>Confirmar posição no campo</b><p>Toca no ponto exato onde aconteceu a ação. O marcador azul é o local que seguirá para o jogo.</p><span data-position-label>X ${Math.round(item.x)}% · Y ${Math.round(item.y)}%</span></div><input data-edit-x type="hidden" value="${Number(item.x)||0}"><input data-edit-y type="hidden" value="${Number(item.y)||0}"><input data-position-touched type="hidden" value="${item.positionConfirmed?'1':'0'}"></div></div>`)}
+ q('#sviList').addEventListener('click',e=>{const card=e.target.closest('[data-id]');if(!card)return;const item=session.suggestions.find(x=>x.id===card.dataset.id);if(!item)return;const pitch=e.target.closest('[data-edit-pitch]');if(pitch){const box=pitch.getBoundingClientRect(),x=Math.max(0,Math.min(100,(e.clientX-box.left)/Math.max(1,box.width)*100)),y=Math.max(0,Math.min(100,(e.clientY-box.top)/Math.max(1,box.height)*100));q('[data-edit-x]',card).value=x.toFixed(2);q('[data-edit-y]',card).value=y.toFixed(2);q('[data-position-touched]',card).value='1';pitch.style.setProperty('--x',`${x}%`);pitch.style.setProperty('--y',`${y}%`);q('[data-position-label]',card).textContent=`X ${Math.round(x)}% · Y ${Math.round(y)}% · confirmado`;return}if(e.target.closest('[data-clip],[data-seek]')){playSuggestionClip(item);return}if(e.target.closest('[data-accept]')){if(!item.clipReviewed){playSuggestionClip(item);log('Revê primeiro o clip; depois valida ou corrige a sugestão.');return}item.status='accepted';log(`${item.action} validado. A posição continua pendente até ser confirmada no campo.`);render()}else if(e.target.closest('[data-reject]')){item.status='rejected';log(`${item.action} rejeitado.`);render()}else if(e.target.closest('[data-edit]'))editRow(card,item);else if(e.target.closest('[data-save-edit]')){item.second=Math.max(0,Number(q('[data-edit-time]',card).value)||0);const definition=catalogueFor(q('[data-edit-action]',card).value);item.action=definition.label;item.actionKey=definition.action;item.subtype=definition.subtype||'';item.player=q('[data-edit-player]',card).value;item.note=q('[data-edit-note]',card).value.trim()||'Sugestão corrigida pelo analista.';item.x=Math.max(0,Math.min(100,Number(q('[data-edit-x]',card).value)||0));item.y=Math.max(0,Math.min(100,Number(q('[data-edit-y]',card).value)||0));item.positionConfirmed=q('[data-position-touched]',card).value==='1';item.status='accepted';log(item.positionConfirmed?'Sugestão, classificação e posição corrigidas e validadas.':'Sugestão validada; falta confirmar a posição no campo.');render()}});
+ qa('[data-svi-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.sviTab;qa('[data-svi-tab]').forEach(x=>x.classList.toggle('active',x===b));render()});qa('#sviFilterConfidence,#sviFilterAction,#sviFilterPlayer,#sviFilterStatus').forEach(el=>el.onchange=render);
+ file.onchange=()=>{const f=file.files?.[0];if(!f)return;if(objectUrl)URL.revokeObjectURL(objectUrl);objectUrl=URL.createObjectURL(f);video.src=objectUrl;video.hidden=false;empty.hidden=true;session.fileName=f.name;q('#sviFileName').textContent=f.name;q('#sviSize').textContent=`${(f.size/1024/1024).toFixed(1)} MB`;q('#sviAnalyse').disabled=false;q('#sviEngineStatus').textContent='Carregado';log(`Vídeo “${f.name}” carregado.`);video.onloadedmetadata=()=>{session.duration=video.duration||0;q('#sviDuration').textContent=clock(session.duration);q('#sviResolution').textContent=`${video.videoWidth||'—'}×${video.videoHeight||'—'}`;persist()}};
+ function setProgress(value,label){q('#sviProgressBar').style.width=`${value}%`;q('#sviProgressValue').textContent=`${value}%`;q('#sviProgressLabel').textContent=label;qa('.sviStage').forEach((el,i)=>{el.classList.toggle('done',value>=(i+1)*20);el.classList.toggle('active',value>=i*20&&value<(i+1)*20)})}
+ q('#sviAnalyse').onclick=()=>{clearInterval(timer);q('#sviAnalyse').disabled=true;q('#sviEngineStatus').textContent='A analisar';session.suggestions=[];render();let p=0;const labels=['A preparar o vídeo','A procurar sequências relevantes','A classificar ações','A calcular confiança','A construir sugestões'];log('Análise experimental iniciada.');timer=setInterval(()=>{p=Math.min(100,p+5);setProgress(p,labels[Math.min(4,Math.floor(p/20))]);if(p>=100){clearInterval(timer);session.suggestions=seedSuggestions(video.duration||session.duration||900);q('#sviEngineStatus').textContent='Concluído';q('#sviAnalyse').disabled=false;log(`${session.suggestions.length} sugestões criadas para validação.`);render()}},90)};
+ q('#sviAcceptHigh').onclick=()=>{const item=session.suggestions.find(x=>x.status==='pending'&&x.confidence>=85&&!x.clipReviewed)||session.suggestions.find(x=>x.status==='pending'&&x.confidence>=85);if(!item){log('Não existem sugestões de confiança alta por rever.');return}playSuggestionClip(item)};
+ q('#sviSendGame').onclick=()=>{const waiting=session.suggestions.filter(x=>x.status==='accepted'&&!x.sent&&!x.positionConfirmed),accepted=session.suggestions.filter(x=>x.status==='accepted'&&!x.sent&&x.positionConfirmed);if(!accepted.length){log(waiting.length?`${waiting.length} sugestões ainda precisam da posição confirmada.`:'Não existem novas sugestões validadas para enviar.');return}if(typeof state==='undefined'||!Array.isArray(state.events)){log('O jogo não está disponível nesta sessão.');return}accepted.forEach(x=>{const definition=catalogueFor(x.action),actionKey=x.actionKey||definition.action,subtype=x.subtype||definition.subtype||'',baseLabels={golo:'Golo',remate:'Remate',defesa:'Defesa',recuperacao:'Recuperação de bola',perda:'Perda de bola',passe:'Passe-chave',cruzamento:'Cruzamento eficaz',falta:'Falta',fora_jogo:'Fora de jogo',canto:'Canto',advertencia:'Advertência',acao_defensiva:'Ações defensivas',observacao:'Observação'},label=actionKey==='golo'?`Golo · ${subtype}`:(subtype||definition.label),ev={id:`instant_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,time:Math.floor(x.second/60),gameSecond:Math.round(x.second),period:x.part,type:label,label,baseLabel:baseLabels[actionKey]||definition.label,action:actionKey,subtype,player:x.player,x:x.x,y:x.y,team:'home',source:'instant_beta',confidence:x.confidence,positionConfirmed:true,comment:x.note||''};if(actionKey==='golo')ev.goalType=subtype;if(actionKey==='passe')ev.creationType='Passe-chave';if(actionKey==='advertencia')ev.warningType=subtype;if(actionKey==='acao_defensiva')ev.defensiveType=subtype;if(actionKey==='falta')ev.foulType=subtype;if(actionKey==='observacao'){ev.observationCategory='Outra observação';ev.note=x.note||'Observação proveniente da análise instantânea.'}state.events.push(ev);if(Array.isArray(state.fieldEvents))state.fieldEvents.push({...ev});if(actionKey==='observacao'&&Array.isArray(state.observations))state.observations.push({id:ev.id,category:ev.observationCategory,text:ev.note,player:ev.player,playerNumber:String(ev.player).split(' ')[0],time:ev.time,gameSecond:ev.gameSecond,period:ev.period,x:ev.x,y:ev.y,team:'home',source:'instant_beta'});if(Array.isArray(state.heatPoints))state.heatPoints.push({id:ev.id,x:ev.x,y:ev.y,weight:['golo','remate'].includes(actionKey)?1.5:1,team:'home'});x.sent=true});if(typeof window.saveState==='function')window.saveState(true);if(typeof window.drawHeat==='function')window.drawHeat(true);if(typeof window.buildTimeline==='function')window.buildTimeline();log(`${accepted.length} eventos com posição confirmada enviados para o jogo.${waiting.length?` ${waiting.length} ficaram a aguardar confirmação do local.`:''}`);if(typeof window.toast==='function')window.toast(`${accepted.length} eventos adicionados ao jogo`);render()};
+ q('#sviExport').onclick=()=>{const blob=new Blob([JSON.stringify({exportedAt:new Date().toISOString(),video:session.fileName,suggestions:session.suggestions},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='statsvision-analise-instantanea.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),500);log('Sugestões exportadas em JSON.')};
+ q('#sviReset').onclick=()=>{clearInterval(timer);session={suggestions:[],fileName:'',duration:0};localStorage.removeItem(storeKey);if(objectUrl)URL.revokeObjectURL(objectUrl);objectUrl='';video.removeAttribute('src');video.load();video.hidden=true;empty.hidden=false;q('#sviFileName').textContent='Nenhum vídeo carregado';q('#sviDuration').textContent='—';q('#sviResolution').textContent='—';q('#sviSize').textContent='—';q('#sviEngineStatus').textContent='Pronto';q('#sviAnalyse').disabled=true;setProgress(0,'A aguardar vídeo');log('Teste limpo.');render()};
+ function open(){q('#settingsModal')?.classList.remove('show');q('#svVideoWorkspace')?.setAttribute('hidden','');document.documentElement.classList.add('svInstantOpen');document.body.classList.add('svInstantOpen');q('#mainApp').classList.add('svInstantOpen');workspace.hidden=false;qa('#mainApp .nav button').forEach(x=>x.classList.toggle('active',x===button));render()}
+ function close(){workspace.hidden=true;document.documentElement.classList.remove('svInstantOpen');document.body.classList.remove('svInstantOpen');q('#mainApp').classList.remove('svInstantOpen');button.classList.remove('active');q('#mainApp .nav [data-view="jogo"]')?.classList.add('active')}
+ button.onclick=open;q('#sviClose').onclick=close;qa('#mainApp .nav button').filter(x=>x!==button).forEach(x=>x.addEventListener('click',()=>{if(!workspace.hidden)close()}));
+ if(session.suggestions.length){q('#sviFileName').textContent=session.fileName||'Sessão anterior';q('#sviDuration').textContent=session.duration?clock(session.duration):'—';q('#sviEngineStatus').textContent='Resultados guardados'}render();
+ window.addEventListener('beforeunload',()=>{clearInterval(timer);if(objectUrl)URL.revokeObjectURL(objectUrl)});
+})();
+</script>
+
+<style id="statsvision-video-library-annotations-v2">
+/* V2 · validação, biblioteca e anotações temporais */
+.svVideoHeaderActions{flex-wrap:wrap;justify-content:flex-end}.svVideoHeaderActions .svV2Primary{border-color:#63e7f0;background:#13bfd1;color:#04232c}.svVideoHeaderActions .svV2Count{display:inline-grid;place-items:center;min-width:18px;height:18px;margin-left:5px;padding:0 5px;border-radius:99px;background:#63e7f0;color:#04232c;font-size:6px}
+.svVideoClip.pending{border-left-color:#e5a128!important}.svVideoClip.validated{border-left-color:#18a568!important}.svVideoClipState{display:inline-flex;align-items:center;gap:4px;width:max-content;margin-top:3px;padding:3px 6px;border-radius:99px;font-size:5.8px;font-weight:950;letter-spacing:.04em;text-transform:uppercase}.svVideoClipState.pending{background:#fff2d8;color:#9b6110}.svVideoClipState.validated{background:#dcf5e8;color:#137a4b}.svVideoClipButtons .svV2Validate{grid-column:1/-1;width:auto!important;border-color:#20a66a!important;background:#e2f7ec!important;color:#126d46!important}.svVideoClipButtons .svV2Validate.saved{border-color:#acd9c2!important;background:#f0faf5!important;color:#247453!important}.svVideoFilters .svV2ValidationFilter{grid-column:1/-1}
+#svVideoWorkspace.svLibraryOpen>.svVideoShell{visibility:hidden;pointer-events:none}
+#svClipLibraryView[hidden]{display:none!important}#svClipLibraryView{position:absolute;inset:0;z-index:35;display:grid;grid-template-rows:auto minmax(0,1fr);background:#eef2f5;color:#101418}
+.svLibHead{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 16px;border-bottom:1px solid #244859;background:linear-gradient(135deg,#061b2a,#0d3447);color:#fff}.svLibTitle{display:flex;align-items:center;gap:11px}.svLibTitle i{width:38px;height:38px;display:grid;place-items:center;border:1px solid rgba(99,231,240,.28);border-radius:10px;background:rgba(19,191,209,.12);color:#63e7f0;font-style:normal;font-size:17px}.svLibTitle h1{margin:0;font-size:20px}.svLibTitle p{margin:3px 0 0;color:#a9c0ca;font-size:10px;font-weight:750}.svLibHeadActions{display:flex;gap:7px}.svLibHeadActions button{height:34px;padding:0 11px;border:1px solid #315366;border-radius:8px;background:#0a2a3c;color:#e8f4f6;font-size:9px;font-weight:950}.svLibHeadActions button.primary{border-color:#63e7f0;background:#13bfd1;color:#04232c}
+.svLibBody{min-height:0;display:grid;grid-template-columns:minmax(430px,1.18fr) minmax(330px,.82fr);gap:10px;padding:10px}.svLibPlayer,.svLibPanel{min-height:0;border:1px solid #d7e0e5;border-radius:13px;background:#fff;box-shadow:0 7px 20px rgba(24,39,52,.06);overflow:hidden}.svLibPlayer{display:grid;grid-template-rows:auto minmax(250px,1fr) auto}.svLibPlayerHead,.svLibPanelHead{padding:10px 12px;border-bottom:1px solid #e0e6ea;background:#f8fafb}.svLibPlayerHead{display:flex;align-items:center;justify-content:space-between;gap:10px}.svLibPlayerHead h2,.svLibPanelHead h2{margin:0;font-size:15px}.svLibPlayerHead small,.svLibPanelHead small{display:block;margin-top:3px;color:#70818b;font-size:9px;font-weight:750}.svLibTransport{display:flex;align-items:center;gap:6px;font-size:9px}.svLibTransport button,.svLibTransport select{height:30px;border:1px solid #c9d6dc;border-radius:7px;background:#fff;color:#263943;padding:0 8px;font-size:9px;font-weight:900}.svLibTransport button.primary{border-color:#13bfd1;background:#13bfd1;color:#04232c}.svLibPlayerHost{position:relative;min-height:0;background:#061622}.svLibPlayerHost>.svVideoPlayerWrap{width:100%;height:100%;min-height:250px}.svLibNow{min-height:46px;padding:8px 11px;border-top:1px solid #e0e6ea;background:#f8fafb;color:#42545e;font-size:10px;line-height:1.4}.svLibNow b{color:#142b37;font-size:11px}
+.svLibPanel{display:grid;grid-template-rows:auto minmax(0,1fr)}.svLibFilters{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}.svLibFilters label{display:grid;gap:3px;color:#667781;font-size:8px;font-weight:950;letter-spacing:.05em;text-transform:uppercase}.svLibFilters select{height:30px;border:1px solid #ccd8de;border-radius:7px;background:#fff;color:#20343e;padding:0 7px;font-size:10px;font-weight:850}.svLibList{min-height:0;overflow:auto;display:grid;align-content:start;gap:6px;padding:8px}.svLibEmpty{min-height:140px;display:grid;place-items:center;padding:20px;border:1px dashed #c6d4db;border-radius:9px;color:#72838d;text-align:center;font-size:10px;font-weight:800;line-height:1.5}.svLibCard{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:7px;padding:7px 8px;border:1px solid #d8e2e7;border-left:4px solid #18a568;border-radius:9px;background:#fff;min-height:66px}.svLibTime b{display:block;font-size:12px}.svLibTime small{color:#71828b;font-size:7px;font-weight:900;line-height:1.2}.svLibInfo{min-width:0}.svLibInfo strong,.svLibInfo span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.svLibInfo strong{font-size:11px}.svLibInfo span{margin-top:2px;color:#5f717b;font-size:9px;font-weight:750}.svLibInfo em{display:inline-block;margin-top:3px;padding:2px 5px;border-radius:99px;background:#e1f5ea;color:#13794a;font-size:7px;font-style:normal;font-weight:950}.svLibActions{display:grid;grid-template-columns:repeat(2,27px);gap:3px}.svLibActions button{height:26px;padding:0;border:1px solid #ccd8de;border-radius:6px;background:#fff;color:#354954;font-size:9px;font-weight:950}.svLibActions .play{grid-column:1/-1;width:auto;min-width:57px;border-color:#153f52;background:#0c3042;color:#fff;font-size:8px}.svLibActions .annotate{color:#087d89}.svLibActions .remove{color:#b33d47}
+.svLibModal[hidden]{display:none!important}.svLibModal{position:fixed;inset:0;z-index:6100;display:grid;place-items:center;padding:18px;background:rgba(3,15,23,.72)}.svLibModalCard{width:min(560px,94vw);max-height:90vh;overflow:auto;padding:18px;border:1px solid #d7e1e6;border-radius:17px;background:#fff;box-shadow:0 22px 70px rgba(0,0,0,.3)}.svLibModalCard h2{margin:0 0 5px;font-size:18px}.svLibModalCard>p{margin:0 0 14px;color:#6a7b85;font-size:8px}.svLibEditGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.svLibEditGrid label{display:grid;gap:5px;color:#60727c;font-size:7px;font-weight:900}.svLibEditGrid label.wide{grid-column:1/-1}.svLibEditGrid input,.svLibEditGrid select{height:38px;border:1px solid #cbd7dd;border-radius:9px;background:#fff;color:#152c37;padding:0 10px;font-size:9px}.svLibModalActions{display:flex;justify-content:flex-end;gap:7px;margin-top:14px}.svLibModalActions button{height:35px;padding:0 13px;border:1px solid #cad6dc;border-radius:8px;background:#fff;color:#243944;font-size:7px;font-weight:950}.svLibModalActions .primary{border-color:#13bfd1;background:#13bfd1;color:#04232c}
+.svAnnotationLayer{position:absolute;inset:12px;z-index:12;pointer-events:none;border-radius:10px}.svAnnotationLayer.drawing{pointer-events:auto;cursor:crosshair;touch-action:none;box-shadow:inset 0 0 0 2px rgba(99,231,240,.72)}.svAnnotationLayer.drawing:after{content:"DESENHA AGORA NO VÍDEO";position:absolute;left:50%;bottom:14px;transform:translateX(-50%);padding:7px 10px;border-radius:8px;background:rgba(3,20,31,.88);color:#baf7fa;font-size:9px;font-weight:950;letter-spacing:.05em;pointer-events:none}.svAnnotationLayer canvas{display:block;width:100%;height:100%}.svAnnotationToolbar[hidden]{display:none!important}.svAnnotationToolbar{position:absolute;left:20px;right:20px;top:20px;z-index:14;display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid rgba(156,211,220,.28);border-radius:11px;background:rgba(3,20,31,.92);box-shadow:0 10px 28px rgba(0,0,0,.25);color:#fff}.svAnnotationToolbar button,.svAnnotationToolbar select,.svAnnotationToolbar input{height:32px;border:1px solid #335565;border-radius:7px;background:#0b2b3c;color:#e8f5f7;padding:0 9px;font-size:9px;font-weight:900}.svAnnotationToolbar button.active{border-color:#63e7f0;background:#13bfd1;color:#04232c}.svAnnotationToolbar button.primary{border-color:#63e7f0;background:#13bfd1;color:#04232c}.svAnnotationToolbar button.continue{border-color:#5adc95;background:#1d9c61;color:#fff}.svAnnotationToolbar input[type=color]{width:36px;padding:3px}.svAnnotationHint{margin-left:auto;color:#d4e7eb;font-size:8px;font-weight:850}
+.svAnnotationBadge{position:absolute;left:22px;bottom:22px;z-index:14;padding:6px 9px;border-radius:8px;background:rgba(3,20,31,.86);color:#d8eef1;font-size:6px;font-weight:900;pointer-events:none}
+.svTrueReportHeat{display:block;width:100%;height:100%;object-fit:contain;border-radius:13px}.svrHeatChart.svTrueHeatChart{grid-template-rows:minmax(0,1fr) auto}
+@media(max-width:1180px) and (orientation:landscape){.svLibBody{grid-template-columns:minmax(400px,1.12fr) minmax(305px,.88fr);gap:7px;padding:7px}.svLibHead{padding:8px 11px}.svLibTitle i{width:34px;height:34px}.svLibTitle h1{font-size:17px}.svLibPlayerHead,.svLibPanelHead{padding:8px}.svLibCard{padding:6px 7px;gap:6px;min-height:62px}.svAnnotationToolbar{left:14px;right:14px;top:14px;padding:6px}.svAnnotationToolbar button,.svAnnotationToolbar select,.svAnnotationToolbar input{height:29px;padding-inline:7px;font-size:8px}}
+@media(orientation:portrait){#svClipLibraryView{inset:0 0 68px}.svLibBody{grid-template-columns:1fr;overflow:auto}.svLibPlayer{min-height:430px}.svLibPanel{min-height:430px}.svLibHead{align-items:flex-start}.svLibHeadActions{flex-wrap:wrap}.svLibTitle p{display:none}}
+
+/* V3 — clipes independentes, editor simples e desenhos persistentes. */
+.svClipCaptureSource{position:fixed!important;left:-4px!important;top:-4px!important;width:2px!important;height:2px!important;opacity:.001!important;pointer-events:none!important;z-index:-1!important}
+.svRealClipShell{position:relative;width:100%;height:100%;min-height:250px;display:grid;place-items:center;overflow:hidden;background:#02090f}
+.svRealClipShell video{display:block;width:100%;height:100%;object-fit:contain;background:#000}
+.svRealClipEmpty{max-width:360px;padding:24px;text-align:center;color:#a8bdc7;font-size:10px;line-height:1.55}.svRealClipEmpty b{display:block;margin-bottom:6px;color:#fff;font-size:15px}
+.svRealClipLoading{position:absolute;inset:0;z-index:20;display:grid;place-items:center;background:rgba(2,13,20,.78);color:#d9f9fb;font-size:10px;font-weight:900}.svRealClipLoading[hidden]{display:none!important}
+.svLibClipState{display:block;margin-top:4px;color:#14794a;font-size:7px;font-weight:950}.svLibClipState.warn{color:#a4680f}
+.svLibActions{grid-template-columns:repeat(2,minmax(54px,1fr));min-width:126px}.svLibActions button{width:auto!important;padding:0 6px!important}.svLibActions .play{grid-column:1/-1}.svLibActions .download{color:#1760bc}.svLibActions .remove{grid-column:2}
+.svVideoClipButtons .svV2Validate.is-creating{position:relative;overflow:hidden;border-color:#1760bc!important;background:#e6efff!important;color:#174fa8!important}.svVideoClipButtons .svV2Validate.is-creating:after{content:"";position:absolute;left:0;bottom:0;width:var(--clip-progress,0%);height:3px;background:#246bfd;transition:width .18s linear}
+.svAnnotationLayer{bottom:54px}.svAnnotationToolbar{align-items:center}.svAnnotationToolbar .svAnnToolGroup{display:flex;gap:5px}.svAnnotationToolbar button[data-ann-tool]{min-width:74px}.svAnnotationToolbar .svAnnDanger{color:#ffb5b5}.svAnnotationToolbar .svAnnDone{margin-left:auto;border-color:#5adc95;background:#1d9c61;color:#fff}.svAnnotationHint{width:100%;margin:0;padding-top:3px;border-top:1px solid rgba(173,220,228,.15);text-align:center}
+.svLibEditTrim{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px;border:1px solid #d8e2e7;border-radius:10px;background:#f7fafb}.svLibEditTrim>span{grid-column:1/-1;color:#233943;font-size:9px;font-weight:950}.svLibEditTrim small{grid-column:1/-1;color:#6b7d87;font-size:8px;line-height:1.4}.svLibEditTrim label{font-size:8px!important}
+@media(max-width:1180px) and (orientation:landscape){.svLibActions{min-width:112px}.svAnnotationToolbar button[data-ann-tool]{min-width:62px}.svAnnotationHint{font-size:7px}}
+</style>
+
+<script id="statsvision-video-library-annotations-v2-script">
+(()=>{
+  const q=(selector,root=document)=>root.querySelector(selector),qa=(selector,root=document)=>Array.from(root.querySelectorAll(selector));
+  const workspace=q('#svVideoWorkspace'),videoState=window.statsVisionVideoState;if(!workspace||!videoState)return;
+  const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  const uid=prefix=>`${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+  const actionNames={golo:'Golo',remate:'Remate',defesa:'Defesa',recuperacao:'Recuperação de bola',perda:'Perda de bola',passe:'Passe-chave',cruzamento:'Cruzamento eficaz',falta:'Falta',fora_jogo:'Fora de jogo',canto:'Canto',advertencia:'Advertência',acao_defensiva:'Ação defensiva',observacao:'Observação',substituicao:'Substituição',cartao_amarelo:'Cartão amarelo',expulsao:'Cartão vermelho'};
+  const partLabel=part=>({1:'1.ª PARTE',2:'2.ª PARTE',3:'1.ª PARTE · PROLONGAMENTO',4:'2.ª PARTE · PROLONGAMENTO'}[Number(part)]||`${part}.ª PARTE`);
+  videoState.library=videoState.library&&typeof videoState.library==='object'?videoState.library:{};
+  videoState.annotations=videoState.annotations&&typeof videoState.annotations==='object'?videoState.annotations:{};
+  videoState.validationFilter=videoState.validationFilter||'all';
+  const persist=()=>{if(typeof window.saveState==='function')window.saveState(true)};
+  const isSavedCut=item=>Boolean(item&&['cut','ready','session'].includes(item.clipStatus));
+  function clipSource(key,item){
+    const api=window.statsVisionVideoApi,entry=api?.getEntry?.(key);if(!api||!entry)return null;
+    const base=api.clipRange(entry);if(!base)return null;const part=String(entry.event.period||item.part||1),center=Number.isFinite(Number(item.sourceCenter))?Number(item.sourceCenter):Number(base.center),before=Math.max(0,Math.min(60,Number.isFinite(Number(item.before))?Number(item.before):Math.max(0,center-base.start))),after=Math.max(0,Math.min(60,Number.isFinite(Number(item.after))?Number(item.after):Math.max(0,base.end-center)));
+    return {api,entry,part,file:api.getLocalFile(part),center,before,after,range:{center,start:Math.max(0,center-before),end:center+after}};
+  }
+  async function saveVirtualCut(key,item){
+    key=String(key);const source=clipSource(key,item);if(!source)throw new Error('Sincroniza primeiro este lance com o vídeo.');
+    if(!source.api.sourceAvailable(source.part))throw new Error(`Volta a associar o vídeo da ${partLabel(source.part)} para guardar este corte.`);
+    const partData=source.api.ensurePart(source.part),sourceDuration=Number(partData.source==='youtube'?partData.youtube?.duration:partData.file?.duration),start=Math.max(0,source.range.start),end=Number.isFinite(sourceDuration)&&sourceDuration>0?Math.min(sourceDuration,source.range.end):source.range.end;
+    item.clipStatus='cut';item.clipMime='';item.clipBytes=0;item.clipDuration=Math.max(.1,end-start);item.rangeStart=start;item.rangeEnd=end;item.sourceCenter=source.center;item.before=source.before;item.after=source.after;item.sourceFileSize=Number(source.file?.size)||Number(partData.file?.size)||0;item.createdAt=item.createdAt||new Date().toISOString();
+    videoState.library[key]=item;videoState.annotations[key]=Array.isArray(videoState.annotations[key])?videoState.annotations[key]:[];item.annotations=videoState.annotations[key];persist();return true;
+  }
+  function combinedEvents(){
+    const groups=typeof state!=='undefined'?[state.events,state.fieldEvents].filter(Array.isArray):[],seen=new Set(),items=[];
+    groups.forEach(group=>group.forEach(event=>{if(!event||typeof event!=='object')return;const identity=event.id?`id:${event.id}`:['legacy',event.period||1,event.gameSecond??event.time??0,event.action||event.label||event.type||'',event.player||'',event.x??'',event.y??''].join('|');if(seen.has(identity))return;seen.add(identity);items.push(event)}));
+    return items;
+  }
+  function eventEntries(){return combinedEvents().map((event,index)=>({event,index,key:String(event.id||`legacy-${index}`)}))}
+  function entryFor(key){return eventEntries().find(item=>item.key===String(key))}
+  function clock(event){const seconds=Math.max(0,Number(event?.gameSecond)||((Number(event?.time)||0)*60));return `${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(Math.floor(seconds%60)).padStart(2,'0')}`}
+  function labelFor(event){return String(event?.label||event?.type||actionNames[event?.action]||'Evento').replace(/^[•·\s]+/,'').trim()}
+  function updateLibraryCount(){const count=Object.values(videoState.library).filter(isSavedCut).length;const badge=q('#svV2LibraryCount');if(badge)badge.textContent=count;const header=q('#svLibCount');if(header)header.textContent=`${count} ${count===1?'CORTE GUARDADO':'CORTES GUARDADOS'}`}
+
+  const headerActions=q('.svVideoHeaderActions',workspace);
+  if(headerActions&&!q('#svV2LibraryOpen')){
+    headerActions.insertAdjacentHTML('afterbegin','<button type="button" class="svV2Primary" id="svV2LibraryOpen">BIBLIOTECA <span class="svV2Count" id="svV2LibraryCount">0</span></button>');
+  }
+  const filters=q('.svVideoFilters',workspace);
+  if(filters&&!q('#svV2ValidationFilter')){
+    filters.insertAdjacentHTML('beforeend','<label class="svV2ValidationFilter">Biblioteca<select id="svV2ValidationFilter"><option value="all">Todos os cortes</option><option value="pending">Por guardar</option><option value="validated">Guardados</option></select></label>');
+    q('#svV2ValidationFilter').value=videoState.validationFilter;
+  }
+  function applyValidationFilter(shouldPersist=false){
+    const selected=q('#svV2ValidationFilter')?.value||'all';videoState.validationFilter=selected;
+    qa('.svVideoClip',workspace).forEach(card=>{const item=videoState.library[card.dataset.videoCard],saved=isSavedCut(item);card.hidden=selected==='pending'?saved:selected==='validated'?!saved:false});
+    if(shouldPersist)persist();
+  }
+  function decorateClips(){
+    qa('.svVideoClip[data-video-card]',workspace).forEach(card=>{
+      const key=card.dataset.videoCard,item=videoState.library[key],saved=isSavedCut(item),creating=false;card.classList.toggle('validated',saved);card.classList.toggle('pending',!saved);
+      let stateBadge=q('.svVideoClipState',card);if(!stateBadge){stateBadge=document.createElement('span');q('.svVideoClipMain',card)?.appendChild(stateBadge)}
+      const stateClass=`svVideoClipState ${saved?'validated':'pending'}`,stateText=saved?'✓ Corte guardado':'● Por guardar';if(stateBadge.className!==stateClass)stateBadge.className=stateClass;if(stateBadge.textContent!==stateText)stateBadge.textContent=stateText;
+      const buttons=q('.svVideoClipButtons',card);if(buttons){let button=q('.svV2Validate',buttons);if(!button){button=document.createElement('button');button.type='button';button.className='svV2Validate';buttons.appendChild(button)}button.dataset.v2Validate=key;button.classList.toggle('saved',saved);const buttonText=saved?'✓ CORTE GUARDADO':'GUARDAR CORTE';if(button.textContent!==buttonText)button.textContent=buttonText}
+    });
+    applyValidationFilter();updateLibraryCount();
+  }
+  const clipList=q('#svVideoClips',workspace);if(clipList)new MutationObserver(decorateClips).observe(clipList,{childList:true});
+  clipList?.addEventListener('click',async event=>{
+    const button=event.target.closest('[data-v2-validate]');if(!button)return;event.preventDefault();event.stopPropagation();
+    const key=button.dataset.v2Validate,itemSaved=videoState.library[key];if(isSavedCut(itemSaved))return openLibrary();
+    const entry=entryFor(key);if(!entry)return;
+    const item=itemSaved||{id:uid('clip'),eventKey:key,action:entry.event.action||'evento',label:labelFor(entry.event),player:entry.event.player||'Equipa',part:Number(entry.event.period)||1,rate:1,validatedAt:new Date().toISOString(),before:Number(videoState.preRoll)||8,after:Number(videoState.postRoll)||5,annotations:Array.isArray(videoState.annotations[key])?videoState.annotations[key]:[]};
+    videoState.library[key]=item;decorateClips();
+    try{const created=await saveVirtualCut(key,item);if(created&&typeof window.toast==='function')window.toast('Corte guardado na Biblioteca')}
+    catch(error){if(!itemSaved)delete videoState.library[key];decorateClips();renderLibrary();if(typeof window.toast==='function')window.toast(error.message||'Não foi possível guardar o corte')}
+  },true);
+  q('#svV2ValidationFilter')?.addEventListener('change',()=>applyValidationFilter(true));
+
+  const library=document.createElement('section');library.id='svClipLibraryView';library.hidden=true;library.innerHTML=`
+    <header class="svLibHead"><div class="svLibTitle"><i>▣</i><div><h1>Biblioteca de Cortes</h1><p>Cada momento fica ligado ao vídeo original. Reproduz, ajusta e desenha diretamente.</p></div></div><div class="svLibHeadActions"><button type="button" id="svLibBackVideo">VOLTAR AOS CORTES</button><button type="button" class="primary" id="svLibClose">VOLTAR AO JOGO</button></div></header>
+    <div class="svLibBody">
+      <section class="svLibPlayer"><header class="svLibPlayerHead"><div><h2>Editor do corte</h2><small id="svLibCount">0 CORTES GUARDADOS</small></div><div class="svLibTransport"><button type="button" class="primary" id="svLibPause">Ⅱ PAUSAR</button><label>VELOCIDADE <select id="svLibRate"><option value=".5">0,5×</option><option value="1" selected>1×</option><option value="1.5">1,5×</option><option value="2">2×</option></select></label></div></header><div class="svLibPlayerHost" id="svLibPlayerHost"></div><div class="svLibNow" id="svLibNow"><b>Escolhe um corte da Biblioteca.</b><br>O leitor mostra apenas o intervalo guardado do vídeo original.</div></section>
+      <aside class="svLibPanel"><header class="svLibPanelHead"><h2>Momentos validados</h2><small>Filtros rápidos por ação e parte</small><div class="svLibFilters"><label>Tipo de ação<select id="svLibAction"><option value="all">Todas as ações</option></select></label><label>Parte<select id="svLibPart"><option value="all">Todas as partes</option><option value="1">1.ª parte</option><option value="2">2.ª parte</option><option value="3">Prolongamento · 1.ª</option><option value="4">Prolongamento · 2.ª</option></select></label></div></header><div class="svLibList" id="svLibList"></div></aside>
+    </div>`;
+  workspace.appendChild(library);
+  const editModal=document.createElement('div');editModal.className='svLibModal';editModal.id='svLibEditModal';editModal.hidden=true;editModal.innerHTML='<div class="svLibModalCard"><h2>Editar corte</h2><p>Altera os dados e escolhe quantos segundos queres mostrar antes e depois da ação.</p><div class="svLibEditGrid"><label class="wide">DESCRIÇÃO<input id="svLibEditLabel"></label><label>AÇÃO<select id="svLibEditAction"></select></label><label>JOGADOR<input id="svLibEditPlayer"></label><label>PARTE<select id="svLibEditPart"><option value="1">1.ª parte</option><option value="2">2.ª parte</option><option value="3">Prolongamento · 1.ª</option><option value="4">Prolongamento · 2.ª</option></select></label><label>VELOCIDADE<select id="svLibEditRate"><option value=".5">0,5×</option><option value="1">1×</option><option value="1.5">1,5×</option><option value="2">2×</option></select></label><div class="svLibEditTrim"><span>DURAÇÃO DO CORTE</span><label>SEGUNDOS ANTES<input id="svLibEditBefore" type="number" min="0" max="60" step="1"></label><label>SEGUNDOS DEPOIS<input id="svLibEditAfter" type="number" min="0" max="60" step="1"></label><small>Exemplo: 8 segundos antes + 5 segundos depois mostra um corte de cerca de 13 segundos.</small></div></div><div class="svLibModalActions"><button type="button" id="svLibEditCancel">CANCELAR</button><button type="button" class="primary" id="svLibEditSave">GUARDAR ALTERAÇÕES</button></div></div>';document.body.appendChild(editModal);
+  const sourcePlayerWrap=q('.svVideoShell .svVideoPlayerWrap',workspace),sourcePlayerHome=sourcePlayerWrap?.parentNode||null,sourcePlayerNext=sourcePlayerWrap?.nextSibling||null;
+  let playerWrap=null,clipPlayer=null,activeLibraryKey=null,activeLibraryRange=null,editingKey=null;
+  function movePlayerToLibrary(){
+    const host=q('#svLibPlayerHost');if(!host||!sourcePlayerWrap)return;
+    if(sourcePlayerWrap.parentNode!==host){host.replaceChildren();host.appendChild(sourcePlayerWrap)}
+    playerWrap=sourcePlayerWrap;clipPlayer=q('#svVideoPlayer',playerWrap);
+    if(clipPlayer&&!clipPlayer.dataset.svCutEditorBound){clipPlayer.dataset.svCutEditorBound='1';clipPlayer.addEventListener('timeupdate',annotationPlaybackTick);clipPlayer.addEventListener('seeking',()=>playedAnnotations.clear());clipPlayer.addEventListener('play',()=>{if(activeLibraryRange){if(clipPlayer.currentTime<activeLibraryRange.start-.15||clipPlayer.currentTime>=activeLibraryRange.end-.08)clipPlayer.currentTime=activeLibraryRange.start;window.statsVisionVideoApi?.armVirtualRange?.(activeLibraryRange.part,activeLibraryRange.end)}if(currentMediaTime()<.18)playedAnnotations.clear()});clipPlayer.addEventListener('ended',()=>{drawAnnotations(-1,false);playedAnnotations.clear()})}
+    ensureAnnotationLayer();
+  }
+  function restorePlayer(){
+    try{mediaCommand('pause')}catch(error){}window.statsVisionVideoApi?.clearVirtualRange?.();annotationResizeObserver?.disconnect();annotationResizeObserver=null;annotationLayer?.remove();annotationToolbar?.remove();if(sourcePlayerHome&&sourcePlayerWrap){const anchor=sourcePlayerNext?.parentNode===sourcePlayerHome?sourcePlayerNext:null;sourcePlayerHome.insertBefore(sourcePlayerWrap,anchor)}q('#svLibPlayerHost')?.replaceChildren();playerWrap=null;clipPlayer=null;activeLibraryKey=null;activeLibraryRange=null;annotationLayer=null;annotationCanvas=null;annotationCtx=null;annotationToolbar=null;
+  }
+  function openLibrary(){library.hidden=false;workspace.classList.add('svLibraryOpen');movePlayerToLibrary();renderLibrary();updateLibraryCount()}
+  function closeLibrary(toGame=false){stopAnnotationMode(false);restorePlayer();library.hidden=true;workspace.classList.remove('svLibraryOpen');if(toGame)q('#svVideoClose')?.click()}
+  q('#svV2LibraryOpen')?.addEventListener('click',openLibrary);q('#svLibBackVideo').onclick=()=>closeLibrary(false);q('#svLibClose').onclick=()=>closeLibrary(true);
+  function libraryItems(){
+    const action=q('#svLibAction')?.value||'all',part=q('#svLibPart')?.value||'all';
+    return Object.entries(videoState.library).map(([key,item])=>({key,item,entry:entryFor(key)})).filter(row=>(action==='all'||row.item.action===action)&&(part==='all'||String(row.item.part)===part));
+  }
+  function renderLibrary(){
+    const values=Object.values(videoState.library),actions=[...new Set(values.map(item=>item.action).filter(Boolean))].sort((a,b)=>(actionNames[a]||a).localeCompare(actionNames[b]||b,'pt')),select=q('#svLibAction'),current=select?.value||'all';
+    if(select){select.innerHTML='<option value="all">Todas as ações</option>'+actions.map(action=>`<option value="${esc(action)}">${esc(actionNames[action]||action)}</option>`).join('');select.value=actions.includes(current)?current:'all'}
+    const rows=libraryItems(),list=q('#svLibList');updateLibraryCount();
+    list.innerHTML=rows.length?rows.map(({key,item,entry})=>{const count=(videoState.annotations[key]||item.annotations||[]).length,duration=Number(item.clipDuration)||0,ready=isSavedCut(item),status=ready?`${duration?`${duration.toFixed(1)} s · `:''}corte ligado ao vídeo`:'corte por guardar';return `<article class="svLibCard" data-lib-key="${esc(key)}"><div class="svLibTime"><b>${clock(entry?.event||{})}</b><small>${esc(partLabel(item.part))}</small></div><div class="svLibInfo"><strong>${esc(item.label||actionNames[item.action]||'Evento')}</strong><span>${esc(item.player||'Equipa')} · ${Number(item.rate)||1}×</span><em>${count} ${count===1?'desenho guardado':'desenhos guardados'}</em><small class="svLibClipState ${ready?'':'warn'}">${esc(status)}</small></div><div class="svLibActions"><button type="button" class="play" data-lib-play>▶ ABRIR CORTE</button><button type="button" data-lib-edit>AJUSTAR</button><button type="button" class="annotate" data-lib-annotate>DESENHAR</button><button type="button" class="remove" data-lib-remove>REMOVER</button></div></article>`}).join(''):'<div class="svLibEmpty">Ainda não existem cortes guardados para estes filtros.<br>Volta à lista e usa “Guardar corte”.</div>';
+  }
+  q('#svLibAction').onchange=renderLibrary;q('#svLibPart').onchange=renderLibrary;
+  function revealCard(key){
+    ['#svVideoFilterPart','#svVideoFilterPlayer','#svVideoFilterAction','#svVideoFilterZone'].forEach(selector=>{const node=q(selector,workspace);if(node&&node.value!=='all'){node.value='all';node.dispatchEvent(new Event('change',{bubbles:true}))}});
+    const validation=q('#svV2ValidationFilter');if(validation){validation.value='all';validation.dispatchEvent(new Event('change',{bubbles:true}))}
+    return q(`[data-video-play="${CSS.escape(String(key))}"]`,workspace);
+  }
+  function setRate(rate){
+    rate=[.5,1,1.5,2].includes(Number(rate))?Number(rate):1;window.statsVisionVideoApi?.setSourceRate?.(rate);if(clipPlayer)clipPlayer.playbackRate=rate;
+    q('#svLibRate').value=String(rate);if(activeLibraryKey&&videoState.library[activeLibraryKey]){videoState.library[activeLibraryKey].rate=rate;persist()}
+  }
+  async function playLibraryClip(key,autoplay=true){
+    const item=videoState.library[key];if(!item)return false;movePlayerToLibrary();activeLibraryKey=key;playedAnnotations.clear();stopAnnotationMode(false);
+    try{
+      if(!isSavedCut(item))await saveVirtualCut(key,item);const source=clipSource(key,item);if(!source||!source.api.sourceAvailable(source.part))throw new Error(`Volta a associar o vídeo da ${partLabel(item.part)}.`);
+      const start=Number.isFinite(Number(item.rangeStart))?Number(item.rangeStart):source.range.start,end=Number.isFinite(Number(item.rangeEnd))?Number(item.rangeEnd):source.range.end;activeLibraryRange={key,part:source.part,start,end};
+      const opened=await source.api.openVirtualRange(source.part,start,end,autoplay);if(!opened)throw new Error('Não foi possível preparar este corte.');
+      setRate(item.rate||1);
+      const list=videoState.annotations[key]||item.annotations||[];item.annotations=list;q('#svLibNow').innerHTML=`<b>${esc(item.label||actionNames[item.action]||'Evento')} · ${esc(item.player||'Equipa')}</b><br>Corte de ${(Number(item.clipDuration)||Math.max(0,end-start)).toFixed(1)} s · ${list.length} ${list.length===1?'desenho guardado':'desenhos guardados'}`;
+      drawAnnotations(0,false);return true;
+    }catch(error){activeLibraryRange=null;if(typeof window.toast==='function')window.toast(error.message||'Não foi possível abrir o corte');return false}
+  }
+  q('#svLibPause').onclick=()=>mediaCommand('pause');q('#svLibRate').onchange=event=>setRate(event.target.value);
+  q('#svLibList').addEventListener('click',async event=>{
+    const card=event.target.closest('[data-lib-key]');if(!card)return;const key=card.dataset.libKey;
+    if(event.target.closest('[data-lib-play]'))await playLibraryClip(key,true);
+    else if(event.target.closest('[data-lib-edit]'))openEdit(key);
+    else if(event.target.closest('[data-lib-annotate]')){const ready=await playLibraryClip(key,false);if(ready)startAnnotationMode()}
+    else if(event.target.closest('[data-lib-remove]')&&confirm('Retirar este corte da Biblioteca? O evento original mantém-se no jogo.')){delete videoState.library[key];delete videoState.annotations[key];if(activeLibraryKey===key){mediaCommand('pause');window.statsVisionVideoApi?.clearVirtualRange?.();activeLibraryKey=null;activeLibraryRange=null;drawAnnotations(-1,false)}persist();renderLibrary();decorateClips()}
+  });
+  function actionOptions(value){const catalog=window.arenaActions||[];const actions=[...new Set([...catalog.map(item=>item.key),...Object.keys(actionNames),value].filter(Boolean))];return actions.map(action=>`<option value="${esc(action)}"${action===value?' selected':''}>${esc(catalog.find(item=>item.key===action)?.label||actionNames[action]||action)}</option>`).join('')}
+  function openEdit(key){const item=videoState.library[key];if(!item)return;editingKey=key;q('#svLibEditLabel').value=item.label||'';q('#svLibEditAction').innerHTML=actionOptions(item.action);q('#svLibEditPlayer').value=item.player||'';q('#svLibEditPart').value=String(item.part||1);q('#svLibEditRate').value=String(item.rate||1);q('#svLibEditBefore').value=Number.isFinite(Number(item.before))?Number(item.before):Number(videoState.preRoll)||8;q('#svLibEditAfter').value=Number.isFinite(Number(item.after))?Number(item.after):Number(videoState.postRoll)||5;editModal.hidden=false}
+  q('#svLibEditCancel').onclick=()=>{editModal.hidden=true;editingKey=null};q('#svLibEditSave').onclick=async()=>{const key=editingKey,item=videoState.library[key];if(!item)return;const oldBefore=Number(item.before),oldAfter=Number(item.after),nextBefore=Math.max(0,Math.min(60,Number(q('#svLibEditBefore').value)||0)),nextAfter=Math.max(0,Math.min(60,Number(q('#svLibEditAfter').value)||0)),trimChanged=nextBefore!==oldBefore||nextAfter!==oldAfter,saveButton=q('#svLibEditSave');item.label=q('#svLibEditLabel').value.trim()||actionNames[q('#svLibEditAction').value]||'Evento';item.action=q('#svLibEditAction').value;item.player=q('#svLibEditPlayer').value.trim()||'Equipa';item.part=Number(q('#svLibEditPart').value)||1;item.rate=Number(q('#svLibEditRate').value)||1;item.before=nextBefore;item.after=nextAfter;persist();if(trimChanged){saveButton.disabled=true;saveButton.textContent='A GUARDAR CORTE…';try{await saveVirtualCut(key,item);const shift=Number.isFinite(oldBefore)?nextBefore-oldBefore:0;if(shift)(videoState.annotations[key]||[]).forEach(shape=>{if(shape.timeline!=='clip')return;shape.start=Math.max(0,(Number(shape.start)||0)+shift);if(shape.end!=null)shape.end=Math.max(shape.start,(Number(shape.end)||0)+shift)});item.annotations=videoState.annotations[key]||[];persist()}catch(error){item.before=oldBefore;item.after=oldAfter;persist();if(typeof window.toast==='function')window.toast(error.message||'Não foi possível ajustar a duração');saveButton.disabled=false;saveButton.textContent='GUARDAR ALTERAÇÕES';return}saveButton.disabled=false;saveButton.textContent='GUARDAR ALTERAÇÕES'}editModal.hidden=true;editingKey=null;renderLibrary();if(activeLibraryKey===key)await playLibraryClip(key,false);if(typeof window.toast==='function')window.toast(trimChanged?'Duração do corte atualizada':'Corte atualizado')};
+
+  let annotationLayer=null,annotationCanvas=null,annotationCtx=null,annotationToolbar=null,annotationResizeObserver=null,drawing=false,startPoint=null,currentShape=null,lastYoutubeTime=0,annotationTimer=0,annotationMode=false;
+  const playedAnnotations=new Set();
+  function ensureAnnotationLayer(){
+    const wrap=playerWrap||q('.svVideoPlayerWrap',workspace);if(!wrap||annotationLayer?.isConnected)return;
+    annotationLayer=document.createElement('div');annotationLayer.className='svAnnotationLayer';annotationLayer.innerHTML='<canvas aria-label="Anotações temporais do clip"></canvas>';wrap.appendChild(annotationLayer);annotationCanvas=q('canvas',annotationLayer);annotationCtx=annotationCanvas.getContext('2d');
+    annotationToolbar=document.createElement('div');annotationToolbar.className='svAnnotationToolbar';annotationToolbar.hidden=true;annotationToolbar.innerHTML='<div class="svAnnToolGroup"><button type="button" data-ann-tool="arrow" class="active">↗ SETA</button><button type="button" data-ann-tool="circle">◯ CÍRCULO</button><button type="button" data-ann-tool="line">╱ LINHA</button><button type="button" data-ann-tool="pen">✎ LIVRE</button></div><input type="color" id="svAnnColor" value="#ffdf3d" title="Cor do desenho"><select id="svAnnWidth" title="Espessura"><option value="3">Traço fino</option><option value="5" selected>Traço médio</option><option value="8">Traço grosso</option></select><select id="svAnnHold" title="Tempo no ecrã"><option value="1">Mostrar 1 s</option><option value="2" selected>Mostrar 2 s</option><option value="3">Mostrar 3 s</option><option value="manual">Até continuar</option></select><button type="button" class="primary" id="svAnnStopShow">PAUSAR E DESENHAR</button><button type="button" class="continue" id="svAnnContinue" hidden>CONTINUAR CLIPE ▶</button><button type="button" id="svAnnUndo">↶ ÚLTIMO</button><button type="button" class="svAnnDanger" id="svAnnClear">LIMPAR</button><button type="button" class="svAnnDone" id="svAnnClose">✓ GUARDAR E SAIR</button><span class="svAnnotationHint">O clipe está parado. Escolhe uma forma e desenha diretamente na imagem.</span>';wrap.appendChild(annotationToolbar);
+    annotationLayer.addEventListener('pointerdown',pointerDown);annotationLayer.addEventListener('pointermove',pointerMove);annotationLayer.addEventListener('pointerup',pointerUp);annotationLayer.addEventListener('pointercancel',pointerUp);
+    qa('[data-ann-tool]',annotationToolbar).forEach(button=>button.onclick=()=>{qa('[data-ann-tool]',annotationToolbar).forEach(node=>node.classList.toggle('active',node===button));if(annotationMode)armAnnotationDrawing(false)});
+    q('#svAnnStopShow').onclick=()=>armAnnotationDrawing(true);
+    q('#svAnnContinue').onclick=continueAnnotation;q('#svAnnUndo').onclick=undoAnnotation;q('#svAnnClear').onclick=clearAnnotations;q('#svAnnClose').onclick=()=>stopAnnotationMode(false);
+    resizeAnnotation();annotationResizeObserver?.disconnect();annotationResizeObserver=new ResizeObserver(resizeAnnotation);annotationResizeObserver.observe(wrap);
+  }
+  function resizeAnnotation(){if(!annotationCanvas||!annotationLayer)return;const box=annotationLayer.getBoundingClientRect(),d=window.devicePixelRatio||1;annotationCanvas.width=Math.max(1,Math.round(box.width*d));annotationCanvas.height=Math.max(1,Math.round(box.height*d));annotationCtx.setTransform(d,0,0,d,0,0);drawAnnotations(currentMediaTime(),annotationMode)}
+  function currentMediaTime(){let value=window.statsVisionVideoApi?.getCurrentTime?.();if(value===null||!Number.isFinite(Number(value))){const local=q('#svVideoPlayer',workspace);value=local&&!local.hidden&&Number.isFinite(local.currentTime)?Number(local.currentTime):Number(lastYoutubeTime)||0}value=Number(value)||0;return activeLibraryRange?Math.max(0,value-activeLibraryRange.start):value}
+  function mediaCommand(command){if(clipPlayer&&!clipPlayer.hidden){try{if(command==='pause')clipPlayer.pause();else clipPlayer.play().catch(()=>{})}catch(error){}return}const local=q('#svVideoPlayer',workspace);try{if(local&&!local.hidden){if(command==='pause')local.pause();else local.play().catch(()=>{})}}catch(error){}const frame=q('#svYouTubeHost iframe',workspace);try{frame?.contentWindow?.postMessage(JSON.stringify({event:'command',func:command==='pause'?'pauseVideo':'playVideo',args:[]}),'*')}catch(error){}}
+  window.addEventListener('message',event=>{if(!/youtube/i.test(String(event.origin||'')))return;try{const data=typeof event.data==='string'?JSON.parse(event.data):event.data;if(data?.event==='infoDelivery'&&Number.isFinite(Number(data.info?.currentTime)))lastYoutubeTime=Number(data.info.currentTime)}catch(error){}});
+  function pointFromEvent(event){const box=annotationCanvas.getBoundingClientRect();return {x:Math.max(0,Math.min(1,(event.clientX-box.left)/box.width)),y:Math.max(0,Math.min(1,(event.clientY-box.top)/box.height))}}
+  function pointerDown(event){if(!annotationLayer.classList.contains('drawing')||!activeLibraryKey)return;event.preventDefault();annotationLayer.setPointerCapture?.(event.pointerId);drawing=true;startPoint=pointFromEvent(event);currentShape={id:uid('ann'),tool:q('[data-ann-tool].active',annotationToolbar)?.dataset.annTool||'arrow',color:q('#svAnnColor').value,width:Number(q('#svAnnWidth').value)||5,points:[startPoint],start:currentMediaTime(),end:null,hold:q('#svAnnHold').value,manual:q('#svAnnHold').value==='manual',timeline:'clip'}}
+  function pointerMove(event){if(!drawing||!currentShape)return;const point=pointFromEvent(event);if(currentShape.tool==='pen')currentShape.points.push(point);else currentShape.points=[startPoint,point];drawAnnotations(currentMediaTime(),true,currentShape)}
+  function pointerUp(event){if(!drawing||!currentShape)return;drawing=false;const point=pointFromEvent(event);if(currentShape.tool!=='pen')currentShape.points=[startPoint,point];if(currentShape.points.length<2)currentShape.points.push({x:Math.min(.98,startPoint.x+.08),y:startPoint.y});const list=videoState.annotations[activeLibraryKey]||(videoState.annotations[activeLibraryKey]=[]);list.push(currentShape);videoState.library[activeLibraryKey].annotations=list;persist();annotationLayer.classList.remove('drawing');const shape=currentShape;currentShape=null;drawAnnotations(shape.start,true);const continueButton=q('#svAnnContinue');clearTimeout(annotationTimer);if(shape.manual){continueButton.hidden=false}else{continueButton.hidden=true;annotationTimer=setTimeout(()=>{annotationCtx.clearRect(0,0,annotationCanvas.clientWidth,annotationCanvas.clientHeight);mediaCommand('play')},Math.max(1,Number(shape.hold)||2)*1000)}renderLibrary()}
+  function drawShape(shape,ctx,width,height){const points=shape.points||[];if(points.length<2)return;ctx.save();ctx.strokeStyle=shape.color||'#ffdf3d';ctx.fillStyle=shape.color||'#ffdf3d';ctx.lineWidth=Number(shape.width)||5;ctx.lineCap='round';ctx.lineJoin='round';const p=index=>({x:points[index].x*width,y:points[index].y*height});if(shape.tool==='pen'){ctx.beginPath();points.forEach((_,index)=>{const pt=p(index);index?ctx.lineTo(pt.x,pt.y):ctx.moveTo(pt.x,pt.y)});ctx.stroke()}else{const a=p(0),b=p(points.length-1);if(shape.tool==='circle'){ctx.beginPath();ctx.ellipse((a.x+b.x)/2,(a.y+b.y)/2,Math.max(4,Math.abs(b.x-a.x)/2),Math.max(4,Math.abs(b.y-a.y)/2),0,0,Math.PI*2);ctx.stroke()}else{ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();if(shape.tool==='arrow'){const angle=Math.atan2(b.y-a.y,b.x-a.x),size=11+ctx.lineWidth;ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x-size*Math.cos(angle-.48),b.y-size*Math.sin(angle-.48));ctx.lineTo(b.x-size*Math.cos(angle+.48),b.y-size*Math.sin(angle+.48));ctx.closePath();ctx.fill()}}}ctx.restore()}
+  function shapeTime(shape,field='start'){const value=Number(shape?.[field]);if(!Number.isFinite(value))return null;if(shape.timeline==='clip')return value;const item=activeLibraryKey?videoState.library[activeLibraryKey]:null,offset=Number(item?.rangeStart);return Number.isFinite(offset)?Math.max(0,value-offset):value}
+  function drawAnnotations(time,force=false,preview=null){if(!annotationCtx||!annotationCanvas)return;const width=annotationCanvas.clientWidth,height=annotationCanvas.clientHeight;annotationCtx.clearRect(0,0,width,height);const list=activeLibraryKey?(videoState.annotations[activeLibraryKey]||[]):[];list.filter(shape=>{if(force)return true;const start=shapeTime(shape),end=shapeTime(shape,'end');return start!=null&&(Math.abs(start-Number(time))<.28||(end!=null&&time>=start&&time<=end))}).forEach(shape=>drawShape(shape,annotationCtx,width,height));if(preview)drawShape(preview,annotationCtx,width,height)}
+  function armAnnotationDrawing(showMessage=true){if(!annotationLayer||!annotationToolbar)return;mediaCommand('pause');annotationLayer.classList.add('drawing');q('#svAnnContinue').hidden=true;drawAnnotations(currentMediaTime(),true);const hint=q('.svAnnotationHint',annotationToolbar);if(hint)hint.textContent='Desenha agora no vídeo.';if(showMessage&&typeof window.toast==='function')window.toast('Vídeo parado — desenha diretamente no ecrã')}
+  function startAnnotationMode(){ensureAnnotationLayer();annotationMode=true;annotationToolbar.hidden=false;armAnnotationDrawing(false)}
+  function stopAnnotationMode(resume){clearTimeout(annotationTimer);annotationMode=false;drawing=false;currentShape=null;annotationLayer?.classList.remove('drawing');if(annotationToolbar)annotationToolbar.hidden=true;if(annotationCtx)annotationCtx.clearRect(0,0,annotationCanvas.clientWidth,annotationCanvas.clientHeight);if(resume)mediaCommand('play')}
+  function continueAnnotation(){clearTimeout(annotationTimer);q('#svAnnContinue').hidden=true;annotationLayer.classList.remove('drawing');annotationCtx.clearRect(0,0,annotationCanvas.clientWidth,annotationCanvas.clientHeight);mediaCommand('play')}
+  function undoAnnotation(){if(!activeLibraryKey)return;const list=videoState.annotations[activeLibraryKey]||[];list.pop();videoState.library[activeLibraryKey].annotations=list;persist();drawAnnotations(currentMediaTime(),true);renderLibrary()}
+  function clearAnnotations(){if(!activeLibraryKey)return;const list=videoState.annotations[activeLibraryKey]||[];if(!list.length)return;if(!confirm('Apagar todos os desenhos deste clipe?'))return;videoState.annotations[activeLibraryKey]=[];videoState.library[activeLibraryKey].annotations=[];playedAnnotations.clear();persist();drawAnnotations(-1,false);renderLibrary();if(typeof window.toast==='function')window.toast('Desenhos removidos')}
+  function annotationPlaybackTick(){
+    if(annotationMode||!activeLibraryKey||!activeLibraryRange)return;const time=currentMediaTime(),list=videoState.annotations[activeLibraryKey]||[],hit=list.find(shape=>{const start=shapeTime(shape);return start!=null&&!playedAnnotations.has(shape.id)&&Math.abs(start-time)<.32});if(!hit){drawAnnotations(time,false);return}
+    playedAnnotations.add(hit.id);mediaCommand('pause');drawAnnotations(shapeTime(hit),false);clearTimeout(annotationTimer);
+    if(hit.manual){if(annotationToolbar)annotationToolbar.hidden=false;q('#svAnnContinue').hidden=false}
+    else annotationTimer=setTimeout(()=>{drawAnnotations(-1,false);mediaCommand('play')},Math.max(1,Number(hit.hold)||2)*1000);
+  }
+  q('#svVideoPlayer',workspace)?.addEventListener('timeupdate',annotationPlaybackTick);setInterval(annotationPlaybackTick,180);
+  const originalVideoClose=q('#svVideoClose');originalVideoClose?.addEventListener('click',()=>{if(!library.hidden)closeLibrary(false);stopAnnotationMode(false)},true);
+  updateLibraryCount();setTimeout(decorateClips,120);
+})();
+</script>
+
+<style id="statsvision-visual-map-fixes-v61">
+/* Contraste corrigido nos controlos indicados. */
+.modal .modalCard .rosterEditorV20 .rosterEditorActions button{
+  min-width:220px!important;
+  background:#0a293b!important;
+  color:#fff!important;
+  border:1px solid #17c7d8!important;
+  box-shadow:0 6px 16px rgba(0,0,0,.18)!important;
+  opacity:1!important;
+  text-shadow:none!important;
+}
+#mainApp .contentView .miniPitchCard h3{color:#fff!important}
+#mainApp .contentView .detailFilters select{
+  background:#071f2f!important;
+  color:#fff!important;
+  border-color:rgba(115,190,207,.34)!important;
+}
+#mainApp .contentView .detailFilters select option{background:#071f2f;color:#fff}
+
+/* Os mapas deixam de ficar cortados e passam a ter uma área de leitura maior. */
+#mainApp .analytics{align-content:start!important;overflow-x:hidden!important;overflow-y:auto!important}
+#mainApp .analytics>.quick{display:none!important}
+#mainApp .analytics>.mapsPair{
+  height:auto!important;
+  min-height:300px!important;
+  flex:0 0 auto!important;
+}
+#mainApp .analytics .mapMini{height:auto!important;min-height:300px!important}
+#mainApp .analytics .mapMini canvas{
+  width:100%!important;
+  height:auto!important;
+  min-height:225px!important;
+  max-height:none!important;
+  flex:1 1 auto!important;
+  object-fit:contain!important;
+}
+#mainApp .analytics>#analysisCenter{
+  width:calc(100% - 6px)!important;
+  min-height:330px!important;
+  flex:0 0 330px!important;
+  grid-template-rows:40px 38px minmax(250px,1fr)!important;
+}
+#mainApp #analysisCenter .analysisCenterHead strong{font-size:11px!important;color:#fff!important}
+#mainApp #analysisCenter .analysisLive{font-size:8px!important}
+#mainApp #analysisCenter .analysisTabs button{height:37px!important;padding:0 10px!important;font-size:7px!important;color:#9ab4bf!important}
+#mainApp #analysisCenter .analysisTabs button.active{color:#66e6ef!important}
+#mainApp #analysisCenter .analysisCenterBody{padding:10px!important}
+
+/* Estatísticas rápidas: primeira página do Centro de Análise. */
+.analysisQuickStatsGrid{
+  width:100%;
+  min-height:100%;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-auto-rows:minmax(102px,1fr);
+  gap:9px;
+}
+.analysisQuickStat{
+  position:relative;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap:8px;
+  padding:12px 8px;
+  border:1px solid rgba(115,190,207,.3);
+  border-radius:13px;
+  overflow:hidden;
+  background:linear-gradient(145deg,#0c3145,#071f2f);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 5px 15px rgba(0,0,0,.13);
+  text-align:center;
+}
+.analysisQuickStat:before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:#19c7d8}
+.analysisQuickStat.goals:before,.analysisQuickStat.target:before{background:#63de70}
+.analysisQuickStat.losses:before{background:#ff775e}
+.analysisQuickStat small{color:#96b1bd!important;font-size:8px!important;font-weight:900!important;letter-spacing:.045em;text-transform:uppercase}
+.analysisQuickStat b{color:#fff!important;font-size:28px!important;font-weight:950!important;line-height:1}
+.analysisOnlyStage .analysisQuickStatsGrid{grid-auto-rows:minmax(145px,1fr);gap:14px}
+.analysisOnlyStage .analysisQuickStat b{font-size:40px!important}
+.analysisOnlyStage .analysisQuickStat small{font-size:10px!important}
+
+/* Mapa das nove zonas construído dentro de um campo de futebol. */
+.zoneLargeCard{display:flex!important;align-items:center!important;justify-content:center!important;overflow:hidden!important}
+.zonePitch{
+  position:relative;
+  width:100%;
+  max-height:100%;
+  aspect-ratio:105/68;
+  overflow:hidden;
+  border:3px solid #fff;
+  border-radius:12px;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.075) 0 10%,rgba(0,0,0,.035) 10% 20%),linear-gradient(180deg,#52b84f,#3e9e3d);
+  box-shadow:0 7px 20px rgba(0,0,0,.2);
+}
+.zonePitch .zoneLarge{
+  position:absolute;
+  inset:0;
+  z-index:2;
+  min-height:0!important;
+  height:auto!important;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  grid-template-rows:repeat(3,1fr);
+  gap:0!important;
+}
+.zonePitch .zoneCell{
+  border:1px solid rgba(255,255,255,.44)!important;
+  border-radius:0!important;
+  color:#fff!important;
+  font-size:13px!important;
+  text-shadow:0 1px 3px rgba(0,0,0,.55);
+  background:rgba(239,246,248,.18)!important;
+}
+.zonePitch .zoneCell.home{background:rgba(9,199,221,.62)!important}
+.zonePitch .zoneCell.away{background:rgba(18,76,149,.68)!important}
+.zonePitch .zoneCell.equal{background:rgba(226,235,239,.32)!important}
+.zonePitch .zoneCell.empty{background:rgba(255,255,255,.08)!important}
+.zonePitch .zoneCell small{font-size:7px!important;color:#fff!important}
+.zonePitchHalf,.zonePitchCircle,.zonePitchBox{position:absolute;z-index:4;display:block;pointer-events:none}
+.zonePitchHalf{left:50%;top:0;bottom:0;border-left:2px solid rgba(255,255,255,.94)}
+.zonePitchCircle{left:50%;top:50%;width:22%;aspect-ratio:1;border:2px solid rgba(255,255,255,.94);border-radius:50%;transform:translate(-50%,-50%)}
+.zonePitchBox{top:22%;width:17%;height:56%;border:2px solid rgba(255,255,255,.94)}
+.zonePitchBox.left{left:-2px}.zonePitchBox.right{right:-2px}
+
+/* Sentido de ataque sobre todos os mapas secundários. */
+#mainApp :is(.miniPitch,.statsPitchV20,.statsPitch,.playMiniPitch,.eventEditPitch,.zonePitch){position:relative!important}
+.svMapDirection{
+  position:absolute;
+  left:50%;
+  bottom:7px;
+  z-index:40;
+  transform:translateX(-50%);
+  min-width:92px;
+  height:24px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 11px;
+  border:1px solid rgba(99,231,240,.68);
+  border-radius:999px;
+  background:rgba(5,26,40,.91);
+  color:#fff!important;
+  box-shadow:0 4px 12px rgba(0,0,0,.25);
+  font-size:7px!important;
+  font-style:normal;
+  font-weight:950;
+  letter-spacing:.055em;
+  white-space:nowrap;
+  pointer-events:none;
+}
+
+@media(max-width:900px){
+  .analysisQuickStatsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #mainApp .analytics>.mapsPair{min-height:270px!important}
+  #mainApp .analytics .mapMini{min-height:270px!important}
+}
+@media(max-width:1100px) and (orientation:landscape){
+  #mainApp .analytics>.mapsPair{min-height:235px!important}
+  #mainApp .analytics .mapMini{min-height:235px!important}
+  #mainApp .analytics .mapMini canvas{min-height:180px!important}
+  #mainApp .analytics>#analysisCenter{min-height:260px!important;flex-basis:260px!important;grid-template-rows:31px 31px minmax(190px,1fr)!important}
+  #mainApp #analysisCenter .analysisTabs button{height:30px!important;font-size:6px!important;padding:0 7px!important}
+  .analysisQuickStatsGrid{grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:minmax(78px,1fr);gap:6px}
+  .analysisQuickStat{padding:7px 5px;gap:5px}.analysisQuickStat b{font-size:21px!important}.analysisQuickStat small{font-size:6px!important}
+}
+</style>
+
+<style id="statsvision-analysis-stacking-v62">
+/* Coluna direita em fluxo vertical real: mapas primeiro, Centro de Análise por baixo. */
+#mainApp .analytics{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  align-content:stretch!important;
+  gap:14px!important;
+  grid-template-rows:none!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  padding-bottom:14px!important;
+  scrollbar-gutter:stable;
+}
+#mainApp .analytics>.mapsPair{
+  position:relative!important;
+  order:1!important;
+  z-index:auto!important;
+  width:100%!important;
+  height:330px!important;
+  min-height:330px!important;
+  flex:0 0 330px!important;
+  margin:0!important;
+}
+#mainApp .analytics>.mapsPair>.mapMini{
+  height:330px!important;
+  min-height:330px!important;
+}
+#mainApp .analytics>#analysisCenter{
+  position:relative!important;
+  order:2!important;
+  z-index:auto!important;
+  width:100%!important;
+  height:440px!important;
+  min-height:440px!important;
+  max-height:none!important;
+  flex:0 0 440px!important;
+  margin:0!important;
+  transform:none!important;
+  clear:both!important;
+}
+@media(max-width:1100px) and (orientation:landscape){
+  #mainApp .analytics{gap:10px!important;padding-bottom:10px!important}
+  #mainApp .analytics>.mapsPair,
+  #mainApp .analytics>.mapsPair>.mapMini{
+    height:245px!important;
+    min-height:245px!important;
+  }
+  #mainApp .analytics>.mapsPair{flex-basis:245px!important}
+  #mainApp .analytics>#analysisCenter{
+    height:350px!important;
+    min-height:350px!important;
+    flex-basis:350px!important;
+    grid-template-rows:34px 34px minmax(270px,1fr)!important;
+  }
+}
+@media(orientation:portrait){
+  #mainApp .analytics{overflow:visible!important}
+  #mainApp .analytics>.mapsPair,
+  #mainApp .analytics>.mapsPair>.mapMini{
+    height:280px!important;
+    min-height:280px!important;
+  }
+  #mainApp .analytics>.mapsPair{flex-basis:280px!important}
+  #mainApp .analytics>#analysisCenter{
+    height:560px!important;
+    min-height:560px!important;
+    flex-basis:560px!important;
+  }
+}
+</style>
+
+<script id="statsvision-map-directions-v61">
+(()=>{
+  const mapSelector='.miniPitch,.statsPitchV20,.statsPitch,.playMiniPitch,.eventEditPitch,.zonePitch';
+  function sideForPeriod(period){
+    const list=(typeof state!=='undefined'&&Array.isArray(state.fieldEvents)?state.fieldEvents:[]).filter(event=>String(event.period||1)===String(period)&&['left','right'].includes(event.attackSide)).map(event=>event.attackSide);
+    if(list.length){const right=list.filter(side=>side==='right').length;return right>=list.length-right?'right':'left'}
+    const current=String(typeof state!=='undefined'&&(state.currentPart||document.querySelector('#periodSelect')?.value)||1);
+    return current===String(period)?((typeof state!=='undefined'&&state.attackSide)||'right'):null;
+  }
+  function directionText(part='all'){
+    if(part==='1'||part==='2'){const side=sideForPeriod(part)||(typeof state!=='undefined'&&state.attackSide)||'right';return side==='right'?'ATACAMOS →':'← ATACAMOS'}
+    const first=sideForPeriod('1'),second=sideForPeriod('2');
+    if(first&&second&&first!==second)return `1.ª ${first==='right'?'→':'←'} · 2.ª ${second==='right'?'→':'←'}`;
+    const side=second||first||(typeof state!=='undefined'&&state.attackSide)||'right';
+    return side==='right'?'ATACAMOS →':'← ATACAMOS';
+  }
+  function mapPart(map){
+    const detail=map.closest('.analysisDetail'),detailSelect=detail?.querySelector('#teamPart,#playerPart');
+    if(detailSelect)return detailSelect.value||'all';
+    const explicit=map.dataset.mapPart||map.closest('[data-map-part]')?.dataset.mapPart;
+    if(explicit)return explicit;
+    const nearby=map.closest('.statsMapV20,.playCard,.eventEditCard')?.querySelector('select[id*="Part"],select[data-period]');
+    return nearby?.value||'all';
+  }
+  let scheduled=0;
+  function paint(){
+    cancelAnimationFrame(scheduled);scheduled=requestAnimationFrame(()=>{
+      document.querySelectorAll(mapSelector).forEach(map=>{
+        if(map.id==='pitch'||map.closest('#arenaContent')?.querySelector(':scope > .pitch')===map)return;
+        let badge=Array.from(map.children).find(child=>child.classList?.contains('svMapDirection'));
+        if(!badge){badge=document.createElement('span');badge.className='svMapDirection';map.appendChild(badge)}
+        const part=mapPart(map),text=directionText(part);badge.dataset.mapPart=part;if(badge.textContent!==text)badge.textContent=text;
+      });
+    });
+  }
+  const observer=new MutationObserver(paint);observer.observe(document.body,{childList:true,subtree:true});
+  document.addEventListener('change',event=>{if(event.target.matches('#teamPart,#playerPart,#heatFilter,#attackFilter,#periodSelect,#setAttackSide,select[id*="Part"]'))paint()});
+  document.addEventListener('click',event=>{if(event.target.closest('[data-flip-attack]'))setTimeout(paint,0)});
+  window.addEventListener('resize',paint,{passive:true});
+  window.statsVisionPaintMapDirections=paint;
+  window.statsVisionMapDirectionText=directionText;
+  paint();
+})();
+</script>
+
+<script id="statsvision-report-true-heatmap-v2">
+(()=>{
+  const q=(selector,root=document)=>root.querySelector(selector),qa=(selector,root=document)=>Array.from(root.querySelectorAll(selector));
+  function roundRect(ctx,x,y,w,h,r){const radius=Math.max(0,Math.min(r,w/2,h/2));ctx.beginPath();ctx.moveTo(x+radius,y);ctx.arcTo(x+w,y,x+w,y+h,radius);ctx.arcTo(x+w,y+h,x,y+h,radius);ctx.arcTo(x,y+h,x,y,radius);ctx.arcTo(x,y,x+w,y,radius);ctx.closePath()}
+  function heatColor(value){const stops=[[0,[17,55,186]],[.22,[0,133,255]],[.42,[0,220,208]],[.60,[47,218,71]],[.76,[246,231,29]],[.89,[255,139,0]],[1,[239,36,36]]];for(let i=1;i<stops.length;i++){if(value<=stops[i][0]){const [a,ca]=stops[i-1],[b,cb]=stops[i],mix=(value-a)/(b-a||1);return ca.map((channel,index)=>Math.round(channel+(cb[index]-channel)*mix))}}return stops.at(-1)[1]}
+  function pitch(ctx,width,height){const pad=12,fw=width-pad*2,fh=height-pad*2;roundRect(ctx,pad,pad,fw,fh,16);ctx.fillStyle='#4ba64a';ctx.fill();ctx.save();roundRect(ctx,pad,pad,fw,fh,16);ctx.clip();for(let i=0;i<10;i++){ctx.fillStyle=i%2?'rgba(255,255,255,.035)':'rgba(0,0,0,.025)';ctx.fillRect(pad+i*fw/10,pad,fw/10,fh)}ctx.restore();return {pad,fw,fh}}
+  function lines(ctx,field){const {pad,fw,fh}=field;ctx.save();ctx.strokeStyle='rgba(255,255,255,.94)';ctx.lineWidth=3;ctx.strokeRect(pad+1,pad+1,fw-2,fh-2);ctx.beginPath();ctx.moveTo(pad+fw/2,pad);ctx.lineTo(pad+fw/2,pad+fh);ctx.stroke();ctx.beginPath();ctx.arc(pad+fw/2,pad+fh/2,Math.min(fw,fh)*.15,0,Math.PI*2);ctx.stroke();ctx.strokeRect(pad,pad+fh*.22,fw*.17,fh*.56);ctx.strokeRect(pad+fw*.83,pad+fh*.22,fw*.17,fh*.56);ctx.restore()}
+  function render(events,width=900,height=500){const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const ctx=canvas.getContext('2d');const field=pitch(ctx,width,height),source=events.filter(event=>Number.isFinite(Number(event.x))&&Number.isFinite(Number(event.y))&&!['observacao','substituicao'].includes(event.action));if(source.length){const gridW=Math.max(90,Math.min(190,Math.round(field.fw*.72))),gridH=Math.max(58,Math.min(124,Math.round(gridW*68/105))),density=new Float32Array(gridW*gridH),sigmaX=Math.max(5,gridW*.075),sigmaY=Math.max(4,gridH*.105),radiusX=Math.ceil(sigmaX*3),radiusY=Math.ceil(sigmaY*3);for(const event of source){const px=Math.max(0,Math.min(gridW-1,(Number(event.x)||0)/100*(gridW-1))),py=Math.max(0,Math.min(gridH-1,(Number(event.y)||0)/100*(gridH-1))),weight=event.action==='golo'?1.35:event.action==='remate'?1.18:1,minX=Math.max(0,Math.floor(px-radiusX)),maxX=Math.min(gridW-1,Math.ceil(px+radiusX)),minY=Math.max(0,Math.floor(py-radiusY)),maxY=Math.min(gridH-1,Math.ceil(py+radiusY));for(let y=minY;y<=maxY;y++){const dy=(y-py)/sigmaY,dy2=dy*dy;for(let x=minX;x<=maxX;x++){const dx=(x-px)/sigmaX,energy=Math.exp(-.5*(dx*dx+dy2));if(energy>.008)density[y*gridW+x]+=energy*weight}}}let max=0;for(const value of density)if(value>max)max=value;const image=ctx.createImageData(gridW,gridH),data=image.data;for(let i=0;i<density.length;i++){const raw=max?density[i]/max:0;if(raw<.035)continue;const value=Math.min(1,Math.pow(raw,.62)),[red,green,blue]=heatColor(value),offset=i*4;data[offset]=red;data[offset+1]=green;data[offset+2]=blue;data[offset+3]=Math.round(25+205*Math.min(1,value*1.12))}const layer=document.createElement('canvas');layer.width=gridW;layer.height=gridH;layer.getContext('2d').putImageData(image,0,0);ctx.save();roundRect(ctx,field.pad,field.pad,field.fw,field.fh,16);ctx.clip();ctx.imageSmoothingEnabled=true;ctx.drawImage(layer,field.pad,field.pad,field.fw,field.fh);ctx.restore()}lines(ctx,field);if(!source.length){ctx.fillStyle='rgba(255,255,255,.94)';roundRect(ctx,width/2-105,height/2-22,210,44,12);ctx.fill();ctx.fillStyle='#52616d';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='850 16px system-ui';ctx.fillText('Sem ações',width/2,height/2)}return canvas.toDataURL('image/png')}
+  function upgrade(){
+    const overlay=q('#svReportOverlay');if(!overlay?.classList.contains('show'))return;const all=(typeof state!=='undefined'&&Array.isArray(state.fieldEvents)?state.fieldEvents:[]).filter(event=>event.team!=='away');
+    qa('.svrHeatChart',overlay).forEach(chart=>{
+      const page=chart.closest('.svReportPage'),heading=q('.svrSectionHead h2',page),title=heading?.textContent||'',isPlayer=chart.closest('.svrPlayerMap'),source=isPlayer?(()=>{const match=title.match(/#?\s*(\d+)\s*·\s*(.+)/),number=match?.[1],name=match?.[2]?.trim();return all.filter(event=>String(event.playerNumber||'')===String(number||'')||String(event.player||'').trim()===String(name||''))})():all;
+      const direction=typeof window.statsVisionMapDirectionText==='function'?window.statsVisionMapDirectionText('all'):(typeof state!=='undefined'&&state.attackSide||'right')==='right'?'ATACAMOS →':'← ATACAMOS';chart.classList.add('svTrueHeatChart');chart.innerHTML=`<img class="svTrueReportHeat" src="${render(source)}" alt="Heatmap com a mesma escala, intensidade e suavização da aplicação"><div class="svrChartKey"><span><i class="hot"></i>Maior intensidade</span><span><i class="cool"></i>Menor intensidade</span><span>${direction}</span></div>`;
+    })
+  }
+  const original=window.openProfessionalReport;if(typeof original==='function'){window.openProfessionalReport=function(...args){const result=original(...args);setTimeout(upgrade,30);return result};const report=q('#sideReport');if(report){const clean=report.cloneNode(true);report.replaceWith(clean);clean.addEventListener('click',()=>window.openProfessionalReport('complete'))}const exportButton=q('#exportReport');if(exportButton)exportButton.onclick=()=>window.openProfessionalReport('complete')}
+  window.statsVisionUpgradeReportHeatmaps=upgrade;
+})();
+</script>
+
+<style id="statsvision-player-team-stacked-maps-v63">
+/* Jogador e Equipa: um campo por linha, maior e sem compressão lateral. */
+#mainApp .analysisDetail{
+  height:100%!important;
+  min-height:0!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  align-content:start!important;
+  padding-bottom:18px!important;
+}
+#mainApp .analysisDetail .detailBoards{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-auto-rows:auto!important;
+  align-items:start!important;
+  gap:16px!important;
+  width:100%!important;
+  min-height:0!important;
+}
+#mainApp .analysisDetail .miniPitchCard{
+  width:100%!important;
+  min-width:0!important;
+  padding:14px!important;
+  gap:11px!important;
+}
+#mainApp .analysisDetail .miniPitchCard h3{
+  font-size:13px!important;
+}
+#mainApp .analysisDetail .miniPitch{
+  width:min(100%,980px)!important;
+  min-height:0!important;
+  aspect-ratio:105/68!important;
+  margin-inline:auto!important;
+}
+@media(max-width:1100px) and (orientation:landscape){
+  #mainApp .analysisDetail .detailBoards{grid-template-columns:minmax(0,1fr)!important;gap:12px!important}
+  #mainApp .analysisDetail .miniPitchCard{padding:11px!important}
+  #mainApp .analysisDetail .miniPitch{width:min(100%,760px)!important}
+}
+</style>
+
+<style id="statsvision-analytics-map-proportions-v64">
+/* Heatmap e Ataques: mais baixos, ligeiramente mais estreitos e com proporção real de campo. */
+#mainApp .analytics>.mapsPair{
+  height:250px!important;
+  min-height:250px!important;
+  flex-basis:250px!important;
+  gap:10px!important;
+}
+#mainApp .analytics>.mapsPair>.mapMini{
+  height:250px!important;
+  min-height:250px!important;
+  justify-content:flex-start!important;
+}
+#mainApp .analytics>.mapsPair>.mapMini canvas{
+  display:block!important;
+  width:min(94%,308px)!important;
+  height:auto!important;
+  min-height:0!important;
+  max-width:308px!important;
+  max-height:200px!important;
+  aspect-ratio:105/68!important;
+  flex:0 0 auto!important;
+  margin:auto!important;
+  object-fit:contain!important;
+}
+@media(max-width:1100px) and (orientation:landscape){
+  #mainApp .analytics>.mapsPair,
+  #mainApp .analytics>.mapsPair>.mapMini{
+    height:205px!important;
+    min-height:205px!important;
+  }
+  #mainApp .analytics>.mapsPair{flex-basis:205px!important}
+  #mainApp .analytics>.mapsPair>.mapMini canvas{
+    width:min(94%,250px)!important;
+    max-width:250px!important;
+    max-height:162px!important;
+  }
+}
+@media(orientation:portrait){
+  #mainApp .analytics>.mapsPair,
+  #mainApp .analytics>.mapsPair>.mapMini{
+    height:225px!important;
+    min-height:225px!important;
+  }
+  #mainApp .analytics>.mapsPair{flex-basis:225px!important}
+  #mainApp .analytics>.mapsPair>.mapMini canvas{
+    width:min(94%,270px)!important;
+    max-width:270px!important;
+    max-height:175px!important;
+  }
+}
+</style>
+
+<style id="statsvision-session-scroll-fix-v65">
+/* Arquivos de jogos e treinos: o conteúdo fica contido e percorre-se até ao fim. */
+#welcomeScreen .svpConsole{
+  min-height:0!important;
+  overflow:hidden!important;
+}
+#welcomeScreen .svpConsoleShell.svSessionShell{
+  height:min(700px,94dvh)!important;
+  min-height:0!important;
+  max-height:94dvh!important;
+  grid-template-rows:minmax(0,1fr)!important;
+  overflow:hidden!important;
+}
+#welcomeScreen .svpConsoleShell.svSessionShell>.svSessionHub{
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  grid-template-rows:auto minmax(0,1fr)!important;
+}
+#welcomeScreen .svpConsoleShell.svSessionShell #svSessionView{
+  position:relative!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:100%!important;
+  overflow-x:hidden!important;
+  overflow-y:scroll!important;
+  overscroll-behavior-y:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+  touch-action:pan-y!important;
+  scrollbar-gutter:stable!important;
+  scrollbar-width:auto!important;
+  scrollbar-color:#2c7082 #061b29!important;
+  padding-bottom:clamp(42px,7vh,80px)!important;
+}
+#welcomeScreen .svpConsoleShell.svSessionShell #svSessionView::-webkit-scrollbar{width:11px}
+#welcomeScreen .svpConsoleShell.svSessionShell #svSessionView::-webkit-scrollbar-track{background:#061b29}
+#welcomeScreen .svpConsoleShell.svSessionShell #svSessionView::-webkit-scrollbar-thumb{
+  border:3px solid #061b29;
+  border-radius:999px;
+  background:#2c7082;
+}
+#welcomeScreen .svpConsoleShell.svSessionShell #svSessionView>.sv60Panel{
+  width:100%!important;
+  min-height:min-content!important;
+  margin:0 auto!important;
+}
+#welcomeScreen .svpConsoleShell.svSessionShell .sv60List,
+#welcomeScreen .svpConsoleShell.svSessionShell .sv64Archive{
+  min-height:min-content!important;
+}
+@media(max-width:760px){
+  #welcomeScreen .svpConsoleShell.svSessionShell{
+    height:96dvh!important;
+    max-height:96dvh!important;
+  }
+}
+</style>
+
 </body></html>
